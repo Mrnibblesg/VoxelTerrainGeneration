@@ -5,11 +5,11 @@ using UnityEngine;
 public class Chunk : MonoBehaviour
 {
     Voxel[,,] voxels;
-    public int height = 32;
+    public int height = 128;
     private int size;
     //Separate from start script so we can choose when to
     //generate after creation
-    void Initialize(int size)
+    public void Initialize(int size)
     {
         this.size = size;
         voxels = new Voxel[size, height, size];
