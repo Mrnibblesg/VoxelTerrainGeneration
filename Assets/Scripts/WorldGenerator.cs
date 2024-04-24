@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class WorldGenerator : MonoBehaviour
 {
+    public static WorldGenerator world { get; private set; }
+
     public int worldSize;
     public int chunkSize = 32;
     public int worldHeight = 128;
@@ -11,13 +13,19 @@ public class WorldGenerator : MonoBehaviour
     
     void Start()
     {
+        if (world != null)
+        {
+            return;
+        }
+        world = this;
         Chunk.size = chunkSize;
         Chunk.height = worldHeight;
         chunks = new Dictionary<Vector3, Chunk>();
+
         GenerateWorld();
     }
 
-    //Generates a world with dimensions worldSize x worldSize chunks
+    //Generates a world with dimensions worldSize x worldSize chunks.
     void GenerateWorld()
     {
         for (int x = 0; x < worldSize; x++)
@@ -25,13 +33,32 @@ public class WorldGenerator : MonoBehaviour
             for (int z = 0; z < worldSize; z++)
             {
                 GameObject chunkObj = new GameObject($"Chunk{x},{z}");
-                Vector3 position = new Vector3(x * chunkSize, 0, z * chunkSize);
-                chunkObj.transform.position = position;
-
+                //we'll store the chunk's chunk coordinates in the dictionary
+                //but use it's real location for the gameObject. This stuff will need to
+                //be done differently if we use vertical chunks
+                Vector3 position = new Vector3Int(x, 0, z);
+                chunkObj.transform.position = position * chunkSize;
                 Chunk newChunk = chunkObj.AddComponent<Chunk>();
-                newChunk.Initialize(chunkSize);
+                newChunk.Initialize(chunkSize, new Vector3Int(x, 0, z));
                 chunks.Add(position, newChunk);
+
             }
         }
+    }
+
+    //Vector is in global coordinates
+    public Chunk GetChunk(Vector3 vec)
+    {
+        Chunk c;
+        Vector3 chunkCoordinates = new Vector3Int(
+            (int)vec.x / chunkSize,
+            (int)vec.y / worldHeight,
+            (int)vec.z / chunkSize);
+        
+        if (chunks.TryGetValue(chunkCoordinates, out c))
+        {
+            return c;
+        }
+        return null;
     }
 }
