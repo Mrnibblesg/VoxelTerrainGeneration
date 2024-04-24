@@ -6,10 +6,13 @@ public class WorldGenerator : MonoBehaviour
 {
     public int worldSize;
     public int chunkSize = 32;
+    public int worldHeight = 128;
     private Dictionary<Vector3, Chunk> chunks;
     
     void Start()
     {
+        Chunk.size = chunkSize;
+        Chunk.height = worldHeight;
         chunks = new Dictionary<Vector3, Chunk>();
         GenerateWorld();
     }
