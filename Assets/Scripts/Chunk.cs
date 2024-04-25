@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class Chunk : MonoBehaviour
 {
@@ -234,7 +233,7 @@ public class Chunk : MonoBehaviour
     bool OutsideVoxelOpaque(Vector3 pos)
     {
         Vector3 globalPos = transform.position + pos;
-        Chunk neighbor = WorldGenerator.world.GetChunk(globalPos);
+        Chunk neighbor = WorldGenerator.World.GetChunk(globalPos);
         if (neighbor == null)
         {
             return false;

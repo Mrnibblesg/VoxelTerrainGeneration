@@ -1,10 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class WorldGenerator : MonoBehaviour
 {
-    public static WorldGenerator world { get; private set; }
+    public static WorldGenerator World { get; private set; }
 
     public int worldSize;
     public int chunkSize = 32;
@@ -12,12 +13,13 @@ public class WorldGenerator : MonoBehaviour
     private Dictionary<Vector3, Chunk> chunks;
     
     void Start()
-    {
-        if (world != null)
+    { 
+        if (World != null)
         {
-            return;
+            throw new Exception("Only one instance of the WorldGenerator is allowed");
         }
-        world = this;
+        World = this;
+
         Chunk.size = chunkSize;
         Chunk.height = worldHeight;
         chunks = new Dictionary<Vector3, Chunk>();
