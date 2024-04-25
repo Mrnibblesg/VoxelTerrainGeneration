@@ -33,27 +33,35 @@ public class WorldGenerator : MonoBehaviour
             for (int z = 0; z < worldSize; z++)
             {
                 GameObject chunkObj = new GameObject($"Chunk{x},{z}");
+
                 //we'll store the chunk's chunk coordinates in the dictionary
                 //but use it's real location for the gameObject. This stuff will need to
                 //be done differently if we use vertical chunks
                 Vector3 position = new Vector3Int(x, 0, z);
                 chunkObj.transform.position = position * chunkSize;
+
                 Chunk newChunk = chunkObj.AddComponent<Chunk>();
-                newChunk.Initialize(chunkSize, new Vector3Int(x, 0, z));
+                newChunk.Initialize(new Vector3Int(x, 0, z));
                 chunks.Add(position, newChunk);
 
             }
         }
+        //Hacky, instead want to render the chunk and re-render its
+        //neighbors to get ready for procedural gen
+        foreach (KeyValuePair<Vector3, Chunk> pair in chunks)
+        {
+            pair.Value.Render();
+        }
     }
 
-    //Vector is in global coordinates
+    //vec is in global coordinates
     public Chunk GetChunk(Vector3 vec)
     {
         Chunk c;
         Vector3 chunkCoordinates = new Vector3Int(
-            (int)vec.x / chunkSize,
-            (int)vec.y / worldHeight,
-            (int)vec.z / chunkSize);
+            Mathf.FloorToInt(vec.x / chunkSize),
+            Mathf.FloorToInt(vec.y / worldHeight),
+            Mathf.FloorToInt(vec.z / chunkSize));
         
         if (chunks.TryGetValue(chunkCoordinates, out c))
         {

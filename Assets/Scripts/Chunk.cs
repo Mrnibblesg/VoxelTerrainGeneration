@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,7 +21,7 @@ public class Chunk : MonoBehaviour
     private MeshRenderer meshRenderer;
     private MeshCollider meshCollider;
 
-    public void Initialize(int size, Vector3Int position)
+    public void Initialize(Vector3Int position)
     {
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
@@ -28,12 +29,12 @@ public class Chunk : MonoBehaviour
 
         chunkCoords = position;
 
-        col = Color.green;
+        //col = Color.green;
+        col = new Color(0, 0.7f, 0);
         meshRenderer.material.SetColor("_Color", col);
 
         voxels = new Voxel[size, height, size];
         InitializeVoxels();
-        CreateMesh();
         
     }
 
@@ -54,7 +55,7 @@ public class Chunk : MonoBehaviour
         }
     }
 
-    void CreateMesh()
+    public void Render()
     {
         meshVertices = new List<Vector3>();
         meshUVs = new List<Vector2>();
@@ -237,16 +238,25 @@ public class Chunk : MonoBehaviour
         {
             return false;
         }
-        Vector3 neighborPos = neighbor.gameObject.transform.InverseTransformPoint(globalPos);
-        return neighbor.voxels[(int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z].active;
+        
+        //Ensure we don't somehow use an invalid index
+        try
+        {
+            Vector3 neighborPos = neighbor.gameObject.transform.InverseTransformPoint(globalPos);
+            return neighbor.voxels[(int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z].active;
+        }
+        catch(IndexOutOfRangeException e)
+        {
+            print(e);
+        }
+        return false;
     }
-
     void OnDrawGizmos()
     {
         if (voxels == null || meshFilter.mesh == null) return;
         //Outline the whole chunk
         Gizmos.color = Color.black;
         //Gizmos.DrawCube(transform.position + new Vector3(size / 2, height / 2, size / 2), new Vector3(size, height, size));
-        Gizmos.DrawWireMesh(meshFilter.mesh);
+        Gizmos.DrawWireMesh(meshFilter.mesh, transform.position);
     }
 }
