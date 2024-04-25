@@ -5,6 +5,13 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     public float speed = 10f;
+
+    private void Start()
+    {
+        WorldGenerator w = WorldGenerator.World;
+        Vector3 startPosition = new(0.5f, w.worldHeight * w.chunkHeight + 1.5f, 0.5f); 
+        transform.position = startPosition;
+    }
     // Update is called once per frame
     void Update()
     {

@@ -6,7 +6,7 @@ using UnityEngine;
 public class Chunk : MonoBehaviour
 {
     public static int size; //X*Z
-    public static int height = 128;
+    public static int height;
     Voxel[,,] voxels;
     private Vector3Int chunkCoords;
     
@@ -98,10 +98,8 @@ public class Chunk : MonoBehaviour
             meshVertices.Add(new Vector3(x + 1,y + 1,z    ));
             meshVertices.Add(new Vector3(x + 1,y    ,z + 1));
             meshVertices.Add(new Vector3(x + 1,y    ,z    ));
-            meshUVs.Add(new Vector2(1,1));
-            meshUVs.Add(new Vector2(0,1));
-            meshUVs.Add(new Vector2(1,0));
-            meshUVs.Add(new Vector2(0,0));
+            addUVs();
+
             int vertexAmt = meshVertices.Count;
 
             meshTris.Add(vertexAmt - 3);
@@ -118,10 +116,8 @@ public class Chunk : MonoBehaviour
             meshVertices.Add(new Vector3(x, y + 1, z    ));
             meshVertices.Add(new Vector3(x, y    , z + 1));
             meshVertices.Add(new Vector3(x, y    , z    ));
-            meshUVs.Add(new Vector2(1, 1));
-            meshUVs.Add(new Vector2(0, 1));
-            meshUVs.Add(new Vector2(1, 0));
-            meshUVs.Add(new Vector2(0, 0));
+            addUVs();
+
             int vertexAmt = meshVertices.Count;
 
             meshTris.Add(vertexAmt - 1);
@@ -138,10 +134,8 @@ public class Chunk : MonoBehaviour
             meshVertices.Add(new Vector3(x + 1, y + 1, z    ));
             meshVertices.Add(new Vector3(x    , y + 1, z + 1));
             meshVertices.Add(new Vector3(x    , y + 1, z    ));
-            meshUVs.Add(new Vector2(1, 1));
-            meshUVs.Add(new Vector2(0, 1));
-            meshUVs.Add(new Vector2(1, 0));
-            meshUVs.Add(new Vector2(0, 0));
+            addUVs();
+
             int vertexAmt = meshVertices.Count;
 
             meshTris.Add(vertexAmt - 1);
@@ -158,10 +152,8 @@ public class Chunk : MonoBehaviour
             meshVertices.Add(new Vector3(x + 1, y    , z    ));
             meshVertices.Add(new Vector3(x    , y    , z + 1));
             meshVertices.Add(new Vector3(x    , y    , z    ));
-            meshUVs.Add(new Vector2(1, 1));
-            meshUVs.Add(new Vector2(0, 1));
-            meshUVs.Add(new Vector2(1, 0));
-            meshUVs.Add(new Vector2(0, 0));
+            addUVs();
+
             int vertexAmt = meshVertices.Count;
 
             meshTris.Add(vertexAmt - 3);
@@ -178,10 +170,8 @@ public class Chunk : MonoBehaviour
             meshVertices.Add(new Vector3(x + 1, y    , z + 1));
             meshVertices.Add(new Vector3(x    , y + 1, z + 1));
             meshVertices.Add(new Vector3(x    , y    , z + 1));
-            meshUVs.Add(new Vector2(1, 1));
-            meshUVs.Add(new Vector2(0, 1));
-            meshUVs.Add(new Vector2(1, 0));
-            meshUVs.Add(new Vector2(0, 0));
+            addUVs();
+
             int vertexAmt = meshVertices.Count;
 
             meshTris.Add(vertexAmt - 3);
@@ -198,10 +188,8 @@ public class Chunk : MonoBehaviour
             meshVertices.Add(new Vector3(x + 1, y    , z    ));
             meshVertices.Add(new Vector3(x    , y + 1, z    ));
             meshVertices.Add(new Vector3(x    , y    , z    ));
-            meshUVs.Add(new Vector2(1, 1));
-            meshUVs.Add(new Vector2(0, 1));
-            meshUVs.Add(new Vector2(1, 0));
-            meshUVs.Add(new Vector2(0, 0));
+            addUVs();
+
             int vertexAmt = meshVertices.Count;
 
             meshTris.Add(vertexAmt - 1);
@@ -213,14 +201,18 @@ public class Chunk : MonoBehaviour
             meshTris.Add(vertexAmt - 2);
         }
     }
+    void addUVs()
+    {
+        meshUVs.Add(new Vector2(1, 1));
+        meshUVs.Add(new Vector2(0, 1));
+        meshUVs.Add(new Vector2(1, 0));
+        meshUVs.Add(new Vector2(0, 0));
+    }
 
     bool IsOpaque(int x, int y, int z)
     {
-        if (y < 0 || y >= height) //above or below
-        {
-            return false;
-        }
         if (x < 0 || x >= size || //outside of chunk
+            y < 0 || y >= height ||
             z < 0 || z >= size)
         {
             Vector3Int pos = new Vector3Int(x, y, z);
