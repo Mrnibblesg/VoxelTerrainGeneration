@@ -259,4 +259,54 @@ public class Chunk : MonoBehaviour
         //Gizmos.DrawCube(transform.position + new Vector3(size / 2, height / 2, size / 2), new Vector3(size, height, size));
         Gizmos.DrawWireMesh(meshFilter.mesh, transform.position);
     }
+
+    /// <summary>
+    /// Copies the voxel at the given position in this chunk.
+    /// </summary>
+    /// <param name="vec"></param>
+    /// <returns></returns>
+    public Voxel? GetVoxel(Vector3 vec)
+    {
+        Vector3Int pos = new Vector3Int(
+            Mathf.FloorToInt(vec.x),
+            Mathf.FloorToInt(vec.y),
+            Mathf.FloorToInt(vec.z)
+        );
+
+        bool outside = pos.x < 0 || pos.x >= size ||
+                       pos.y < 0 || pos.y >= height ||
+                       pos.z < 0 || pos.z >= size;
+
+        return outside ? null : Voxel.Clone(voxels[pos.x, pos.y, pos.z]);
+    }
+
+    /// <summary>
+    /// Sets the voxel at the given position in this chunk.
+    /// </summary>
+    /// <param name="vec"></param>
+    /// <param name="voxel"></param>
+    /// <returns> Whether the voxel was set. </returns>
+    public bool SetVoxel(Vector3 vec, Voxel voxel)
+    {
+        Vector3Int pos = new Vector3Int(
+                       Mathf.FloorToInt(vec.x),
+                       Mathf.FloorToInt(vec.y),
+                       Mathf.FloorToInt(vec.z)
+                    );
+
+        bool outside = pos.x < 0 || pos.x >= size ||
+                       pos.y < 0 || pos.y >= height ||
+                       pos.z < 0 || pos.z >= size;
+
+        if (!outside)
+        {
+            voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
+        }
+
+        // Update the mesh
+        // Brute force for now
+        Render();
+
+        return !outside;
+    }
 }
