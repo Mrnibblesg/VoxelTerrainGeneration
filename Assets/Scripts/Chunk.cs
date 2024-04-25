@@ -48,7 +48,8 @@ public class Chunk : MonoBehaviour
                 {
                     voxels[x, y, z] = new Voxel(
                         transform.position + new Vector3(x, y, z),
-                        Color.white
+                        Color.white//,
+                        //(x + y + z) % 2 == 1
                     );
                 }
             }
