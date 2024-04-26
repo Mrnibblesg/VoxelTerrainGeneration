@@ -8,11 +8,13 @@ public class Chunk : MonoBehaviour
     public static int size; //X*Z
     public static int height;
     Voxel[,,] voxels;
+    Chunk[] neighbors;
     private Vector3Int chunkCoords;
     
     private Color col;
 
     private List<Vector3> meshVertices;
+    private Dictionary<Vector3Int, int> vertexDict;
     private List<Vector2> meshUVs;
     private List<int> meshTris;
 
@@ -25,6 +27,8 @@ public class Chunk : MonoBehaviour
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
+
+        vertexDict = new Dictionary<Vector3Int, int>();
 
         chunkCoords = position;
 
@@ -47,19 +51,20 @@ public class Chunk : MonoBehaviour
                 {
                     voxels[x, y, z] = new Voxel(
                         transform.position + new Vector3(x, y, z),
-                        Color.white//,
-                        //(x + y + z) % 2 == 1
+                        Color.white,
+                        true//(x + y + z) % 2 == 1
                     );
                 }
             }
         }
     }
 
-    public void Render()
+    public void RegenerateMesh()
     {
         meshVertices = new List<Vector3>();
         meshUVs = new List<Vector2>();
         meshTris = new List<int>();
+        vertexDict = new Dictionary<Vector3Int, int>();
 
         for (int x = 0; x < size; x++)
         {
@@ -69,12 +74,13 @@ public class Chunk : MonoBehaviour
                 {
                     if (voxels[x, y, z].active)
                     {
-                        AddFaces(x, y, z);
+                        AddFaces(new Vector3Int(x, y, z));
                     }
                 }
             }
         }
         Mesh newMesh = new Mesh();
+        newMesh.name = gameObject.name;
 
         //GreedyMeshing();
         newMesh.vertices = meshVertices.ToArray();
@@ -89,125 +95,111 @@ public class Chunk : MonoBehaviour
     //Builds the mesh from the currently stored voxels
     //if voxel face is exposed, add to mesh
     //Currently inefficient, we add multiple copies of the same vertex.
-    //TRI POINTS SHOULD BE EITHER CLOCKWISE OR COUNTERCLOCKWISE, IT MATTERS
-    void AddFaces(int x, int y, int z)
+    //Tris are are either clockwise (CW) or counterclockwise (CCW).
+
+    //Since we are only using flat colors on our meshes for now, we actually
+    //don't need to apply the UVs, saving us memory.
+
+    //Welcome to the brain scrambler
+    void AddFaces(Vector3Int pos)
     {
-        if (!IsOpaque(x+1, y, z)) // +X (Right)
+        int x = pos.x;
+        int y = pos.y;
+        int z = pos.z;
+
+        //Sharing corner vertices will cause a cube to appear to have
+        //smooth edges. This needs to be fixed. Ensure that edge/corner voxels
+        //are not shared, or determine an alternative solution, like supplying
+        //normals manually.
+        if (!IsOpaque(pos.x+1, pos.y, pos.z)) // +X (Right, CW)
         {
-            meshVertices.Add(new Vector3(x + 1,y + 1,z + 1));
-            meshVertices.Add(new Vector3(x + 1,y + 1,z    ));
-            meshVertices.Add(new Vector3(x + 1,y    ,z + 1));
-            meshVertices.Add(new Vector3(x + 1,y    ,z    ));
-            addUVs();
+            meshTris.Add(vertexIndex(pos + Voxel.RTF));
+            meshTris.Add(vertexIndex(pos + Voxel.RBB));
+            meshTris.Add(vertexIndex(pos + Voxel.RBF));
 
-            int vertexAmt = meshVertices.Count;
-
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 1);
-
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 4);
+            meshTris.Add(vertexIndex(pos + Voxel.RBB));
+            meshTris.Add(vertexIndex(pos + Voxel.RTF));
+            meshTris.Add(vertexIndex(pos + Voxel.RTB));
         }
-        if (!IsOpaque(x-1, y, z)) // -X (Left)
+        if (!IsOpaque(pos.x-1, pos.y, pos.z)) // -X (Left, CCW)
         {
-            meshVertices.Add(new Vector3(x, y + 1, z + 1));
-            meshVertices.Add(new Vector3(x, y + 1, z    ));
-            meshVertices.Add(new Vector3(x, y    , z + 1));
-            meshVertices.Add(new Vector3(x, y    , z    ));
-            addUVs();
 
-            int vertexAmt = meshVertices.Count;
+            meshTris.Add(vertexIndex(pos + Voxel.LBF));
+            meshTris.Add(vertexIndex(pos + Voxel.LBB));
+            meshTris.Add(vertexIndex(pos + Voxel.LTF));
 
-            meshTris.Add(vertexAmt - 1);
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 3);
-
-            meshTris.Add(vertexAmt - 4);
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 2);
+            meshTris.Add(vertexIndex(pos + Voxel.LTB));
+            meshTris.Add(vertexIndex(pos + Voxel.LTF));
+            meshTris.Add(vertexIndex(pos + Voxel.LBB));
         }
-        if (!IsOpaque(x, y+1, z)) // +Y (Top)
+        if (!IsOpaque(x, y+1, z)) // +Y (Top, CW)
         {
-            meshVertices.Add(new Vector3(x + 1, y + 1, z + 1));
-            meshVertices.Add(new Vector3(x + 1, y + 1, z    ));
-            meshVertices.Add(new Vector3(x    , y + 1, z + 1));
-            meshVertices.Add(new Vector3(x    , y + 1, z    ));
-            addUVs();
 
-            int vertexAmt = meshVertices.Count;
+            meshTris.Add(vertexIndex(pos + Voxel.LTF));
+            meshTris.Add(vertexIndex(pos + Voxel.LTB));
+            meshTris.Add(vertexIndex(pos + Voxel.RTF));
 
-            meshTris.Add(vertexAmt - 1);
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 3);
-
-            meshTris.Add(vertexAmt - 4);
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 2);
+            meshTris.Add(vertexIndex(pos + Voxel.RTB));
+            meshTris.Add(vertexIndex(pos + Voxel.RTF));
+            meshTris.Add(vertexIndex(pos + Voxel.LTB));
         }
-        if (!IsOpaque(x, y-1, z)) // -Y (Bottom)
+        if (!IsOpaque(x, y-1, z)) // -Y (Bottom, CCW)
         {
-            meshVertices.Add(new Vector3(x + 1, y    , z + 1));
-            meshVertices.Add(new Vector3(x + 1, y    , z    ));
-            meshVertices.Add(new Vector3(x    , y    , z + 1));
-            meshVertices.Add(new Vector3(x    , y    , z    ));
-            addUVs();
+            meshTris.Add(vertexIndex(pos + Voxel.RBF));
+            meshTris.Add(vertexIndex(pos + Voxel.LBB));
+            meshTris.Add(vertexIndex(pos + Voxel.LBF));
 
-            int vertexAmt = meshVertices.Count;
-
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 1);
-
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 4);
+            meshTris.Add(vertexIndex(pos + Voxel.LBB));
+            meshTris.Add(vertexIndex(pos + Voxel.RBF));
+            meshTris.Add(vertexIndex(pos + Voxel.RBB));
         }
-        if (!IsOpaque(x, y, z+1)) // +Z (Front)
+        if (!IsOpaque(x, y, z+1)) // +Z (Back, CW)
         {
-            meshVertices.Add(new Vector3(x + 1, y + 1, z + 1));
-            meshVertices.Add(new Vector3(x + 1, y    , z + 1));
-            meshVertices.Add(new Vector3(x    , y + 1, z + 1));
-            meshVertices.Add(new Vector3(x    , y    , z + 1));
-            addUVs();
 
-            int vertexAmt = meshVertices.Count;
+            meshTris.Add(vertexIndex(pos + Voxel.RBB));
+            meshTris.Add(vertexIndex(pos + Voxel.LTB));
+            meshTris.Add(vertexIndex(pos + Voxel.LBB));
 
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 1);
-
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 4);
+            meshTris.Add(vertexIndex(pos + Voxel.LTB));
+            meshTris.Add(vertexIndex(pos + Voxel.RBB));
+            meshTris.Add(vertexIndex(pos + Voxel.RTB));
         }
-        if (!IsOpaque(x, y, z-1)) // -Z (Back)
+        if (!IsOpaque(x, y, z-1)) // -Z (Front, CCW)
         {
-            meshVertices.Add(new Vector3(x + 1, y + 1, z    ));
-            meshVertices.Add(new Vector3(x + 1, y    , z    ));
-            meshVertices.Add(new Vector3(x    , y + 1, z    ));
-            meshVertices.Add(new Vector3(x    , y    , z    ));
-            addUVs();
 
-            int vertexAmt = meshVertices.Count;
+            meshTris.Add(vertexIndex(pos + Voxel.LBF));
+            meshTris.Add(vertexIndex(pos + Voxel.LTF));
+            meshTris.Add(vertexIndex(pos + Voxel.RBF));
 
-            meshTris.Add(vertexAmt - 1);
-            meshTris.Add(vertexAmt - 2);
-            meshTris.Add(vertexAmt - 3);
-
-            meshTris.Add(vertexAmt - 4);
-            meshTris.Add(vertexAmt - 3);
-            meshTris.Add(vertexAmt - 2);
+            meshTris.Add(vertexIndex(pos + Voxel.RTF));
+            meshTris.Add(vertexIndex(pos + Voxel.RBF));
+            meshTris.Add(vertexIndex(pos + Voxel.LTF));
         }
     }
-    void addUVs()
+
+    //Input the position of the vertex you want to use on the mesh,
+    //this function will either add it, or return its index if it already
+    //exists. Always returns a valid index.
+    //The purpose of this function is to deduplicate the vertices on meshes.
+    int vertexIndex(Vector3Int pos)
+    {
+        int index;
+        if (vertexDict.TryGetValue(pos, out index))
+        {
+            return index;
+        }
+        meshVertices.Add(pos);
+        index = meshVertices.Count - 1;
+        vertexDict.Add(pos, index);
+        return index;
+    }
+/*    void addUVs()
     {
         meshUVs.Add(new Vector2(1, 1));
         meshUVs.Add(new Vector2(0, 1));
         meshUVs.Add(new Vector2(1, 0));
         meshUVs.Add(new Vector2(0, 0));
-    }
+    }*/
 
     bool IsOpaque(int x, int y, int z)
     {
@@ -297,7 +289,7 @@ public class Chunk : MonoBehaviour
 
         // Update the mesh
         // Brute force for now
-        Render();
+        RegenerateMesh();
 
         return !outside;
     }

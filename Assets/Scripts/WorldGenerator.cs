@@ -7,14 +7,15 @@ using UnityEngine;
 public class WorldGenerator : MonoBehaviour
 {
     public static WorldGenerator World { get; private set; }
-    public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.Render"); //Profiling
+    public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.RegenerateMesh"); //Profiling
+    public static ProfilerMarker s_GenerateWorld = new(ProfilerCategory.Scripts, "WorldGenerator.GenerateWorld"); //Profiling
 
     //Dimensions of world in the amount of chunks
     public int worldSize;
     public int worldHeight;
 
-    public int chunkSize = 32;
-    public int chunkHeight = 128;
+    public int chunkSize;
+    public int chunkHeight;
 
     private Dictionary<Vector3, Chunk> chunks;
     
@@ -30,7 +31,9 @@ public class WorldGenerator : MonoBehaviour
         Chunk.height = chunkHeight;
         chunks = new Dictionary<Vector3, Chunk>();
 
+        s_GenerateWorld.Begin();
         GenerateWorld();
+        s_GenerateWorld.End();
     }
 
     //Generates a world with dimensions worldSize x worldSize chunks.
@@ -64,7 +67,7 @@ public class WorldGenerator : MonoBehaviour
         foreach (KeyValuePair<Vector3, Chunk> pair in chunks)
         {
             s_ChunkGen.Begin();
-            pair.Value.Render();
+            pair.Value.RegenerateMesh();
             s_ChunkGen.End();
         }
     }
