@@ -9,5 +9,3 @@ Samuel Turney
 Saunder VanWoerden
 
 Parker Gutierrez
-
-[//] # Extra comment
