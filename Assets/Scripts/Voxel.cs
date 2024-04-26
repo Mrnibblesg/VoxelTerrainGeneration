@@ -11,4 +11,30 @@ public struct Voxel
         this.col = col;
         this.active = active;
     }
+
+    public static Voxel Clone(Voxel other)
+    {
+        return new Voxel(other.pos, other.col, other.active);
+    }
+
+    public Voxel SetActive(bool active)
+    {
+        this.active = active;
+
+        return this;
+    }
+
+    public Voxel SetColor(Color col)
+    {
+        this.col = col;
+
+        return this;
+    }
+
+    public Voxel SetPosition(Vector3 pos)
+    {
+        this.pos = pos;
+
+        return this;
+    }
 }
