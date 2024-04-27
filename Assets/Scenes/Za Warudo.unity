@@ -535,9 +535,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   worldSize: 4
-  worldHeight: 64
-  chunkSize: 16
-  chunkHeight: 16
+  worldHeight: 1
+  chunkSize: 32
+  chunkHeight: 128
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

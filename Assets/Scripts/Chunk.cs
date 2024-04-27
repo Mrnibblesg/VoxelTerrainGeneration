@@ -133,7 +133,7 @@ public class Chunk : MonoBehaviour
         Voxel.RBB
     };
 
-    public static readonly List<Vector3Int> FrontCorners = new List<Vector3Int>()
+    public static readonly List<Vector3Int> BackCorners = new List<Vector3Int>()
     {
         Voxel.LBF,
         Voxel.LTF,
@@ -143,7 +143,7 @@ public class Chunk : MonoBehaviour
         Voxel.LTF
     };
 
-    public static readonly List<Vector3Int> BackCorners = new List<Vector3Int>()
+    public static readonly List<Vector3Int> FrontCorners = new List<Vector3Int>()
     {
         Voxel.RBB,
         Voxel.LTB,
@@ -174,7 +174,7 @@ public class Chunk : MonoBehaviour
         //smooth edges. This needs to be fixed. Ensure that edge/corner voxels
         //are not shared, or determine an alternative solution, like supplying
         //normals manually.
-        if (!IsOpaque(pos + Vector3Int.right)) // +X (Right, CW)
+        if (!IsOpaque(x+1,y,z)) // +X (Right, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[1]));
@@ -184,7 +184,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[5]));
         }
 
-        if (!IsOpaque(pos + Vector3Int.left)) // -X (Left, CCW)
+        if (!IsOpaque(x-1,y,z)) // -X (Left, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[1]));
@@ -194,7 +194,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[5]));
         } 
 
-        if (!IsOpaque(pos + Vector3Int.up)) // +Y (Top, CW)
+        if (!IsOpaque(x, y+1, z)) // +Y (Top, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[1]));
@@ -204,7 +204,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[5]));
         }
 
-        if (!IsOpaque(pos + Vector3Int.down)) // -Y (Bottom, CCW)
+        if (!IsOpaque(x, y-1, z)) // -Y (Bottom, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[1]));
@@ -214,7 +214,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[5]));
         }
 
-        if (!IsOpaque(pos + Vector3Int.back)) // +Z (Front, CCW)
+        if (!IsOpaque(x, y, z+1)) // +Z (Front, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[1]));
@@ -224,7 +224,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[5]));
         }
 
-        if (!IsOpaque(pos + Vector3Int.forward)) // -Z (Back, CW)
+        if (!IsOpaque(x, y, z - 1)) // -Z (Back, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + BackCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + BackCorners[1]));
@@ -233,7 +233,6 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + BackCorners[4]));
             meshTris.Add(AddVerticesToMesh(pos + BackCorners[5]));
         }
-
     }
 
 
@@ -270,11 +269,11 @@ public class Chunk : MonoBehaviour
         meshUVs.Add(new Vector2(0, 0));
     }*/
 
-    bool IsOpaque(Vector3Int position)
+    bool IsOpaque(int x, int y, int z)
     {
-        int x = position.x;
+        /*int x = position.x;
         int y = position.y;
-        int z = position.z;
+        int z = position.z;*/
 
         if (x < 0 || x >= size || //outside of chunk
             y < 0 || y >= height ||
