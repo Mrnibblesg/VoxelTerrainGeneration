@@ -93,6 +93,66 @@ public class Chunk : MonoBehaviour
         newMesh.RecalculateNormals();
     }
 
+    public static readonly List<Vector3Int> RightCorners = new List<Vector3Int>()
+    {
+        Voxel.RTF,
+        Voxel.RBB,
+        Voxel.RBF,
+        Voxel.RBB,
+        Voxel.RTF,
+        Voxel.RTB
+    };
+
+    public static readonly List<Vector3Int> LeftCorners = new List<Vector3Int>()
+    {
+        Voxel.LBF,
+        Voxel.LBB,
+        Voxel.LTF,
+        Voxel.LTB,
+        Voxel.LTF,
+        Voxel.LBB
+    };
+
+    public static readonly List<Vector3Int> TopCorners = new List<Vector3Int>()
+    {
+        Voxel.LTF,
+        Voxel.LTB,
+        Voxel.RTF,
+        Voxel.RTB,
+        Voxel.RTF,
+        Voxel.LTB
+    };
+
+    public static readonly List<Vector3Int> BottomCorners = new List<Vector3Int>()
+    {
+        Voxel.RBF,
+        Voxel.LBB,
+        Voxel.LBF,
+        Voxel.LBB,
+        Voxel.RBF,
+        Voxel.RBB
+    };
+
+    public static readonly List<Vector3Int> FrontCorners = new List<Vector3Int>()
+    {
+        Voxel.LBF,
+        Voxel.LTF,
+        Voxel.RBF,
+        Voxel.RTF,
+        Voxel.RBF,
+        Voxel.LTF
+    };
+
+    public static readonly List<Vector3Int> BackCorners = new List<Vector3Int>()
+    {
+        Voxel.RBB,
+        Voxel.LTB,
+        Voxel.LBB,
+        Voxel.LTB,
+        Voxel.RBB,
+        Voxel.RTB
+    };
+
     //Builds the mesh from the currently stored voxels
     //if voxel face is exposed, add to mesh
     //Currently inefficient, we add multiple copies of the same vertex.
@@ -116,92 +176,32 @@ public class Chunk : MonoBehaviour
         //normals manually.
         if (!IsOpaque(pos + Vector3Int.right)) // +X (Right, CW)
         {
-            List<Vector3Int> relevantDirections = new List<Vector3Int>()
-            {
-                Voxel.RTF,
-                Voxel.RBB,
-                Voxel.RBF,
-                Voxel.RBB,
-                Voxel.RTF,
-                Voxel.RTB
-            };
-
-            relevantDirections.ForEach(addAllVerticesToMesh);
+            RightCorners.ForEach(addAllVerticesToMesh);
         }
 
         if (!IsOpaque(pos + Vector3Int.left)) // -X (Left, CCW)
         {
-            List<Vector3Int> relevantDirections = new List<Vector3Int>()
-            {
-                Voxel.LBF,
-                Voxel.LBB,
-                Voxel.LTF,
-                Voxel.LTB,
-                Voxel.LTF,
-                Voxel.LBB
-            };
-
-            relevantDirections.ForEach(addAllVerticesToMesh);
+            LeftCorners.ForEach(addAllVerticesToMesh);
         } 
 
         if (!IsOpaque(pos + Vector3Int.up)) // +Y (Top, CW)
         {
-            List<Vector3Int> relevantDirections = new List<Vector3Int>()
-            {
-                Voxel.LTF,
-                Voxel.LTB,
-                Voxel.RTF,
-                Voxel.RTB,
-                Voxel.RTF,
-                Voxel.LTB
-            };
-
-            relevantDirections.ForEach(addAllVerticesToMesh);
+            TopCorners.ForEach(addAllVerticesToMesh);
         }
 
         if (!IsOpaque(pos + Vector3Int.down)) // -Y (Bottom, CCW)
         {
-            List<Vector3Int> relevantDirections = new List<Vector3Int>()
-            {
-                Voxel.RBF,
-                Voxel.LBB,
-                Voxel.LBF,
-                Voxel.LBB,
-                Voxel.RBF,
-                Voxel.RBB
-            };
-
-            relevantDirections.ForEach(addAllVerticesToMesh);
+            BottomCorners.ForEach(addAllVerticesToMesh);
         }
 
         if (!IsOpaque(pos + Vector3Int.back)) // +Z (Front, CCW)
         {
-            List<Vector3Int> vector3Ints = new List<Vector3Int>()
-            {
-                Voxel.LBF,
-                Voxel.LTF,
-                Voxel.RBF,
-                Voxel.RTF,
-                Voxel.RBF,
-                Voxel.LTF
-            };
-
-            vector3Ints.ForEach(addAllVerticesToMesh);
+            FrontCorners.ForEach(addAllVerticesToMesh);
         }
 
         if (!IsOpaque(pos + Vector3Int.forward)) // -Z (Back, CW)
         {
-            List<Vector3Int> relevantDirections = new List<Vector3Int>()
-            {
-                Voxel.RBB,
-                Voxel.LTB,
-                Voxel.LBB,
-                Voxel.LTB,
-                Voxel.RBB,
-                Voxel.RTB
-            };
-
-            relevantDirections.ForEach(addAllVerticesToMesh);
+            BackCorners.ForEach(addAllVerticesToMesh);
         }
 
     }
