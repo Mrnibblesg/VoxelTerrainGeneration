@@ -168,7 +168,7 @@ public class Chunk : MonoBehaviour
         int y = pos.y;
         int z = pos.z;
 
-        Action<Vector3Int> addAllVerticesToMesh = (Vector3Int dir) => meshTris.Add(AddVerticesToMesh(pos + dir));
+        // Action<Vector3Int> addAllVerticesToMesh = (Vector3Int dir) => meshTris.Add(AddVerticesToMesh(pos + dir));
 
         //Sharing corner vertices will cause a cube to appear to have
         //smooth edges. This needs to be fixed. Ensure that edge/corner voxels
@@ -176,32 +176,62 @@ public class Chunk : MonoBehaviour
         //normals manually.
         if (!IsOpaque(pos + Vector3Int.right)) // +X (Right, CW)
         {
-            RightCorners.ForEach(addAllVerticesToMesh);
+            meshTris.Add(AddVerticesToMesh(pos + RightCorners[0]));
+            meshTris.Add(AddVerticesToMesh(pos + RightCorners[1]));
+            meshTris.Add(AddVerticesToMesh(pos + RightCorners[2]));
+            meshTris.Add(AddVerticesToMesh(pos + RightCorners[3]));
+            meshTris.Add(AddVerticesToMesh(pos + RightCorners[4]));
+            meshTris.Add(AddVerticesToMesh(pos + RightCorners[5]));
         }
 
         if (!IsOpaque(pos + Vector3Int.left)) // -X (Left, CCW)
         {
-            LeftCorners.ForEach(addAllVerticesToMesh);
+            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[0]));
+            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[1]));
+            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[2]));
+            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[3]));
+            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[4]));
+            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[5]));
         } 
 
         if (!IsOpaque(pos + Vector3Int.up)) // +Y (Top, CW)
         {
-            TopCorners.ForEach(addAllVerticesToMesh);
+            meshTris.Add(AddVerticesToMesh(pos + TopCorners[0]));
+            meshTris.Add(AddVerticesToMesh(pos + TopCorners[1]));
+            meshTris.Add(AddVerticesToMesh(pos + TopCorners[2]));
+            meshTris.Add(AddVerticesToMesh(pos + TopCorners[3]));
+            meshTris.Add(AddVerticesToMesh(pos + TopCorners[4]));
+            meshTris.Add(AddVerticesToMesh(pos + TopCorners[5]));
         }
 
         if (!IsOpaque(pos + Vector3Int.down)) // -Y (Bottom, CCW)
         {
-            BottomCorners.ForEach(addAllVerticesToMesh);
+            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[0]));
+            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[1]));
+            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[2]));
+            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[3]));
+            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[4]));
+            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[5]));
         }
 
         if (!IsOpaque(pos + Vector3Int.back)) // +Z (Front, CCW)
         {
-            FrontCorners.ForEach(addAllVerticesToMesh);
+            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[0]));
+            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[1]));
+            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[2]));
+            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[3]));
+            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[4]));
+            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[5]));
         }
 
         if (!IsOpaque(pos + Vector3Int.forward)) // -Z (Back, CW)
         {
-            BackCorners.ForEach(addAllVerticesToMesh);
+            meshTris.Add(AddVerticesToMesh(pos + BackCorners[0]));
+            meshTris.Add(AddVerticesToMesh(pos + BackCorners[1]));
+            meshTris.Add(AddVerticesToMesh(pos + BackCorners[2]));
+            meshTris.Add(AddVerticesToMesh(pos + BackCorners[3]));
+            meshTris.Add(AddVerticesToMesh(pos + BackCorners[4]));
+            meshTris.Add(AddVerticesToMesh(pos + BackCorners[5]));
         }
 
     }
