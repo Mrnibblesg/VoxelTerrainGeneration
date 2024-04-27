@@ -82,6 +82,7 @@ public class WorldGenerator : MonoBehaviour
         {
             return c;
         }
+
         return null;
     }
 
@@ -91,7 +92,7 @@ public class WorldGenerator : MonoBehaviour
     /// <param name="vec"> The world-space position from which the voxel is intended to be acquired from (will be converted to local space.) </param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public Voxel GetVoxel(Vector3 vec)
+    public Voxel? GetVoxel(Vector3 vec)
     {
         Chunk c = GetChunk(vec);
         if (c != null)
@@ -99,10 +100,7 @@ public class WorldGenerator : MonoBehaviour
             return (Voxel) c.GetVoxel(c.transform.InverseTransformPoint(vec));
         }
 
-        else
-        {
-            throw new Exception("Chunk not found");
-        }
+        return null;
     }
     
     /// <summary>
@@ -118,7 +116,7 @@ public class WorldGenerator : MonoBehaviour
         {
             c.SetVoxel(c.transform.InverseTransformPoint(vec), voxel);
         }
-        else
+        else if (voxel.active != false)
         {
             throw new Exception("Chunk not found");
         }

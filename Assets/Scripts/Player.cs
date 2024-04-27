@@ -22,8 +22,12 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F))
         {
             var position = new Vector3(transform.position.x, transform.position.y - 1.5f, transform.position.z);
+            var voxel = WorldGenerator.World.GetVoxel(position);
 
-            WorldGenerator.World.SetVoxel(position, WorldGenerator.World.GetVoxel(position).SetActive(false));
+            if (voxel is not null)
+            {
+                WorldGenerator.World.SetVoxel(position, ((Voxel)voxel).SetActive(false));
+            }
         }
     }
 }
