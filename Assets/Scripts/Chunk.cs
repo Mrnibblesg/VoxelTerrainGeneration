@@ -50,8 +50,8 @@ public class Chunk : MonoBehaviour
                 for (int z = 0; z < size; z++)
                 {
                     voxels[x, y, z] = new Voxel(
-                        Color.white,
-                        true//(x + y + z) % 2 == 1
+                        Color.white
+                        //,(x + y + z) % 2 == 1
                     );
                 }
             }
@@ -71,7 +71,7 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = 0; z < size; z++)
                 {
-                    if (voxels[x, y, z].active)
+                    if (!voxels[x, y, z].isAir)
                     {
                         AddFaces(new Vector3Int(x, y, z));
                     }
@@ -172,7 +172,7 @@ public class Chunk : MonoBehaviour
         //smooth edges. This needs to be fixed. Ensure that edge/corner voxels
         //are not shared, or determine an alternative solution, like supplying
         //normals manually.
-        if (!IsOpaque(x+1,y,z)) // +X (Right, CW)
+        if (IsVoxelAir(x+1,y,z)) // +X (Right, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[1]));
@@ -182,7 +182,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[5]));
         }
 
-        if (!IsOpaque(x-1,y,z)) // -X (Left, CCW)
+        if (IsVoxelAir(x-1,y,z)) // -X (Left, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[1]));
@@ -192,7 +192,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[5]));
         } 
 
-        if (!IsOpaque(x, y+1, z)) // +Y (Top, CW)
+        if (IsVoxelAir(x, y+1, z)) // +Y (Top, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[1]));
@@ -202,7 +202,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[5]));
         }
 
-        if (!IsOpaque(x, y-1, z)) // -Y (Bottom, CCW)
+        if (IsVoxelAir(x, y-1, z)) // -Y (Bottom, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[1]));
@@ -212,7 +212,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[5]));
         }
 
-        if (!IsOpaque(x, y, z+1)) // +Z (Front, CW)
+        if (IsVoxelAir(x, y, z+1)) // +Z (Front, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[1]));
@@ -222,7 +222,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[5]));
         }
 
-        if (!IsOpaque(x, y, z - 1)) // -Z (Back, CCW)
+        if (IsVoxelAir(x, y, z - 1)) // -Z (Back, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + BackCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + BackCorners[1]));
@@ -267,7 +267,7 @@ public class Chunk : MonoBehaviour
         meshUVs.Add(new Vector2(0, 0));
     }*/
 
-    bool IsOpaque(int x, int y, int z)
+    bool IsVoxelAir(int x, int y, int z)
     {
         /*int x = position.x;
         int y = position.y;
@@ -278,32 +278,31 @@ public class Chunk : MonoBehaviour
             z < 0 || z >= size)
         {
             Vector3Int pos = new Vector3Int(x, y, z);
-            return OutsideVoxelOpaque(pos);
+            return IsOutsideVoxelAir(pos);
         }
-        return voxels[x, y, z].active;
+        return voxels[x, y, z].isAir;
     }
 
-    //Is the voxel at pos which is outside this chunk opaque?
-    bool OutsideVoxelOpaque(Vector3 pos)
+    bool IsOutsideVoxelAir(Vector3 pos)
     {
         Vector3 globalPos = transform.position + pos;
         Chunk neighbor = WorldGenerator.World.GetChunk(globalPos);
         if (neighbor == null)
         {
-            return false;
+            return true;
         }
         
         //Ensure we don't somehow use an invalid index
         try
         {
             Vector3 neighborPos = neighbor.gameObject.transform.InverseTransformPoint(globalPos);
-            return neighbor.voxels[(int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z].active;
+            return neighbor.voxels[(int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z].isAir;
         }
         catch(IndexOutOfRangeException e)
         {
             print(e);
         }
-        return false;
+        return true;
     }
     void OnDrawGizmos()
     {

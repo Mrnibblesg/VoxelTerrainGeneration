@@ -21,22 +21,21 @@ public struct Voxel
     public static readonly Vector3Int RTB = new(1, 1, 1);
 
     public Color col;
-    public bool active;
-    public Voxel(Color col, bool active = true)
+    public bool isAir;
+    public Voxel(Color col, bool isAir = false)
     {
         this.col = col;
-        this.active = active;
+        this.isAir = isAir;
     }
 
     public static Voxel Clone(Voxel other)
     {
-        return new Voxel(other.col, other.active);
+        return new Voxel(other.col, other.isAir);
     }
 
-    public Voxel SetActive(bool active)
+    public Voxel SetAir(bool isAir)
     {
-        this.active = active;
-
+        this.isAir = isAir;
         return this;
     }
 
