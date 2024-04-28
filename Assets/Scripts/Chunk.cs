@@ -33,7 +33,6 @@ public class Chunk : MonoBehaviour
 
         chunkCoords = position;
 
-        //col = Color.green;
         col = new Color(0, 0.7f, 0);
         meshRenderer.material.SetColor("_Color", col);
 
@@ -51,7 +50,6 @@ public class Chunk : MonoBehaviour
                 for (int z = 0; z < size; z++)
                 {
                     voxels[x, y, z] = new Voxel(
-                        transform.position + new Vector3(x, y, z),
                         Color.white,
                         true//(x + y + z) % 2 == 1
                     );
