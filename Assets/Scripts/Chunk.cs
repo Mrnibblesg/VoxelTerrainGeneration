@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Experimental.AI;
+using static UnityEditor.PlayerSettings;
 
 public class Chunk : MonoBehaviour
 {
@@ -56,6 +58,36 @@ public class Chunk : MonoBehaviour
                 }
             }
         }
+
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int z = 0; z < size; z++)
+                {
+                    MarkExposed(x,y,z);
+                }
+            }
+        }
+
+        
+    }
+    /// <summary>
+    /// Pre-emptively iterate through the voxels and mark them as exposed or not
+    /// to make mesh building more efficient.
+    /// </summary>
+    void MarkExposed(int x, int y, int z)
+    {
+        //Mark a block as exposed if any of its sides
+        if (IsOutOfBounds(x, y, z)) { return; }
+
+        voxels[x, y, z].exposed =
+            VoxelHasTransparency(x + 1, y, z) ||
+            VoxelHasTransparency(x - 1, y, z) ||
+            VoxelHasTransparency(x, y + 1, z) ||
+            VoxelHasTransparency(x, y - 1, z) ||
+            VoxelHasTransparency(x, y, z + 1) ||
+            VoxelHasTransparency(x, y, z - 1);
     }
 
     public void RegenerateMesh()
@@ -70,8 +102,8 @@ public class Chunk : MonoBehaviour
             for (int y = 0; y < height; y++)
             {
                 for (int z = 0; z < size; z++)
-                {
-                    if (!voxels[x, y, z].isAir)
+                {   
+                    if (!voxels[x, y, z].isAir && voxels[x,y,z].exposed)
                     {
                         AddFaces(new Vector3Int(x, y, z));
                     }
@@ -91,6 +123,7 @@ public class Chunk : MonoBehaviour
         newMesh.RecalculateNormals();
     }
 
+    //TODO these don't need to be lists
     public static readonly List<Vector3Int> RightCorners = new List<Vector3Int>()
     {
         Voxel.RTF,
@@ -172,7 +205,7 @@ public class Chunk : MonoBehaviour
         //smooth edges. This needs to be fixed. Ensure that edge/corner voxels
         //are not shared, or determine an alternative solution, like supplying
         //normals manually.
-        if (IsVoxelAir(x+1,y,z)) // +X (Right, CW)
+        if (VoxelHasTransparency(x+1,y,z)) // +X (Right, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[1]));
@@ -182,7 +215,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + RightCorners[5]));
         }
 
-        if (IsVoxelAir(x-1,y,z)) // -X (Left, CCW)
+        if (VoxelHasTransparency(x-1,y,z)) // -X (Left, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[1]));
@@ -192,7 +225,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + LeftCorners[5]));
         } 
 
-        if (IsVoxelAir(x, y+1, z)) // +Y (Top, CW)
+        if (VoxelHasTransparency(x, y+1, z)) // +Y (Top, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[1]));
@@ -202,7 +235,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + TopCorners[5]));
         }
 
-        if (IsVoxelAir(x, y-1, z)) // -Y (Bottom, CCW)
+        if (VoxelHasTransparency(x, y-1, z)) // -Y (Bottom, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[1]));
@@ -212,7 +245,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + BottomCorners[5]));
         }
 
-        if (IsVoxelAir(x, y, z+1)) // +Z (Front, CW)
+        if (VoxelHasTransparency(x, y, z+1)) // +Z (Front, CW)
         {
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[1]));
@@ -222,7 +255,7 @@ public class Chunk : MonoBehaviour
             meshTris.Add(AddVerticesToMesh(pos + FrontCorners[5]));
         }
 
-        if (IsVoxelAir(x, y, z - 1)) // -Z (Back, CCW)
+        if (VoxelHasTransparency(x, y, z - 1)) // -Z (Back, CCW)
         {
             meshTris.Add(AddVerticesToMesh(pos + BackCorners[0]));
             meshTris.Add(AddVerticesToMesh(pos + BackCorners[1]));
@@ -267,23 +300,21 @@ public class Chunk : MonoBehaviour
         meshUVs.Add(new Vector2(0, 0));
     }*/
 
-    bool IsVoxelAir(int x, int y, int z)
+    bool VoxelHasTransparency(int x, int y, int z)
     {
         /*int x = position.x;
         int y = position.y;
         int z = position.z;*/
 
-        if (x < 0 || x >= size || //outside of chunk
-            y < 0 || y >= height ||
-            z < 0 || z >= size)
+        if (IsOutOfBounds(x,y,z))
         {
             Vector3Int pos = new Vector3Int(x, y, z);
-            return IsOutsideVoxelAir(pos);
+            return OutsideVoxelHasTransparency(pos);
         }
-        return voxels[x, y, z].isAir;
+        return voxels[x, y, z].hasTransparency;
     }
 
-    bool IsOutsideVoxelAir(Vector3 pos)
+    bool OutsideVoxelHasTransparency(Vector3 pos)
     {
         Vector3 globalPos = transform.position + pos;
         Chunk neighbor = WorldGenerator.World.GetChunk(globalPos);
@@ -296,7 +327,7 @@ public class Chunk : MonoBehaviour
         try
         {
             Vector3 neighborPos = neighbor.gameObject.transform.InverseTransformPoint(globalPos);
-            return neighbor.voxels[(int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z].isAir;
+            return neighbor.voxels[(int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z].hasTransparency;
         }
         catch(IndexOutOfRangeException e)
         {
@@ -347,19 +378,38 @@ public class Chunk : MonoBehaviour
                        Mathf.FloorToInt(vec.z)
                     );
 
-        bool outside = pos.x < 0 || pos.x >= size ||
-                       pos.y < 0 || pos.y >= height ||
-                       pos.z < 0 || pos.z >= size;
+        bool outside = IsOutOfBounds(pos.x, pos.y, pos.z);
 
         if (!outside)
         {
             voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
         }
 
+        UpdateNeighbors(pos.x, pos.y, pos.z);
+        
         // Update the mesh
         // Brute force for now
         RegenerateMesh();
 
         return !outside;
+    }
+    /// <summary>
+    /// Update the state of voxels adjacent to the given position.
+    /// </summary>
+    private void UpdateNeighbors(int x, int y, int z)
+    {
+        MarkExposed(x+1, y, z);
+        MarkExposed(x-1, y, z);
+        MarkExposed(x, y+1, z);
+        MarkExposed(x, y-1, z);
+        MarkExposed(x, y, z+1);
+        MarkExposed(x, y, z-1);
+    }
+    private bool IsOutOfBounds(int x, int y, int z)
+    {
+        return x < 0 || x >= size ||
+               y < 0 || y >= height ||
+               z < 0 || z >= size;
+
     }
 }

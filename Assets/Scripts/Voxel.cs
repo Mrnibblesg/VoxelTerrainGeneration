@@ -22,10 +22,15 @@ public struct Voxel
 
     public Color col;
     public bool isAir;
-    public Voxel(Color col, bool isAir = false)
+    public bool hasTransparency;
+    public bool exposed;
+    public Voxel(Color col, bool isAir = false, bool hasTransparency = false)
     {
         this.col = col;
         this.isAir = isAir;
+        this.hasTransparency = isAir || hasTransparency;
+        
+        this.exposed = true;
     }
 
     public static Voxel Clone(Voxel other)
@@ -38,7 +43,16 @@ public struct Voxel
         this.isAir = isAir;
         return this;
     }
-
+    public Voxel SetTransparency(bool hasTransparency)
+    {
+        this.hasTransparency = hasTransparency;
+        return this;
+    }
+    public Voxel SetExposed(bool exposed)
+    {
+        this.exposed = exposed;
+        return this;
+    }
     public Voxel SetColor(Color col)
     {
         this.col = col;
