@@ -1,10 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Experimental.AI;
-using static UnityEditor.PlayerSettings;
 
 public class Chunk : MonoBehaviour
 {
@@ -73,12 +70,10 @@ public class Chunk : MonoBehaviour
         
     }
     /// <summary>
-    /// Pre-emptively iterate through the voxels and mark them as exposed or not
-    /// to make mesh building more efficient.
+    /// Mark the given voxel as exposed if it's adjacent to something transparent.
     /// </summary>
-    void MarkExposed(int x, int y, int z)
+    public void MarkExposed(int x, int y, int z)
     {
-        //Mark a block as exposed if any of its sides
         if (IsOutOfBounds(x, y, z)) { return; }
 
         voxels[x, y, z].exposed =
@@ -123,8 +118,7 @@ public class Chunk : MonoBehaviour
         newMesh.RecalculateNormals();
     }
 
-    //TODO these don't need to be lists
-    public static readonly List<Vector3Int> RightCorners = new List<Vector3Int>()
+    public static readonly Vector3Int[] RightCorners = new Vector3Int[]
     {
         Voxel.RTF,
         Voxel.RBB,
@@ -134,7 +128,7 @@ public class Chunk : MonoBehaviour
         Voxel.RTB
     };
 
-    public static readonly List<Vector3Int> LeftCorners = new List<Vector3Int>()
+    public static readonly Vector3Int[] LeftCorners = new Vector3Int[]
     {
         Voxel.LBF,
         Voxel.LBB,
@@ -144,7 +138,7 @@ public class Chunk : MonoBehaviour
         Voxel.LBB
     };
 
-    public static readonly List<Vector3Int> TopCorners = new List<Vector3Int>()
+    public static readonly Vector3Int[] TopCorners = new Vector3Int[]
     {
         Voxel.LTF,
         Voxel.LTB,
@@ -154,7 +148,7 @@ public class Chunk : MonoBehaviour
         Voxel.LTB
     };
 
-    public static readonly List<Vector3Int> BottomCorners = new List<Vector3Int>()
+    public static readonly Vector3Int[] BottomCorners = new Vector3Int[]
     {
         Voxel.RBF,
         Voxel.LBB,
@@ -164,7 +158,7 @@ public class Chunk : MonoBehaviour
         Voxel.RBB
     };
 
-    public static readonly List<Vector3Int> BackCorners = new List<Vector3Int>()
+    public static readonly Vector3Int[] BackCorners = new Vector3Int[]
     {
         Voxel.LBF,
         Voxel.LTF,
@@ -174,7 +168,7 @@ public class Chunk : MonoBehaviour
         Voxel.LTF
     };
 
-    public static readonly List<Vector3Int> FrontCorners = new List<Vector3Int>()
+    public static readonly Vector3Int[] FrontCorners = new Vector3Int[]
     {
         Voxel.RBB,
         Voxel.LTB,
@@ -186,11 +180,7 @@ public class Chunk : MonoBehaviour
 
     //Builds the mesh from the currently stored voxels
     //if voxel face is exposed, add to mesh
-    //Currently inefficient, we add multiple copies of the same vertex.
     //Tris are are either clockwise (CW) or counterclockwise (CCW).
-
-    //Since we are only using flat colors on our meshes for now, we actually
-    //don't need to apply the UVs, saving us memory.
 
     //Welcome to the brain scrambler
     void AddFaces(Vector3Int pos)
@@ -302,10 +292,6 @@ public class Chunk : MonoBehaviour
 
     bool VoxelHasTransparency(int x, int y, int z)
     {
-        /*int x = position.x;
-        int y = position.y;
-        int z = position.z;*/
-
         if (IsOutOfBounds(x,y,z))
         {
             Vector3Int pos = new Vector3Int(x, y, z);
@@ -357,9 +343,7 @@ public class Chunk : MonoBehaviour
             Mathf.FloorToInt(vec.z)
         );
 
-        bool outside = pos.x < 0 || pos.x >= size ||
-                       pos.y < 0 || pos.y >= height ||
-                       pos.z < 0 || pos.z >= size;
+        bool outside = IsOutOfBounds(pos.x, pos.y, pos.z);
 
         return outside ? null : Voxel.Clone(voxels[pos.x, pos.y, pos.z]);
     }
@@ -379,37 +363,79 @@ public class Chunk : MonoBehaviour
                     );
 
         bool outside = IsOutOfBounds(pos.x, pos.y, pos.z);
+        if (outside) { return false; }
 
-        if (!outside)
-        {
-            voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
-        }
-
+        voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
         UpdateNeighbors(pos.x, pos.y, pos.z);
         
         // Update the mesh
         // Brute force for now
         RegenerateMesh();
 
-        return !outside;
+        return true;
     }
+
     /// <summary>
     /// Update the state of voxels adjacent to the given position.
     /// </summary>
+    /// <remarks>
+    /// The origin of the updates must be from within the chunk. Neighbors may
+    /// be outside.
+    /// </remarks>
     private void UpdateNeighbors(int x, int y, int z)
     {
-        MarkExposed(x+1, y, z);
-        MarkExposed(x-1, y, z);
-        MarkExposed(x, y+1, z);
-        MarkExposed(x, y-1, z);
-        MarkExposed(x, y, z+1);
-        MarkExposed(x, y, z-1);
+        if (IsOutOfBounds(x,y,z)) { return; }
+
+        //Make sure when adding to this function that the things you add DO NOT trigger
+        //more updates, or the updates could cascade forever.
+        void updateList(Chunk c, int x, int y, int z)
+        {
+            c.MarkExposed(x, y, z);
+
+            if (c != this)
+            {
+                c.RegenerateMesh();
+            }
+        }
+
+        void UseAppropriateChunk(int x, int y, int z)
+        {
+            if (!IsOutOfBounds(x, y, z))
+            {
+                updateList(this, x, y, z);
+            }
+
+            Chunk c = WorldGenerator.World.GetChunk(transform.position + new Vector3(x, y, z));
+            if (c != null)
+            {
+                Vector3 neighborPos = c.transform.InverseTransformPoint(
+                    transform.position + new Vector3Int(x, y, z)
+                );
+
+                updateList(c, (int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z);
+            }
+        }
+
+
+        UseAppropriateChunk(x-1, y, z);
+        UseAppropriateChunk(x+1, y, z);
+        UseAppropriateChunk(x, y-1, z);
+        UseAppropriateChunk(x, y+1, z);
+        UseAppropriateChunk(x, y, z-1);
+        UseAppropriateChunk(x, y, z+1);
     }
+
+    /// <summary>
+    /// Returns whether the given voxel coordinates are within the chunk.
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="z"></param>
+    /// <returns></returns>
     private bool IsOutOfBounds(int x, int y, int z)
     {
         return x < 0 || x >= size ||
                y < 0 || y >= height ||
                z < 0 || z >= size;
-
     }
 }
