@@ -27,6 +27,7 @@ public class Chunk : MonoBehaviour
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        //meshRenderer.material = (Material)Resources.Load("Textures/Vertex Colors");
 
         vertexDict = new Dictionary<Vector3Int, int>();
 
