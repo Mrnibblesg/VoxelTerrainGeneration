@@ -20,13 +20,13 @@ public struct Voxel
     public static readonly Vector3Int LTB = new(0, 1, 1);
     public static readonly Vector3Int RTB = new(1, 1, 1);
 
-    public Color col;
+    public VoxelType.Type type;
     public bool isAir;
     public bool hasTransparency;
     public bool exposed;
-    public Voxel(Color col, bool isAir = false, bool hasTransparency = false)
+    public Voxel(VoxelType.Type type, bool isAir = false, bool hasTransparency = false)
     {
-        this.col = col;
+        this.type = type;
         this.isAir = isAir;
         this.hasTransparency = isAir || hasTransparency;
         
@@ -35,7 +35,7 @@ public struct Voxel
 
     public static Voxel Clone(Voxel other)
     {
-        return new Voxel(other.col, other.isAir);
+        return new Voxel(other.type, other.isAir, other.hasTransparency);
     }
 
     public Voxel SetAir(bool isAir)
@@ -53,9 +53,9 @@ public struct Voxel
         this.exposed = exposed;
         return this;
     }
-    public Voxel SetColor(Color col)
+    public Voxel SetType(VoxelType.Type type)
     {
-        this.col = col;
+        this.type = type;
 
         return this;
     }

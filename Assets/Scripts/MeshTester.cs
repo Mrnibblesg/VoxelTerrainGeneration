@@ -11,7 +11,7 @@ public class MeshTester : MonoBehaviour
         Mesh m = new Mesh();
         MeshFilter mf = gameObject.GetComponent<MeshFilter>();
         MeshRenderer mr = gameObject.GetComponent<MeshRenderer>();
-        mr.material.shader = Shader.Find("Particles/Standard Surface");//SetColor("_Color", new Color(1,0,0));
+        mr.material.shader = Shader.Find("Particles/Standard Surface");//SetType("_Color", new Color(1,0,0));
 
         Vector3[] verts = new Vector3[]
         {

@@ -15,7 +15,7 @@ public class Chunk : MonoBehaviour
 
     private List<Vector3> meshVertices;
     private Dictionary<Vector3Int, int> vertexDict;
-    private List<Vector2> meshUVs;
+    private List<Color32> meshColors;
     private List<int> meshTris;
 
     private MeshFilter meshFilter;
@@ -27,14 +27,14 @@ public class Chunk : MonoBehaviour
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        //meshRenderer.material = (Material)Resources.Load("Textures/Vertex Colors");
+        meshRenderer.material = (Material)Resources.Load("Textures/Vertex Colors");
 
         vertexDict = new Dictionary<Vector3Int, int>();
 
         chunkCoords = position;
 
-        col = new Color(0, 0.7f, 0);
-        meshRenderer.material.SetColor("_Color", col);
+        //col = new Color(0, 0.7f, 0);
+        //meshRenderer.material.SetColor("_Color", col);
 
         voxels = new Voxel[size, height, size];
         InitializeVoxels();
@@ -43,6 +43,8 @@ public class Chunk : MonoBehaviour
 
     void InitializeVoxels()
     {
+        Array types = Enum.GetValues(typeof(VoxelType.Type));
+        System.Random r = new System.Random();
         for (int x = 0; x < size; x++)
         {
             for (int y = 0; y < height; y++)
@@ -50,7 +52,7 @@ public class Chunk : MonoBehaviour
                 for (int z = 0; z < size; z++)
                 {
                     voxels[x, y, z] = new Voxel(
-                        Color.white
+                         (VoxelType.Type)types.GetValue(r.Next(1,types.Length))
                         //,(x + y + z) % 2 == 1
                     );
                 }
@@ -89,7 +91,7 @@ public class Chunk : MonoBehaviour
     public void RegenerateMesh()
     {
         meshVertices = new List<Vector3>();
-        meshUVs = new List<Vector2>();
+        meshColors = new List<Color32>();
         meshTris = new List<int>();
         vertexDict = new Dictionary<Vector3Int, int>();
 
@@ -98,20 +100,23 @@ public class Chunk : MonoBehaviour
             for (int y = 0; y < height; y++)
             {
                 for (int z = 0; z < size; z++)
-                {   
-                    if (!voxels[x, y, z].isAir && voxels[x,y,z].exposed)
+                {
+                    Voxel v = voxels[x, y, z];
+                    if (!v.isAir && v.exposed)
                     {
-                        AddFaces(new Vector3Int(x, y, z));
+                        Vector3Int pos = new(x, y, z);
+                        AddFaces(ref v, ref pos);
                     }
                 }
             }
         }
         Mesh newMesh = new Mesh();
         newMesh.name = gameObject.name;
+        //newMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 
         //GreedyMeshing();
         newMesh.vertices = meshVertices.ToArray();
-        newMesh.uv = meshUVs.ToArray();
+        newMesh.colors32 = meshColors.ToArray();
         newMesh.triangles = meshTris.ToArray();
         meshFilter.mesh = newMesh;
         meshCollider.sharedMesh = newMesh;
@@ -184,76 +189,77 @@ public class Chunk : MonoBehaviour
     //Tris are are either clockwise (CW) or counterclockwise (CCW).
 
     //Welcome to the brain scrambler
-    void AddFaces(Vector3Int pos)
+    void AddFaces(ref Voxel v, ref Vector3Int pos)
     {
         int x = pos.x;
         int y = pos.y;
         int z = pos.z;
 
-        // Action<Vector3Int> addAllVerticesToMesh = (Vector3Int dir) => meshTris.Add(AddVerticesToMesh(pos + dir));
+        // Action<Vector3Int> addAllVerticesToMesh = (Vector3Int dir) => meshTris.Add(AddVertexToMesh(pos + dir));
 
         //Sharing corner vertices will cause a cube to appear to have
         //smooth edges. This needs to be fixed. Ensure that edge/corner voxels
         //are not shared, or determine an alternative solution, like supplying
         //normals manually.
+
         if (VoxelHasTransparency(x+1,y,z)) // +X (Right, CW)
         {
-            meshTris.Add(AddVerticesToMesh(pos + RightCorners[0]));
-            meshTris.Add(AddVerticesToMesh(pos + RightCorners[1]));
-            meshTris.Add(AddVerticesToMesh(pos + RightCorners[2]));
-            meshTris.Add(AddVerticesToMesh(pos + RightCorners[3]));
-            meshTris.Add(AddVerticesToMesh(pos + RightCorners[4]));
-            meshTris.Add(AddVerticesToMesh(pos + RightCorners[5]));
+            meshTris.Add(AddVertexToMesh(pos + RightCorners[0], v.type));
+            meshTris.Add(AddVertexToMesh(pos + RightCorners[1], v.type));
+            meshTris.Add(AddVertexToMesh(pos + RightCorners[2], v.type));
+            meshTris.Add(AddVertexToMesh(pos + RightCorners[3], v.type));
+            meshTris.Add(AddVertexToMesh(pos + RightCorners[4], v.type));
+            meshTris.Add(AddVertexToMesh(pos + RightCorners[5], v.type));
         }
 
         if (VoxelHasTransparency(x-1,y,z)) // -X (Left, CCW)
         {
-            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[0]));
-            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[1]));
-            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[2]));
-            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[3]));
-            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[4]));
-            meshTris.Add(AddVerticesToMesh(pos + LeftCorners[5]));
+            meshTris.Add(AddVertexToMesh(pos + LeftCorners[0], v.type));
+            meshTris.Add(AddVertexToMesh(pos + LeftCorners[1], v.type));
+            meshTris.Add(AddVertexToMesh(pos + LeftCorners[2], v.type));
+            meshTris.Add(AddVertexToMesh(pos + LeftCorners[3], v.type));
+            meshTris.Add(AddVertexToMesh(pos + LeftCorners[4], v.type));
+            meshTris.Add(AddVertexToMesh(pos + LeftCorners[5], v.type));
         } 
 
         if (VoxelHasTransparency(x, y+1, z)) // +Y (Top, CW)
         {
-            meshTris.Add(AddVerticesToMesh(pos + TopCorners[0]));
-            meshTris.Add(AddVerticesToMesh(pos + TopCorners[1]));
-            meshTris.Add(AddVerticesToMesh(pos + TopCorners[2]));
-            meshTris.Add(AddVerticesToMesh(pos + TopCorners[3]));
-            meshTris.Add(AddVerticesToMesh(pos + TopCorners[4]));
-            meshTris.Add(AddVerticesToMesh(pos + TopCorners[5]));
+            meshTris.Add(AddVertexToMesh(pos + TopCorners[0], v.type));
+            meshTris.Add(AddVertexToMesh(pos + TopCorners[1], v.type));
+            meshTris.Add(AddVertexToMesh(pos + TopCorners[2], v.type));
+            meshTris.Add(AddVertexToMesh(pos + TopCorners[3], v.type));
+            meshTris.Add(AddVertexToMesh(pos + TopCorners[4], v.type));
+            meshTris.Add(AddVertexToMesh(pos + TopCorners[5], v.type));
         }
 
         if (VoxelHasTransparency(x, y-1, z)) // -Y (Bottom, CCW)
         {
-            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[0]));
-            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[1]));
-            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[2]));
-            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[3]));
-            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[4]));
-            meshTris.Add(AddVerticesToMesh(pos + BottomCorners[5]));
+            meshTris.Add(AddVertexToMesh(pos + BottomCorners[0], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BottomCorners[1], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BottomCorners[2], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BottomCorners[3], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BottomCorners[4], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BottomCorners[5], v.type));
         }
 
         if (VoxelHasTransparency(x, y, z+1)) // +Z (Front, CW)
         {
-            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[0]));
-            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[1]));
-            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[2]));
-            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[3]));
-            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[4]));
-            meshTris.Add(AddVerticesToMesh(pos + FrontCorners[5]));
+            meshTris.Add(AddVertexToMesh(pos + FrontCorners[0], v.type));
+            meshTris.Add(AddVertexToMesh(pos + FrontCorners[1], v.type));
+            meshTris.Add(AddVertexToMesh(pos + FrontCorners[2], v.type));
+            meshTris.Add(AddVertexToMesh(pos + FrontCorners[3], v.type));
+            meshTris.Add(AddVertexToMesh(pos + FrontCorners[4], v.type));
+            meshTris.Add(AddVertexToMesh(pos + FrontCorners[5], v.type));
         }
 
         if (VoxelHasTransparency(x, y, z - 1)) // -Z (Back, CCW)
         {
-            meshTris.Add(AddVerticesToMesh(pos + BackCorners[0]));
-            meshTris.Add(AddVerticesToMesh(pos + BackCorners[1]));
-            meshTris.Add(AddVerticesToMesh(pos + BackCorners[2]));
-            meshTris.Add(AddVerticesToMesh(pos + BackCorners[3]));
-            meshTris.Add(AddVerticesToMesh(pos + BackCorners[4]));
-            meshTris.Add(AddVerticesToMesh(pos + BackCorners[5]));
+            meshTris.Add(AddVertexToMesh(pos + BackCorners[0], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BackCorners[1], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BackCorners[2], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BackCorners[3], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BackCorners[4], v.type));
+            meshTris.Add(AddVertexToMesh(pos + BackCorners[5], v.type));
         }
     }
 
@@ -268,10 +274,10 @@ public class Chunk : MonoBehaviour
     /// </remarks>
     /// <param name="pos"></param>
     /// <returns>The index of the vertex that it added (or the one that already existed).</returns>
-    int AddVerticesToMesh(Vector3Int pos)
+    int AddVertexToMesh(Vector3Int pos, VoxelType.Type type)
     {
         int index;
-
+        //TODO add a way to check for color difference
         if (vertexDict.TryGetValue(pos, out index))
         {
             return index;
@@ -280,16 +286,10 @@ public class Chunk : MonoBehaviour
         meshVertices.Add(pos);
         index = meshVertices.Count - 1;
         vertexDict.Add(pos, index);
+        meshColors.Add(VoxelType.TypeColor[type]);
 
         return index;
     }
-/*    void addUVs()
-    {
-        meshUVs.Add(new Vector2(1, 1));
-        meshUVs.Add(new Vector2(0, 1));
-        meshUVs.Add(new Vector2(1, 0));
-        meshUVs.Add(new Vector2(0, 0));
-    }*/
 
     bool VoxelHasTransparency(int x, int y, int z)
     {
@@ -321,14 +321,6 @@ public class Chunk : MonoBehaviour
             print(e);
         }
         return true;
-    }
-    void OnDrawGizmos()
-    {
-        if (voxels == null || meshFilter.mesh == null) return;
-        //Outline the whole chunk
-        Gizmos.color = Color.black;
-        //Gizmos.DrawCube(transform.position + new Vector3(size / 2, height / 2, size / 2), new Vector3(size, height, size));
-        Gizmos.DrawWireMesh(meshFilter.mesh, transform.position);
     }
 
     /// <summary>
@@ -378,10 +370,10 @@ public class Chunk : MonoBehaviour
 
     /// <summary>
     /// Update the state of voxels adjacent to the given position.
+    /// Regenerates mesh.
     /// </summary>
     /// <remarks>
-    /// The origin of the updates must be from within the chunk. Neighbors may
-    /// be outside.
+    /// The origin of the updates must be from within the chunk.
     /// </remarks>
     private void UpdateNeighbors(int x, int y, int z)
     {
@@ -438,5 +430,15 @@ public class Chunk : MonoBehaviour
         return x < 0 || x >= size ||
                y < 0 || y >= height ||
                z < 0 || z >= size;
+    }
+
+    //Debug only
+    void OnDrawGizmos()
+    {
+        if (voxels == null || meshFilter.mesh == null) return;
+        //Outline the whole chunk
+        Gizmos.color = Color.black;
+        //Gizmos.DrawCube(transform.position + new Vector3(size / 2, height / 2, size / 2), new Vector3(size, height, size));
+        Gizmos.DrawWireMesh(meshFilter.mesh, transform.position);
     }
 }
