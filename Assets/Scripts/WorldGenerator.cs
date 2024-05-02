@@ -119,9 +119,6 @@ public class WorldGenerator : MonoBehaviour
         {
             c.SetVoxel(c.transform.InverseTransformPoint(vec), voxel);
         }
-        else if (voxel.active != false)
-        {
-            throw new Exception("Chunk not found");
-        }
+        //else create new chunk?
     }
 }
