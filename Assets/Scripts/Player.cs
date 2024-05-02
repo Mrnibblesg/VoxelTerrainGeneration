@@ -24,10 +24,7 @@ public class Player : MonoBehaviour
             var position = new Vector3(transform.position.x, transform.position.y - 1.5f, transform.position.z);
             var voxel = WorldGenerator.World.GetVoxel(position);
 
-            if (voxel is not null)
-            {
-                WorldGenerator.World.SetVoxel(position, ((Voxel)voxel).SetActive(false));
-            }
+            WorldGenerator.World.SetVoxel(position, WorldGenerator.World.GetVoxel(position).SetType(VoxelType.Type.AIR));
         }
     }
 }
