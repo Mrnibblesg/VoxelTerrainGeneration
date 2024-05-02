@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,34 +6,31 @@ public class Chunk : MonoBehaviour
 {
     public static int size; //X*Z
     public static int height;
+    private static Material vertexColorMaterial;
     Voxel[,,] voxels;
     Chunk[] neighbors;
     private Vector3Int chunkCoords;
-    
-    private Color col;
 
     private List<Vector3> meshVertices;
-    private Dictionary<Vector3Int, int> vertexDict;
     private List<Color32> meshColors;
-    private List<int> meshTris;
+    private List<int> meshQuads;
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private MeshCollider meshCollider;
 
+    static Chunk()
+    {
+        vertexColorMaterial = (Material)Resources.Load("Textures/Vertex Colors");
+    }
     public void Initialize(Vector3Int position)
     {
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        meshRenderer.material = (Material)Resources.Load("Textures/Vertex Colors");
-
-        vertexDict = new Dictionary<Vector3Int, int>();
+        meshRenderer.material = vertexColorMaterial;
 
         chunkCoords = position;
-
-        //col = new Color(0, 0.7f, 0);
-        //meshRenderer.material.SetColor("_Color", col);
 
         voxels = new Voxel[size, height, size];
         InitializeVoxels();
@@ -51,9 +47,12 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = 0; z < size; z++)
                 {
+                    VoxelType.Type type= (VoxelType.Type)types.GetValue(r.Next(1, types.Length-1));
                     voxels[x, y, z] = new Voxel(
-                         (VoxelType.Type)types.GetValue(r.Next(1,types.Length))
-                        //,(x + y + z) % 2 == 1
+                         type,//(x + z) % 2 == 0 ? VoxelType.Type.GRASS : VoxelType.Type.DIRT, 
+                         false, false
+                         //(type == VoxelType.Type.GLASS ? true : false)
+                    //,(x + y + z) % 2 == 1
                     );
                 }
             }
@@ -73,13 +72,15 @@ public class Chunk : MonoBehaviour
         
     }
     /// <summary>
-    /// Mark the given voxel as exposed if it's adjacent to something transparent.
+    /// Mark the given voxel as exposed if it's transparent or
+    /// adjacent to something transparent.
     /// </summary>
     public void MarkExposed(int x, int y, int z)
     {
         if (IsOutOfBounds(x, y, z)) { return; }
 
         voxels[x, y, z].exposed =
+            voxels[x,y,z].hasTransparency ||
             VoxelHasTransparency(x + 1, y, z) ||
             VoxelHasTransparency(x - 1, y, z) ||
             VoxelHasTransparency(x, y + 1, z) ||
@@ -88,207 +89,223 @@ public class Chunk : MonoBehaviour
             VoxelHasTransparency(x, y, z - 1);
     }
 
+    /// <summary>
+    /// Generates a mesh for this chunk
+    /// </summary>
     public void RegenerateMesh()
     {
         meshVertices = new List<Vector3>();
         meshColors = new List<Color32>();
-        meshTris = new List<int>();
-        vertexDict = new Dictionary<Vector3Int, int>();
+        meshQuads = new List<int>();
 
-        for (int x = 0; x < size; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                for (int z = 0; z < size; z++)
-                {
-                    Voxel v = voxels[x, y, z];
-                    if (!v.isAir && v.exposed)
-                    {
-                        Vector3Int pos = new(x, y, z);
-                        AddFaces(ref v, ref pos);
-                    }
-                }
-            }
-        }
         Mesh newMesh = new Mesh();
         newMesh.name = gameObject.name;
         //newMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
 
-        //GreedyMeshing();
+        GreedyMeshing();
         newMesh.vertices = meshVertices.ToArray();
         newMesh.colors32 = meshColors.ToArray();
-        newMesh.triangles = meshTris.ToArray();
+        newMesh.SetIndices(meshQuads.ToArray(), MeshTopology.Quads,0);
+
         meshFilter.mesh = newMesh;
         meshCollider.sharedMesh = newMesh;
 
         newMesh.RecalculateNormals();
     }
 
-    public static readonly Vector3Int[] RightCorners = new Vector3Int[]
+    /// <summary>
+    /// Uses greedy meshing to merge voxel faces producing a memory efficient
+    /// mesh.
+    /// </summary>
+    /// <remarks>Complicated.</remarks>
+    //Algorithm borrowed from:
+    //https://0fps.net/2012/07/07/meshing-minecraft-part-2/
+    private void GreedyMeshing()
     {
-        Voxel.RTF,
-        Voxel.RBB,
-        Voxel.RBF,
-        Voxel.RBB,
-        Voxel.RTF,
-        Voxel.RTB
-    };
+        int[] dimensions = new int[] { size, height, size };
+        //Iterate over the 3 axes.
+        //a variable representing an axis will change each iteration.
 
-    public static readonly Vector3Int[] LeftCorners = new Vector3Int[]
-    {
-        Voxel.LBF,
-        Voxel.LBB,
-        Voxel.LTF,
-        Voxel.LTB,
-        Voxel.LTF,
-        Voxel.LBB
-    };
-
-    public static readonly Vector3Int[] TopCorners = new Vector3Int[]
-    {
-        Voxel.LTF,
-        Voxel.LTB,
-        Voxel.RTF,
-        Voxel.RTB,
-        Voxel.RTF,
-        Voxel.LTB
-    };
-
-    public static readonly Vector3Int[] BottomCorners = new Vector3Int[]
-    {
-        Voxel.RBF,
-        Voxel.LBB,
-        Voxel.LBF,
-        Voxel.LBB,
-        Voxel.RBF,
-        Voxel.RBB
-    };
-
-    public static readonly Vector3Int[] BackCorners = new Vector3Int[]
-    {
-        Voxel.LBF,
-        Voxel.LTF,
-        Voxel.RBF,
-        Voxel.RTF,
-        Voxel.RBF,
-        Voxel.LTF
-    };
-
-    public static readonly Vector3Int[] FrontCorners = new Vector3Int[]
-    {
-        Voxel.RBB,
-        Voxel.LTB,
-        Voxel.LBB,
-        Voxel.LTB,
-        Voxel.RBB,
-        Voxel.RTB
-    };
-
-    //Builds the mesh from the currently stored voxels
-    //if voxel face is exposed, add to mesh
-    //Tris are are either clockwise (CW) or counterclockwise (CCW).
-
-    //Welcome to the brain scrambler
-    void AddFaces(ref Voxel v, ref Vector3Int pos)
-    {
-        int x = pos.x;
-        int y = pos.y;
-        int z = pos.z;
-
-        // Action<Vector3Int> addAllVerticesToMesh = (Vector3Int dir) => meshTris.Add(AddVertexToMesh(pos + dir));
-
-        //Sharing corner vertices will cause a cube to appear to have
-        //smooth edges. This needs to be fixed. Ensure that edge/corner voxels
-        //are not shared, or determine an alternative solution, like supplying
-        //normals manually.
-
-        if (VoxelHasTransparency(x+1,y,z)) // +X (Right, CW)
+        for (int normal = 0; normal < 3; normal++)
         {
-            meshTris.Add(AddVertexToMesh(pos + RightCorners[0], v.type));
-            meshTris.Add(AddVertexToMesh(pos + RightCorners[1], v.type));
-            meshTris.Add(AddVertexToMesh(pos + RightCorners[2], v.type));
-            meshTris.Add(AddVertexToMesh(pos + RightCorners[3], v.type));
-            meshTris.Add(AddVertexToMesh(pos + RightCorners[4], v.type));
-            meshTris.Add(AddVertexToMesh(pos + RightCorners[5], v.type));
-        }
+            //The other 2 axes of the current slice direction.
+            //Not the same as texture mapping UVs.
+            int u = (normal + 1) % 3;
+            int v = (normal + 2) % 3;
 
-        if (VoxelHasTransparency(x-1,y,z)) // -X (Left, CCW)
-        {
-            meshTris.Add(AddVertexToMesh(pos + LeftCorners[0], v.type));
-            meshTris.Add(AddVertexToMesh(pos + LeftCorners[1], v.type));
-            meshTris.Add(AddVertexToMesh(pos + LeftCorners[2], v.type));
-            meshTris.Add(AddVertexToMesh(pos + LeftCorners[3], v.type));
-            meshTris.Add(AddVertexToMesh(pos + LeftCorners[4], v.type));
-            meshTris.Add(AddVertexToMesh(pos + LeftCorners[5], v.type));
-        } 
+            //stores distinct types of vertices to
+            //turn into quads on current slice
+            int[,] mask = new int[dimensions[u],dimensions[v]];
 
-        if (VoxelHasTransparency(x, y+1, z)) // +Y (Top, CW)
-        {
-            meshTris.Add(AddVertexToMesh(pos + TopCorners[0], v.type));
-            meshTris.Add(AddVertexToMesh(pos + TopCorners[1], v.type));
-            meshTris.Add(AddVertexToMesh(pos + TopCorners[2], v.type));
-            meshTris.Add(AddVertexToMesh(pos + TopCorners[3], v.type));
-            meshTris.Add(AddVertexToMesh(pos + TopCorners[4], v.type));
-            meshTris.Add(AddVertexToMesh(pos + TopCorners[5], v.type));
-        }
+            //stores progress through the volume.
+            //each element is basically used as an iterator for that dimension.
+            int[] progress = new int[] { 0, 0, 0 };
 
-        if (VoxelHasTransparency(x, y-1, z)) // -Y (Bottom, CCW)
-        {
-            meshTris.Add(AddVertexToMesh(pos + BottomCorners[0], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BottomCorners[1], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BottomCorners[2], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BottomCorners[3], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BottomCorners[4], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BottomCorners[5], v.type));
-        }
+            //Add each element to your position to move up 1 slice
+            int[] normOff = new int[] { 0, 0, 0 };
+            normOff[normal] = 1;
 
-        if (VoxelHasTransparency(x, y, z+1)) // +Z (Front, CW)
-        {
-            meshTris.Add(AddVertexToMesh(pos + FrontCorners[0], v.type));
-            meshTris.Add(AddVertexToMesh(pos + FrontCorners[1], v.type));
-            meshTris.Add(AddVertexToMesh(pos + FrontCorners[2], v.type));
-            meshTris.Add(AddVertexToMesh(pos + FrontCorners[3], v.type));
-            meshTris.Add(AddVertexToMesh(pos + FrontCorners[4], v.type));
-            meshTris.Add(AddVertexToMesh(pos + FrontCorners[5], v.type));
-        }
+            //Compute mask for this slice
+            for (progress[normal] = -1; progress[normal] < dimensions[normal];)
+            {
 
-        if (VoxelHasTransparency(x, y, z - 1)) // -Z (Back, CCW)
-        {
-            meshTris.Add(AddVertexToMesh(pos + BackCorners[0], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BackCorners[1], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BackCorners[2], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BackCorners[3], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BackCorners[4], v.type));
-            meshTris.Add(AddVertexToMesh(pos + BackCorners[5], v.type));
+                int n = 0;
+                for (progress[u] = 0; progress[u] < dimensions[u]; progress[u]++)
+                {
+                    for (progress[v] = 0; progress[v] < dimensions[v]; progress[v]++, n++)
+                    {
+                        //Bounds checking/block type checking
+                        //Even if one bound isn't actually air and it's a block in another chunk,
+                        //we say it's air anyways because we aren't meshing across chunks.
+                        //blocks below and above the current slice
+                        VoxelType.Type below = 
+                            (progress[normal] >= 0 ?
+                            voxels[progress[0],
+                                   progress[1],
+                                   progress[2]].type :
+                            VoxelType.Type.AIR);
+
+                        VoxelType.Type above =
+                            (progress[normal] < dimensions[normal] - 1 ?
+                            voxels[progress[0]+normOff[0],
+                                   progress[1]+normOff[1],
+                                   progress[2]+normOff[2]].type :
+                            VoxelType.Type.AIR);
+                        //no face if they're both a block or if the're both air
+                        if ((above == VoxelType.Type.AIR) ==
+                            (below == VoxelType.Type.AIR))
+                        {
+                            mask[progress[u], progress[v]] = 0;
+                        }
+                        else if (below != VoxelType.Type.AIR)
+                        {
+                            mask[progress[u], progress[v]] = (int)below;
+                        }
+                        else
+                        {
+                            //A negative value means that the face is facing the
+                            //opposite direction.
+                            mask[progress[u], progress[v]] = -(int)above;
+                        }
+                    }
+                }
+                progress[normal]++;
+
+                //Create quads from the mask
+                for (int j = 0; j < dimensions[v]; j++)
+                {
+                    for (int i = 0; i < dimensions[u];)
+                    {
+                        int current = mask[i, j];
+                        
+                        if (current == 0)
+                        {
+                            i++;
+                            continue;
+                        }
+
+                        //Calculate width of quad
+                        int w;
+                        for (w = 1; i + w < dimensions[u] && current == mask[i + w, j]; w++) { }
+
+                        int h;
+                        //Calculate height of quad
+                        for (h = 1; j + h < dimensions[v]; h++)
+                        {
+                            for (int k = 0; k < w; k++)
+                            {
+                                if (current != mask[i+k,j+h])
+                                {
+                                    goto BreakHeight; //Break from 2 loops cleanly
+                                }
+                            }
+                        }
+                    BreakHeight:
+                        //we now have our quad: i and j are its starting pos,
+                        //w and h the width and height.
+                        progress[u] = i;
+                        progress[v] = j;
+                        //We apply the w and h in the correct dimension
+                        //according to our current axes so we can properly
+                        //calculate our quad coordinates.
+                        int[] uOff = new int[] { 0, 0, 0 };
+                        uOff[u] = w;
+                        int[] vOff = new int[] { 0, 0, 0 };
+                        vOff[v] = h;
+
+                        AddQuad(current, progress, uOff, vOff);
+
+                        //Mark the section of mask that the quad occupied as done.
+                        for (int k = 0; k < w; k++)
+                        {
+                            for (int l = 0; l < h; l++)
+                            {
+                                mask[i + k, j + l] = 0;
+                            }
+                        }
+                        i += w;
+                    }
+                }
+            }
         }
     }
-
-
     /// <summary>
-    /// Input the position of the vertex you want to use on the mesh,
-    /// this function will either add it, or return its index if it already
-    ///  exists. Always returns a valid index.
+    /// Add a quad to the current list of
+    /// mesh vertices, colors, and quad indices.
     /// </summary>
-    /// <remarks>
-    ///  The purpose of this function is to deduplicate the vertices on meshes.
-    /// </remarks>
+    /// <param name="type"></param>
     /// <param name="pos"></param>
-    /// <returns>The index of the vertex that it added (or the one that already existed).</returns>
-    int AddVertexToMesh(Vector3Int pos, VoxelType.Type type)
+    /// <param name="uOff"></param>
+    /// <param name="vOff"></param>
+    private void AddQuad(int type, int[] pos, int[] uOff, int[] vOff)
     {
-        int index;
-        //TODO add a way to check for color difference
-        if (vertexDict.TryGetValue(pos, out index))
+        bool CCW = type < 0;
+        if (type < 0) type *= -1;
+        Color32 col = VoxelType.TypeColor[(VoxelType.Type)type];
+        int verts = meshVertices.Count;
+
+        meshVertices.Add( //Bottom left corner
+            new(
+            pos[0],
+            pos[1],
+            pos[2]));
+
+        meshVertices.Add( //Bottom right corner
+            new(
+            pos[0] + uOff[0],
+            pos[1] + uOff[1],
+            pos[2] + uOff[2]));
+
+        meshVertices.Add( // Top right corner
+            new(
+            pos[0] + uOff[0] + vOff[0],
+            pos[1] + uOff[1] + vOff[1],
+            pos[2] + uOff[2] + vOff[2]));
+
+        meshVertices.Add( // Top left corner
+            new(
+            pos[0] + vOff[0],
+            pos[1] + vOff[1],
+            pos[2] + vOff[2]));
+
+        meshColors.Add(col);
+        meshColors.Add(col);
+        meshColors.Add(col);
+        meshColors.Add(col);
+        if (CCW)
         {
-            return index;
+            meshQuads.Add(verts + 3);
+            meshQuads.Add(verts + 2);
+            meshQuads.Add(verts + 1);
+            meshQuads.Add(verts);
         }
-
-        meshVertices.Add(pos);
-        index = meshVertices.Count - 1;
-        vertexDict.Add(pos, index);
-        meshColors.Add(VoxelType.TypeColor[type]);
-
-        return index;
+        else
+        {
+            meshQuads.Add(verts);
+            meshQuads.Add(verts + 1);
+            meshQuads.Add(verts + 2);
+            meshQuads.Add(verts + 3);
+        }
     }
 
     bool VoxelHasTransparency(int x, int y, int z)

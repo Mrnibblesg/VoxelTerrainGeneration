@@ -23,7 +23,7 @@ public class Player : MonoBehaviour
         {
             var position = new Vector3(transform.position.x, transform.position.y - 1.5f, transform.position.z);
 
-            WorldGenerator.World.SetVoxel(position, WorldGenerator.World.GetVoxel(position).SetAir(true));
+            WorldGenerator.World.SetVoxel(position, WorldGenerator.World.GetVoxel(position).SetType(VoxelType.Type.AIR));
         }
     }
 }
