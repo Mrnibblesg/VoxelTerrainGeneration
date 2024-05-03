@@ -20,6 +20,12 @@ public class Player : MonoBehaviour
         float vertical = Input.GetAxis("Vertical");
         transform.position += new Vector3(horizontal, 0f, vertical) * Time.deltaTime * speed;
 
+        float MouseX = Input.GetAxis("Mouse X");
+        float MouseY = Input.GetAxis("Mouse Y");
+
+        gameObject.transform.eulerAngles += new Vector3(-MouseY, MouseX, 0);
+        playerCamera.transform.LookAt(gameObject.transform);
+
         if (Input.GetKeyDown(KeyCode.F))
         {
             Vector3[] voxelInfo = looking.LookingAt(playerCamera);
