@@ -121,4 +121,22 @@ public class WorldGenerator : MonoBehaviour
         }
         //else create new chunk?
     }
+    public void SetDimensions(int size, int height, int chunkSz, int chunkHt)
+    {
+        worldSize = size;
+        worldHeight = height;
+        chunkSize = chunkSz;
+        chunkHeight = chunkHt;
+
+        Chunk.size = chunkSize;
+        Chunk.height = chunkHeight;
+        chunks = new Dictionary<Vector3, Chunk>();
+    }
+
+    public void StartGeneration()
+    {
+        s_GenerateWorld.Begin();
+        GenerateWorld();
+        s_GenerateWorld.End();
+    }
 }
