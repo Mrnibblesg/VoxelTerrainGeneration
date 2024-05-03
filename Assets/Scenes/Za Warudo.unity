@@ -168,7 +168,7 @@ GameObject:
   - component: {fileID: 257204930}
   - component: {fileID: 257204929}
   - component: {fileID: 257204928}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -188,6 +188,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 10
+  playerCamera: {fileID: 963194227}
 --- !u!54 &257204929
 Rigidbody:
   m_ObjectHideFlags: 0
