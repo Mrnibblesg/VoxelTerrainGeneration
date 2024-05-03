@@ -3,6 +3,7 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     public float speed = 10f;
+    public Camera playerCamera;
     private LookingAtVoxel looking;
 
     private void Start()
@@ -10,7 +11,7 @@ public class Player : MonoBehaviour
         WorldGenerator w = WorldGenerator.World;
         Vector3 startPosition = new(0.5f, w.worldHeight * w.chunkHeight + 1.5f, 0.5f); 
         transform.position = startPosition;
-        looking = GetComponent<LookingAtVoxel>();
+        looking = gameObject.AddComponent<LookingAtVoxel>();
     }
     // Update is called once per frame
     void Update()
@@ -21,7 +22,7 @@ public class Player : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.F))
         {
-            Vector3[] voxelInfo = looking.LookingAt();
+            Vector3[] voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
                 var position = voxelInfo[0] - (voxelInfo[1] / 2);
@@ -35,7 +36,7 @@ public class Player : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.T))
         {
-            Vector3[] voxelInfo = looking.LookingAt();
+            Vector3[] voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
                 var position = voxelInfo[0] + (voxelInfo[1] / 2);
@@ -49,7 +50,7 @@ public class Player : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            Vector3[] voxelInfo = looking.LookingAt();
+            Vector3[] voxelInfo = looking.LookingAt(playerCamera);
             Debug.Log("Looking at point: " + voxelInfo[0]);
             Debug.Log("Block Normal Vector: " + voxelInfo[1]);
         }

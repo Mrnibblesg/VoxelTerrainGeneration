@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class LookingAtVoxel : MonoBehaviour
 {
-    public Camera playerCamera;
+    // public Camera playerCamera;
     private LayerMask playerLayer;
     private Vector3 lookDir;
 
@@ -12,11 +12,11 @@ public class LookingAtVoxel : MonoBehaviour
         playerLayer = LayerMask.GetMask("Player");
     }
 
-    public Vector3[] LookingAt()
+    public Vector3[] LookingAt(Camera cam)
     {
-        lookDir = playerCamera.transform.forward;
-        Debug.DrawRay(playerCamera.transform.position, lookDir * 20);
-        Ray ray = new Ray(playerCamera.transform.position, lookDir);
+        lookDir = cam.transform.forward;
+        Debug.DrawRay(cam.transform.position, lookDir * 20);
+        Ray ray = new Ray(cam.transform.position, lookDir);
         RaycastHit hit;
 
         if (Physics.Raycast(ray, out hit, 20, ~playerLayer))
