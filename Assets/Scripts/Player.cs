@@ -15,6 +15,7 @@ public class Player : MonoBehaviour
         looking = gameObject.AddComponent<LookingAtVoxel>();
         currType = VoxelType.Type.GRASS;
     }
+
     // Update is called once per frame
     void Update()
     {
@@ -88,6 +89,34 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P))
         {
             Debug.Log(transform.position);
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            Vector3[] voxelInfo = looking.ClickedVoxel(playerCamera);
+            if (voxelInfo != null)
+            {
+                var position = voxelInfo[0] - (voxelInfo[1] / 2);
+                Voxel? voxel = WorldGenerator.World.GetVoxel(position);
+                if (voxel != null)
+                {
+                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(VoxelType.Type.AIR));
+                }
+            }
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            Vector3[] voxelInfo = looking.ClickedVoxel(playerCamera);
+            if (voxelInfo != null)
+            {
+                var position = voxelInfo[0] + (voxelInfo[1] / 2);
+                Voxel? voxel = WorldGenerator.World.GetVoxel(position);
+                if (voxel != null && ((Voxel)voxel).type == VoxelType.Type.AIR)
+                {
+                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(currType));
+                }
+            }
         }
     }
 }

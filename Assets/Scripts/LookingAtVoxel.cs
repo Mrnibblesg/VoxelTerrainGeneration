@@ -26,4 +26,16 @@ public class LookingAtVoxel : MonoBehaviour
 
         return null;
     }
+
+    public Vector3[] ClickedVoxel(Camera cam)
+    {
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        if (Physics.Raycast(ray, out hit, 20, ~playerLayer))
+        {
+            return new Vector3[] { hit.point, hit.normal };
+        }
+
+        return null;
+    }
 }
