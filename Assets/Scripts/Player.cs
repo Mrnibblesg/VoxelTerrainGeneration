@@ -5,6 +5,7 @@ public class Player : MonoBehaviour
     public float speed = 10f;
     public Camera playerCamera;
     private LookingAtVoxel looking;
+    private VoxelType.Type currType;
 
     private void Start()
     {
@@ -12,6 +13,7 @@ public class Player : MonoBehaviour
         Vector3 startPosition = new(0.5f, w.worldHeight * w.chunkHeight + 1.5f, 0.5f); 
         transform.position = startPosition;
         looking = gameObject.AddComponent<LookingAtVoxel>();
+        currType = VoxelType.Type.GRASS;
     }
     // Update is called once per frame
     void Update()
@@ -23,9 +25,14 @@ public class Player : MonoBehaviour
         float MouseX = Input.GetAxis("Mouse X");
         float MouseY = Input.GetAxis("Mouse Y");
 
-        gameObject.transform.eulerAngles += new Vector3(-MouseY, MouseX, 0);
-        playerCamera.transform.LookAt(gameObject.transform);
+        playerCamera.transform.eulerAngles += new Vector3(-MouseY, MouseX, 0);
+        // playerCamera.transform.LookAt(gameObject.transform);
 
+        CheckKeyPress();
+    }
+
+    private void CheckKeyPress()
+    {
         if (Input.GetKeyDown(KeyCode.F))
         {
             Vector3[] voxelInfo = looking.LookingAt(playerCamera);
@@ -39,6 +46,23 @@ public class Player : MonoBehaviour
                 }
             }
         }
+        
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            currType = VoxelType.Type.GRASS;
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            currType = VoxelType.Type.DIRT;
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            currType = VoxelType.Type.STONE;
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            currType = VoxelType.Type.GLASS;
+        }
 
         if (Input.GetKeyDown(KeyCode.T))
         {
@@ -49,7 +73,7 @@ public class Player : MonoBehaviour
                 Voxel? voxel = WorldGenerator.World.GetVoxel(position);
                 if (voxel != null && ((Voxel)voxel).type == VoxelType.Type.AIR)
                 {
-                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(VoxelType.Type.DIRT));
+                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(currType));
                 }
             }
         }
