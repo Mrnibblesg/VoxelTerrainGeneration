@@ -1,4 +1,3 @@
-using UnityEditor.UIElements;
 using UnityEngine;
 
 public class LookingAtVoxel : MonoBehaviour
@@ -11,12 +10,6 @@ public class LookingAtVoxel : MonoBehaviour
     void Start()
     {
         playerLayer = LayerMask.GetMask("Player");
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     public Vector3[] LookingAt()

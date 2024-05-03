@@ -1,12 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
     public float speed = 10f;
-    LookingAtVoxel looking;
+    private LookingAtVoxel looking;
 
     private void Start()
     {
