@@ -6,13 +6,13 @@ public class VoxelInteraction : MonoBehaviour
 {
     public Camera playerCamera;
     private LookingAtVoxel looking;
-    private VoxelType.Type currType;
+    private Block currType;
 
     // Start is called before the first frame update
     void Start()
     {
         looking = gameObject.AddComponent<LookingAtVoxel>();
-        currType = VoxelType.Type.GRASS;
+        currType = Block.GRASS;
     }
 
     // Update is called once per frame
@@ -21,19 +21,19 @@ public class VoxelInteraction : MonoBehaviour
         // type selection
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            currType = VoxelType.Type.GRASS;
+            currType = Block.GRASS;
         }
         if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            currType = VoxelType.Type.DIRT;
+            currType = Block.DIRT;
         }
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            currType = VoxelType.Type.STONE;
+            currType = Block.STONE;
         }
         if (Input.GetKeyDown(KeyCode.Alpha4))
         {
-            currType = VoxelType.Type.GLASS;
+            currType = Block.GLASS;
         }
 
         // first person
@@ -46,7 +46,7 @@ public class VoxelInteraction : MonoBehaviour
                 Voxel? voxel = WorldGenerator.World.GetVoxel(position);
                 if (voxel != null)
                 {
-                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(VoxelType.Type.AIR));
+                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(Block.AIR));
                 }
             }
         }
@@ -58,7 +58,7 @@ public class VoxelInteraction : MonoBehaviour
             {
                 var position = voxelInfo[0] + (voxelInfo[1] / 2);
                 Voxel? voxel = WorldGenerator.World.GetVoxel(position);
-                if (voxel != null && ((Voxel)voxel).type == VoxelType.Type.AIR)
+                if (voxel != null && ((Voxel)voxel).type == Block.AIR)
                 {
                     WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(currType));
                 }
@@ -75,7 +75,7 @@ public class VoxelInteraction : MonoBehaviour
                 Voxel? voxel = WorldGenerator.World.GetVoxel(position);
                 if (voxel != null)
                 {
-                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(VoxelType.Type.AIR));
+                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(Block.AIR));
                 }
             }
         }
@@ -87,7 +87,7 @@ public class VoxelInteraction : MonoBehaviour
             {
                 var position = voxelInfo[0] + (voxelInfo[1] / 2);
                 Voxel? voxel = WorldGenerator.World.GetVoxel(position);
-                if (voxel != null && ((Voxel)voxel).type == VoxelType.Type.AIR)
+                if (voxel != null && ((Voxel)voxel).type == Block.AIR)
                 {
                     WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(currType));
                 }
