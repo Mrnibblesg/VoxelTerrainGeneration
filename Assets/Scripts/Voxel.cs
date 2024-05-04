@@ -20,11 +20,11 @@ public struct Voxel
     public static readonly Vector3Int LTB = new(0, 1, 1);
     public static readonly Vector3Int RTB = new(1, 1, 1);
 
-    public VoxelType.Type type;
+    public Block type;
     public bool isAir;
     public bool hasTransparency;
     public bool exposed;
-    public Voxel(VoxelType.Type type, bool isAir = false, bool hasTransparency = false)
+    public Voxel(Block type, bool isAir = false, bool hasTransparency = false)
     {
         this.type = type;
         this.isAir = isAir;
@@ -53,7 +53,7 @@ public struct Voxel
         this.exposed = exposed;
         return this;
     }
-    public Voxel SetType(VoxelType.Type type)
+    public Voxel SetType(Block type)
     {
         this.type = type;
 
