@@ -43,7 +43,8 @@ public class MainMenu : MonoBehaviour
         WorldGenerator worldGenerator = FindObjectOfType<WorldGenerator>();
         if (worldGenerator != null)
         {
-            worldGenerator.SetDimensions(resolution, height, chunkSize, height); // chunk height set to same as world height currently
+            worldGenerator.SetDimensions(resolution, height, chunkSize, chunkSize); // chunk height and size the same, will make cubes
+            // resolution is controlling world size right now, could change to render distance?
             worldGenerator.StartGeneration();
         }
         SceneManager.sceneLoaded -= OnSceneLoaded; // Detach the event to prevent it from being called again

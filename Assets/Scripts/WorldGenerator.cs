@@ -26,14 +26,6 @@ public class WorldGenerator : MonoBehaviour
             throw new Exception("Only one instance of the WorldGenerator is allowed");
         }
         World = this;
-
-        Chunk.size = chunkSize;
-        Chunk.height = chunkHeight;
-        chunks = new Dictionary<Vector3, Chunk>();
-
-        s_GenerateWorld.Begin();
-        GenerateWorld();
-        s_GenerateWorld.End();
     }
 
     //Generates a world with dimensions worldSize x worldSize chunks.
@@ -130,11 +122,11 @@ public class WorldGenerator : MonoBehaviour
 
         Chunk.size = chunkSize;
         Chunk.height = chunkHeight;
-        chunks = new Dictionary<Vector3, Chunk>();
     }
 
     public void StartGeneration()
     {
+        chunks = new Dictionary<Vector3, Chunk>();
         s_GenerateWorld.Begin();
         GenerateWorld();
         s_GenerateWorld.End();
