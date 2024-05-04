@@ -25,7 +25,7 @@ public class Player : MonoBehaviour
             Voxel? voxel = WorldGenerator.World.GetVoxel(position);
             if (voxel != null)
             {
-                WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(VoxelType.Type.AIR));
+                WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(Block.AIR));
             }
 
         }
