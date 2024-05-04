@@ -39,7 +39,7 @@ public class Chunk : MonoBehaviour
 
     void InitializeVoxels()
     {
-        Array types = Enum.GetValues(typeof(Block));
+        Array types = Enum.GetValues(typeof(VoxelType));
         System.Random r = new System.Random();
         for (int x = 0; x < size; x++)
         {
@@ -47,7 +47,7 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = 0; z < size; z++)
                 {
-                    Block type= (Block)types.GetValue(r.Next(1, types.Length-1));
+                    VoxelType type= (VoxelType)types.GetValue(r.Next(1, types.Length-1));
                     voxels[x, y, z] = new Voxel(
                          type,//(x + z) % 2 == 0 ? VoxelType.Type.GRASS : VoxelType.Type.DIRT, 
                          false, false
@@ -154,31 +154,31 @@ public class Chunk : MonoBehaviour
                 {
                     for (progress[v] = 0; progress[v] < dimensions[v]; progress[v]++, n++)
                     {
-                        //Bounds checking/block type checking
-                        //Even if one bound isn't actually air and it's a block in another chunk,
+                        //Bounds checking/voxel type checking
+                        //Even if one bound isn't actually air and it's a voxel in another chunk,
                         //we say it's air anyways because we aren't meshing across chunks.
-                        //blocks below and above the current slice
-                        Block below = 
+                        //voxels below and above the current slice
+                        VoxelType below = 
                             (progress[normal] >= 0 ?
                             voxels[progress[0],
                                    progress[1],
                                    progress[2]].type :
-                            Block.AIR);
+                            VoxelType.AIR);
 
-                        Block above =
+                        VoxelType above =
                             (progress[normal] < dimensions[normal] - 1 ?
                             voxels[progress[0]+normOff[0],
                                    progress[1]+normOff[1],
                                    progress[2]+normOff[2]].type :
-                            Block.AIR);
+                            VoxelType.AIR);
 
-                        //no face if they're both a block or if the're both air
-                        if ((above == Block.AIR) ==
-                            (below == Block.AIR))
+                        //no face if they're both a voxel or if the're both air
+                        if ((above == VoxelType.AIR) ==
+                            (below == VoxelType.AIR))
                         {
                             mask[progress[u], progress[v]] = 0;
                         }
-                        else if (below != Block.AIR)
+                        else if (below != VoxelType.AIR)
                         {
                             mask[progress[u], progress[v]] = (int)below;
                         }
@@ -262,7 +262,7 @@ public class Chunk : MonoBehaviour
     {
         bool CCW = type < 0;
         if (type < 0) type *= -1;
-        Color32 col = ((Block) type).getBlockAttributes().color;
+        Color32 col = ((VoxelType) type).getVoxelAttributes().color;
 
         int verts = meshVertices.Count;
 

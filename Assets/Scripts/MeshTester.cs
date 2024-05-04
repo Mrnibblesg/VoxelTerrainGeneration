@@ -8,7 +8,7 @@ public class MeshTester : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Block.AIR.getBlockAttributes();
+        VoxelType.AIR.getVoxelAttributes();
 
         Mesh m = new Mesh();
         MeshFilter mf = gameObject.GetComponent<MeshFilter>();
