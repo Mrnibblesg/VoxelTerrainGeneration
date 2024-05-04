@@ -9,7 +9,7 @@ public class Player : MonoBehaviour
     private void Start()
     {
         WorldGenerator w = WorldGenerator.World;
-        Vector3 startPosition = new(0.5f, w.worldHeight * w.chunkHeight + 1.5f, 0.5f); 
+        Vector3 startPosition = new(0.5f, w.worldHeight * w.chunkHeight + 1.5f, 0.5f);
         transform.position = startPosition;
     }
     // Update is called once per frame
@@ -22,8 +22,12 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F))
         {
             var position = new Vector3(transform.position.x, transform.position.y - 1.5f, transform.position.z);
+            Voxel? voxel = WorldGenerator.World.GetVoxel(position);
+            if (voxel != null)
+            {
+                WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(VoxelType.Type.AIR));
+            }
 
-            WorldGenerator.World.SetVoxel(position, WorldGenerator.World.GetVoxel(position).SetType(Block.AIR));
         }
     }
 }
