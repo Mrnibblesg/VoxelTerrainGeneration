@@ -7,8 +7,8 @@ public class Player : MonoBehaviour
     private Vector3Int currentChunkCoord;
 
     //Render distance in chunks
-    private int renderDist = 3;
-    private int unloadDist = 4;
+    private int renderDist = 2;
+    private int unloadDist = 3;
 
     //TODO more sophisticated get and set for potential world switching.
 

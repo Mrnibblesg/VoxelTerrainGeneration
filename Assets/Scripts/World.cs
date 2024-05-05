@@ -3,7 +3,8 @@ using UnityEngine;
 
 
 // TODO In the future, this should *probably* only contain world info, chunks, and get chunks.
-//Player related logic might be better suited for the player class or similar.
+//Player related logic might be better suited for the player class or similar,
+//as we get ready for multiplayer setups.
 public class World
 {
     private Dictionary<Vector3Int, Chunk> chunks;
@@ -15,16 +16,25 @@ public class World
     public int chunkSize;
     public int chunkHeight;
 
+    //Use queues to dictate which order chunks are loaded and unloaded.
+    //This will be threaded. TODO.
+    private Queue<Vector3Int> loadQueue;
+    private Queue<Vector3Int> unloadQueue;
+
     public World(int worldHeight, int chunkSize, int chunkHeight)
     {
         this.worldHeight = worldHeight;
         this.chunkSize = chunkSize;
         this.chunkHeight = chunkHeight;
         chunks = new();
+        loadQueue = new();
+        unloadQueue = new();
     }
 
     /// <summary>
-    /// Updates the loaded and unloaded area surrounding the player,
+    /// Updates the loaded and unloaded area surrounding the player.
+    /// Chunks that come in range or go out of range are added to the
+    /// load/unload queue.
     /// </summary>
     /// <param name="chunkCoord"></param>
     public void UpdateNearbyChunks(Vector3Int chunkCoord, int renderDist, int unloadDist)
@@ -56,6 +66,22 @@ public class World
                 }
             }
         }
+
+        //Can't edit values within a foreach loop. Add to a queue.
+        foreach(KeyValuePair<Vector3Int, Chunk> pair in chunks)
+        {
+            if (Vector3Int.Distance(pair.Key, chunkCoord) > unloadDist)
+            {
+                unloadQueue.Enqueue(pair.Key);
+            }
+        }
+
+        //Unload chunks. This, along with loading chunks should be threaded
+        while (unloadQueue.Count > 0)
+        {
+            UnloadChunk(unloadQueue.Dequeue());
+
+        }
     }
     private void LoadChunk(Vector3Int chunkCoords)
     {
@@ -85,9 +111,11 @@ public class World
     }
     public void UnloadChunk(Vector3Int chunkCoords)
     {
+        GameObject.DestroyImmediate(chunks[chunkCoords].gameObject);
         chunks.Remove(chunkCoords);
     }
 
+    //TODO enable this function when greedy meshing detects neighbor chunks.
     private void RefreshNeighbors(Vector3Int chunkCoord)
     {
         RefreshChunk(chunkCoord + Vector3Int.left);
