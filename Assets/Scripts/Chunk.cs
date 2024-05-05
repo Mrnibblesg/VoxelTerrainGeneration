@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 public class Chunk : MonoBehaviour
@@ -10,6 +11,8 @@ public class Chunk : MonoBehaviour
     Voxel[,,] voxels;
 
     World parent;
+
+    public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.RegenerateMesh"); //Profiling
 
     //more useful for chunks with many voxels
     Chunk[] neighbors;
@@ -97,6 +100,7 @@ public class Chunk : MonoBehaviour
     /// </summary>
     public void RegenerateMesh()
     {
+        s_ChunkGen.Begin();
         meshVertices = new List<Vector3>();
         meshColors = new List<Color32>();
         meshQuads = new List<int>();
@@ -114,6 +118,7 @@ public class Chunk : MonoBehaviour
         meshCollider.sharedMesh = newMesh;
 
         newMesh.RecalculateNormals();
+        s_ChunkGen.End();
     }
 
     /// <summary>

@@ -38,7 +38,7 @@ public class Player : MonoBehaviour
         transform.position += new Vector3(horizontal, 0f, vertical) * Time.deltaTime * speed;
         // playerCamera.transform.LookAt(gameObject.transform);
 
-        UpdateChunkCoord(); //TODO uncomment, only commented for testing
+        UpdateChunkCoord();
     }
 
     /// <summary>

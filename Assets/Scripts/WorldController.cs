@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Profiling;
 using UnityEngine;
 
 
@@ -10,8 +9,6 @@ using UnityEngine;
 public class WorldController : MonoBehaviour
 {
     public static WorldController Controller { get; private set; }
-    public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.RegenerateMesh"); //Profiling
-    public static ProfilerMarker s_CreateWorld = new(ProfilerCategory.Scripts, "WorldController.CreateWorld"); //Profiling
 
     //Dimensions of world in the amount of chunks
     public int worldSize { get; private set; }
@@ -52,7 +49,6 @@ public class WorldController : MonoBehaviour
     ///
     public void CreateWorld() //race condition between this and Player.Start TODO. It's hard to set the player's initial world.
     {
-        s_CreateWorld.Begin();
         World w = new World(worldHeight, chunkSize, chunkHeight);
         GameObject player = GameObject.FindGameObjectWithTag("Player") ?? throw new Exception("There must exist a player with the \"Player\" tag.");
         //ensure the player is loaded into the correct scene if we're having
@@ -60,6 +56,5 @@ public class WorldController : MonoBehaviour
         player.GetComponent<Player>().CurrentWorld = w;
 
         worlds.Add("World " + worlds.Count + 1, w);
-        s_CreateWorld.End();
     }
 }
