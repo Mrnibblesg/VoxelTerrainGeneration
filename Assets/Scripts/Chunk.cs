@@ -5,10 +5,7 @@ using UnityEngine;
 
 public class Chunk : MonoBehaviour
 {
-    public static int size; //X*Z
-    public static int height;
-    private static Material vertexColorMaterial;
-    Voxel[,,] voxels;
+    public Voxel[,,] voxels;
 
     World parent;
 
@@ -25,58 +22,18 @@ public class Chunk : MonoBehaviour
     private MeshRenderer meshRenderer;
     private MeshCollider meshCollider;
 
-    static Chunk()
-    {
-        vertexColorMaterial = (Material)Resources.Load("Textures/Vertex Colors");
-    }
     public void Initialize(World parent)
     {
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        meshRenderer.material = vertexColorMaterial;
+        meshRenderer.material = parent.vertexColorMaterial;
 
         this.parent = parent;
 
-        voxels = new Voxel[size, height, size];
-        InitializeVoxels();
-        
+        voxels = new Voxel[parent.chunkSize, parent.chunkHeight, parent.chunkSize];
     }
 
-    void InitializeVoxels()
-    {
-        //Delegate this to some kind of chunk generator factory
-        Array types = Enum.GetValues(typeof(VoxelType));
-        System.Random r = new System.Random();
-        for (int x = 0; x < size; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                for (int z = 0; z < size; z++)
-                {
-                    VoxelType type= (VoxelType)types.GetValue(r.Next(1, types.Length-1));
-                    voxels[x, y, z] = new Voxel(
-                         type,//(x + z) % 2 == 0 ? VoxelType.Type.GRASS : VoxelType.Type.DIRT, 
-                         false, false
-                         //(type == VoxelType.Type.GLASS ? true : false)
-                    //,(x + y + z) % 2 == 1
-                    );
-                }
-            }
-        }
-
-        for (int x = 0; x < size; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                for (int z = 0; z < size; z++)
-                {
-                    MarkExposed(x,y,z);
-                }
-            }
-        }
-
-    }
     /// <summary>
     /// Mark the given voxel as exposed if it's transparent or
     /// adjacent to something transparent.
@@ -130,7 +87,7 @@ public class Chunk : MonoBehaviour
     //https://0fps.net/2012/07/07/meshing-minecraft-part-2/
     private void GreedyMeshing()
     {
-        int[] dimensions = new int[] { size, height, size };
+        int[] dimensions = new int[] { parent.chunkSize, parent.chunkHeight, parent.chunkSize };
         //Iterate over the 3 axes.
         //a variable representing an axis will change each iteration.
 
@@ -218,7 +175,7 @@ public class Chunk : MonoBehaviour
                         for (w = 1; i + w < dimensions[u] && current == mask[i + w, j]; w++) { }
 
                         int h;
-                        //Calculate height of quad
+                        //Calculate parent.chunkHeight of quad
                         for (h = 1; j + h < dimensions[v]; h++)
                         {
                             for (int k = 0; k < w; k++)
@@ -231,7 +188,7 @@ public class Chunk : MonoBehaviour
                         }
                     BreakHeight:
                         //we now have our quad: i and j are its starting pos,
-                        //w and h the width and height.
+                        //w and h the width and parent.chunkHeight.
                         progress[u] = i;
                         progress[v] = j;
                         //We apply the w and h in the correct dimension
@@ -455,9 +412,9 @@ public class Chunk : MonoBehaviour
     /// <returns></returns>
     private bool IsOutOfBounds(int x, int y, int z)
     {
-        return x < 0 || x >= size ||
-               y < 0 || y >= height ||
-               z < 0 || z >= size;
+        return x < 0 || x >= parent.chunkSize ||
+               y < 0 || y >= parent.chunkHeight ||
+               z < 0 || z >= parent.chunkSize;
     }
 
     //Debug only
@@ -466,7 +423,7 @@ public class Chunk : MonoBehaviour
         if (voxels == null || meshFilter.mesh == null) return;
         //Outline the whole chunk
         Gizmos.color = Color.black;
-        //Gizmos.DrawCube(transform.position + new Vector3(size / 2, height / 2, size / 2), new Vector3(size, height, size));
+        //Gizmos.DrawCube(transform.position + new Vector3(parent.chunkSize / 2, parent.chunkHeight / 2, parent.chunkSize / 2), new Vector3(parent.chunkSize, parent.chunkHeight, parent.chunkSize));
         Gizmos.DrawWireMesh(meshFilter.mesh, transform.position);
     }
 }

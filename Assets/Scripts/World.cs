@@ -8,6 +8,7 @@ using UnityEngine;
 public class World
 {
     private Dictionary<Vector3Int, Chunk> chunks;
+    public readonly Material vertexColorMaterial = (Material) Resources.Load("Textures/Vertex Colors");
 
     //Height of world in chunks
     public int worldHeight;
@@ -21,6 +22,8 @@ public class World
     private Queue<Vector3Int> loadQueue;
     private Queue<Vector3Int> unloadQueue;
 
+    ChunkFactory chunkFactory;
+
     public World(int worldHeight, int chunkSize, int chunkHeight)
     {
         this.worldHeight = worldHeight;
@@ -29,6 +32,7 @@ public class World
         chunks = new();
         loadQueue = new();
         unloadQueue = new();
+        chunkFactory = new(this);
     }
 
     /// <summary>
@@ -96,22 +100,27 @@ public class World
         int y = chunkCoords.y;
         int z = chunkCoords.z;
         GameObject chunkObj = new GameObject($"Chunk{x},{y},{z}");
-        Chunk newChunk = chunkObj.AddComponent<Chunk>();
 
         Vector3Int position = new Vector3Int(x, y, z);
+        Chunk newChunk = chunkObj.AddComponent<Chunk>();
+        chunkFactory.GenerateChunk(newChunk, position);
+        //newChunk.Initialize(this);
         chunks.Add(position, newChunk);
 
         position.x *= WorldController.Controller.chunkSize;
         position.y *= WorldController.Controller.chunkHeight;
         position.z *= WorldController.Controller.chunkSize;
         chunkObj.transform.position = position;
-        newChunk.Initialize(this);
         newChunk.RegenerateMesh();
 
     }
     public void UnloadChunk(Vector3Int chunkCoords)
     {
+#if UNITY_EDITOR
         GameObject.DestroyImmediate(chunks[chunkCoords].gameObject);
+#else
+        GameObject.Destroy(chunks[chunkCoords].gameObject);
+#endif
         chunks.Remove(chunkCoords);
     }
 

@@ -37,8 +37,6 @@ public class WorldController : MonoBehaviour
         chunkSize = chunkSz;
         chunkHeight = chunkSz * 4;//chunkHt; //TODO Chunk height not currently configurable in the main menu. Doing this for now.
 
-        Chunk.size = chunkSize;
-        Chunk.height = chunkHeight;
     }
 
     //Different worlds should reside in different scenes.
