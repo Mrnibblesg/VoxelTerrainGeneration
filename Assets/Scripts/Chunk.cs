@@ -8,8 +8,11 @@ public class Chunk : MonoBehaviour
     public static int height;
     private static Material vertexColorMaterial;
     Voxel[,,] voxels;
+
+    World parent;
+
+    //more useful for chunks with many voxels
     Chunk[] neighbors;
-    private Vector3Int chunkCoords;
 
     private List<Vector3> meshVertices;
     private List<Color32> meshColors;
@@ -23,14 +26,14 @@ public class Chunk : MonoBehaviour
     {
         vertexColorMaterial = (Material)Resources.Load("Textures/Vertex Colors");
     }
-    public void Initialize(Vector3Int position)
+    public void Initialize(World parent)
     {
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
         meshRenderer.material = vertexColorMaterial;
 
-        chunkCoords = position;
+        this.parent = parent;
 
         voxels = new Voxel[size, height, size];
         InitializeVoxels();
@@ -39,6 +42,7 @@ public class Chunk : MonoBehaviour
 
     void InitializeVoxels()
     {
+        //Delegate this to some kind of chunk generator factory
         Array types = Enum.GetValues(typeof(VoxelType));
         System.Random r = new System.Random();
         for (int x = 0; x < size; x++)
@@ -69,7 +73,6 @@ public class Chunk : MonoBehaviour
             }
         }
 
-        
     }
     /// <summary>
     /// Mark the given voxel as exposed if it's transparent or
@@ -323,7 +326,7 @@ public class Chunk : MonoBehaviour
     bool OutsideVoxelHasTransparency(Vector3 pos)
     {
         Vector3 globalPos = transform.position + pos;
-        Chunk neighbor = WorldGenerator.World.GetChunk(globalPos);
+        Chunk neighbor = parent.ChunkFromGlobal(globalPos);
         if (neighbor == null)
         {
             return true;
@@ -361,7 +364,7 @@ public class Chunk : MonoBehaviour
     }
 
     /// <summary>
-    /// Sets the voxel at the given position in this chunk.
+    /// Sets the voxel at the world-space position in this chunk.
     /// </summary>
     /// <param name="vec"></param>
     /// <param name="voxel"></param>
@@ -410,6 +413,7 @@ public class Chunk : MonoBehaviour
             }
         }
 
+        //Use the proper chunk to update the neighbor voxel from.
         void UseAppropriateChunk(int x, int y, int z)
         {
             if (!IsOutOfBounds(x, y, z))
@@ -417,7 +421,7 @@ public class Chunk : MonoBehaviour
                 updateList(this, x, y, z);
             }
 
-            Chunk c = WorldGenerator.World.GetChunk(transform.position + new Vector3(x, y, z));
+            Chunk c = parent.ChunkFromGlobal(transform.position + new Vector3(x, y, z));
             if (c != null)
             {
                 Vector3 neighborPos = c.transform.InverseTransformPoint(

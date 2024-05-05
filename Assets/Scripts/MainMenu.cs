@@ -35,17 +35,17 @@ public class MainMenu : MonoBehaviour
 
         // Load the world generation scene
         SceneManager.LoadScene("Za Warudo", LoadSceneMode.Single);
-        SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded; //race condition from loading scene before adding to the list of callbacks? TODO
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        WorldGenerator worldGenerator = FindObjectOfType<WorldGenerator>();
-        if (worldGenerator != null)
+        WorldController worldController = FindObjectOfType<WorldController>();
+        if (worldController != null)
         {
-            worldGenerator.SetDimensions(resolution, height, chunkSize, chunkSize); // chunk height and size the same, will make cubes
+            worldController.SetDimensions(resolution, height, chunkSize, chunkSize); // chunk height and size the same, will make cubes
             // resolution is controlling world size right now, could change to render distance?
-            worldGenerator.StartGeneration();
+            worldController.CreateWorld();
         }
         SceneManager.sceneLoaded -= OnSceneLoaded; // Detach the event to prevent it from being called again
     }

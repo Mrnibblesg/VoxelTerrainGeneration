@@ -7,11 +7,13 @@ public class VoxelInteraction : MonoBehaviour
     public Camera playerCamera;
     private LookingAtVoxel looking;
     private VoxelType currType;
+    private Player player;
 
     // Start is called before the first frame update
     void Start()
     {
         looking = gameObject.AddComponent<LookingAtVoxel>();
+        player = GetComponent<Player>();
         currType = VoxelType.GRASS;
     }
 
@@ -43,10 +45,10 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 var position = voxelInfo[0] - (voxelInfo[1] / 2);
-                Voxel? voxel = WorldGenerator.World.GetVoxel(position);
+                Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
                 if (voxel != null)
                 {
-                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(VoxelType.AIR));
+                    player.TryBreak(position);
                 }
             }
         }
@@ -57,10 +59,10 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 var position = voxelInfo[0] + (voxelInfo[1] / 2);
-                Voxel? voxel = WorldGenerator.World.GetVoxel(position);
+                Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
                 if (voxel != null && ((Voxel)voxel).type == VoxelType.AIR)
                 {
-                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(currType));
+                    player.TryPlace(position, currType);
                 }
             }
         }
@@ -72,10 +74,10 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 var position = voxelInfo[0] - (voxelInfo[1] / 2);
-                Voxel? voxel = WorldGenerator.World.GetVoxel(position);
+                Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
                 if (voxel != null)
                 {
-                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(VoxelType.AIR));
+                    player.TryBreak(position);
                 }
             }
         }
@@ -86,10 +88,10 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 var position = voxelInfo[0] + (voxelInfo[1] / 2);
-                Voxel? voxel = WorldGenerator.World.GetVoxel(position);
+                Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
                 if (voxel != null && ((Voxel)voxel).type == VoxelType.AIR)
                 {
-                    WorldGenerator.World.SetVoxel(position, (Voxel)voxel?.SetType(currType));
+                    player.TryPlace(position, currType);
                 }
             }
         }
