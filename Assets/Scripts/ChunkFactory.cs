@@ -22,7 +22,7 @@ public class ChunkFactory
     {
         c.Initialize(world);
         RandomVoxels(c, chunkCoords);
-
+        SineFunction(c, chunkCoords);
         return c;
     }
 
@@ -61,6 +61,24 @@ public class ChunkFactory
                 for (int z = 0; z < world.chunkSize; z++)
                 {
                     c.MarkExposed(x, y, z);
+                }
+            }
+        }
+    }
+    private void SineFunction(Chunk c, Vector3Int chunkCoords)
+    {
+        Vector3 chunkPos = new Vector3Int(chunkCoords.x * world.chunkSize, chunkCoords.y * world.chunkHeight, chunkCoords.z * world.chunkSize);
+        for (int x = 0; x < world.chunkSize; x++)
+        {
+            for (int y = 0; y < world.chunkHeight; y++)
+            {
+                for (int z = 0; z < world.chunkSize; z++)
+                {
+                    Vector3 voxelPos = chunkPos + new Vector3(x, y, z);
+                    if (y > 10*Math.Sin((voxelPos.x)/16)*Math.Cos((voxelPos.z) / -16) + 10)
+                    {
+                        c.voxels[x, y, z].SetType(VoxelType.AIR);
+                    }
                 }
             }
         }
