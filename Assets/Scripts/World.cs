@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 
 // TODO In the future, this should *probably* only contain world info, chunks, and get chunks.
@@ -107,24 +108,30 @@ public class World
         //newChunk.Initialize(this);
         chunks.Add(position, newChunk);
 
-        position.x *= WorldController.Controller.chunkSize;
-        position.y *= WorldController.Controller.chunkHeight;
-        position.z *= WorldController.Controller.chunkSize;
-        chunkObj.transform.position = position;
+        chunkObj.transform.position = new(
+            position.x * WorldController.Controller.chunkSize,
+            position.y * WorldController.Controller.chunkHeight,
+            position.z * WorldController.Controller.chunkSize
+        );
+
         newChunk.RegenerateMesh();
+        RefreshNeighbors(position);
 
     }
     public void UnloadChunk(Vector3Int chunkCoords)
     {
-#if UNITY_EDITOR
+#if UNITY_EDITOR //Apparently use this if we're in the editor otherwise the destroy is ignored?
         GameObject.DestroyImmediate(chunks[chunkCoords].gameObject);
 #else
         GameObject.Destroy(chunks[chunkCoords].gameObject);
 #endif
         chunks.Remove(chunkCoords);
+        RefreshNeighbors(chunkCoords); 
     }
 
-    //TODO enable this function when greedy meshing detects neighbor chunks.
+    //When a neighbor chunk is rendered, use this to refresh neighboring chunk meshes.
+    //Honestly inefficient...
+    //Render 6 chunks for the price of 1!!
     private void RefreshNeighbors(Vector3Int chunkCoord)
     {
         RefreshChunk(chunkCoord + Vector3Int.left);

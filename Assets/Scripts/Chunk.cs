@@ -120,22 +120,33 @@ public class Chunk : MonoBehaviour
                     for (progress[v] = 0; progress[v] < dimensions[v]; progress[v]++, n++)
                     {
                         //Bounds checking/voxel type checking
-                        //Even if one bound isn't actually air and it's a voxel in another chunk,
-                        //we say it's air anyways because we aren't meshing across chunks.
+                        //Make sure to check the adjacent chunk if our needed voxel is outside this one
                         //voxels below and above the current slice
                         VoxelType below = 
                             (progress[normal] >= 0 ?
                             voxels[progress[0],
                                    progress[1],
                                    progress[2]].type :
-                            VoxelType.AIR);
+                            parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
+                                transform.position +
+                                new Vector3Int(
+                                    progress[0],
+                                    progress[1],
+                                    progress[2])
+                                )?.type ?? VoxelType.AIR); //A null voxel is treated like air
 
                         VoxelType above =
                             (progress[normal] < dimensions[normal] - 1 ?
                             voxels[progress[0]+normOff[0],
                                    progress[1]+normOff[1],
                                    progress[2]+normOff[2]].type :
-                            VoxelType.AIR);
+                            parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
+                                transform.position +
+                                new Vector3Int(
+                                    progress[0] + normOff[0],
+                                    progress[1] + normOff[1],
+                                    progress[2] + normOff[2])
+                                )?.type ?? VoxelType.AIR); //A null voxel is treated like air
 
                         //no face if they're both a voxel or if the're both air
                         if ((above == VoxelType.AIR) ==
