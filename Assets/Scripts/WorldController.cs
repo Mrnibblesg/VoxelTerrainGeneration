@@ -31,10 +31,10 @@ public class WorldController : MonoBehaviour
 
     public void SetDimensions(int resolution, int height, int chunkSz, int chunkHt)
     {
-        this.resolution = resolution;
+        this.resolution = Mathf.Pow(2,resolution-1); //Resolution in powers of 2 to avoid odd numbers which make rendering annoying due to rounding errors
         worldHeight = height;
         chunkSize = chunkSz;
-        chunkHeight = chunkSz * 4;//chunkHt; //TODO Chunk height not currently configurable in the main menu. Doing this for now.
+        chunkHeight = chunkSz;//chunkHt;
 
     }
 
