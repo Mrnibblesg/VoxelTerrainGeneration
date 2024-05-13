@@ -1,8 +1,27 @@
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class Player : MonoBehaviour
 {
     public float speed = 10f;
+
+    private float mouseX = 0f;
+    
+    [SerializeField]
+    private float mouseSpeedX = 2f;
+
+    private float mouseY = 0f;
+
+    [SerializeField]
+    private float mouseSpeedY = 2f;
+
+    [SerializeField]
+    private float minMouseY = -10f;
+    
+    [SerializeField]
+    private float maxMouseY = 40f;
+
+    private Camera playerCamera;
 
     private Vector3Int currentChunkCoord;
 
@@ -31,14 +50,56 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        this.playerCamera = GetComponentInChildren<Camera>();
+
+        this.mouseX = transform.eulerAngles.y;
+        this.mouseY = playerCamera.transform.eulerAngles.x;
+    }
+
+    private void FixedUpdate()
+    {
+        UpdateMove();
+    }
+
     void Update()
     {
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-        transform.position += new Vector3(horizontal, 0f, vertical) * Time.deltaTime * speed;
-        // playerCamera.transform.LookAt(gameObject.transform);
+        if (Input.GetMouseButton(2))
+        {
+            UpdateLook();
+        }
 
         UpdateChunkCoord();
+    }
+    
+    /// <summary>
+    /// Camera look update. Called in Update().
+    /// </summary>
+    void UpdateLook()
+    {
+        var playerAngle = transform.eulerAngles;
+        this.mouseX += mouseSpeedX * Input.GetAxis("Mouse X");
+        this.transform.eulerAngles = new Vector3(playerAngle.x, mouseX, 0);
+
+        var cameraAngle = playerCamera.transform.eulerAngles;
+        this.mouseY -= mouseSpeedY * Input.GetAxis("Mouse Y");
+        this.mouseY = Mathf.Clamp(mouseY, minMouseY, maxMouseY);
+
+        this.playerCamera.transform.eulerAngles = new Vector3(mouseY, cameraAngle.y, 0);
+    }
+
+    /// <summary>
+    /// Move update. Called in FixedUpdate().
+    /// </summary>
+    void UpdateMove()
+    {
+        float combinedMultiplier = speed * Time.fixedDeltaTime;
+
+        Vector3 forward = Input.GetAxis("Vertical") * transform.forward;
+        Vector3 right = Input.GetAxis("Horizontal") * transform.right;
+
+        transform.position += (forward + right).normalized * combinedMultiplier;
     }
 
     /// <summary>
