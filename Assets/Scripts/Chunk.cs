@@ -353,10 +353,11 @@ public class Chunk : MonoBehaviour
     public Voxel? GetVoxel(Vector3 vec)
     {
         //Get from some coordinate within the chunk to the appropriate voxel coords.
+        vec *= parent.resolution;
         Vector3Int pos = new Vector3Int(
-            Mathf.FloorToInt(vec.x * parent.resolution),
-            Mathf.FloorToInt(vec.y * parent.resolution),
-            Mathf.FloorToInt(vec.z * parent.resolution)
+            Mathf.FloorToInt(vec.x),
+            Mathf.FloorToInt(vec.y),
+            Mathf.FloorToInt(vec.z)
         );
 
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
@@ -375,10 +376,10 @@ public class Chunk : MonoBehaviour
         //Scale the world-space coordinate to voxel-coordinate space
         vec *= parent.resolution;
         Vector3Int pos = new Vector3Int(
-                       Mathf.FloorToInt(vec.x),
-                       Mathf.FloorToInt(vec.y),
-                       Mathf.FloorToInt(vec.z)
-                    );
+            Mathf.FloorToInt(vec.x),
+            Mathf.FloorToInt(vec.y),
+            Mathf.FloorToInt(vec.z)
+        );
 
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
         if (outside) { return false; }
