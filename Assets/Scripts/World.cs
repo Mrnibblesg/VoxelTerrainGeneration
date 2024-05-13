@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 
 // TODO In the future, this should *probably* only contain world info, chunks, and get chunks.
@@ -18,6 +17,8 @@ public class World
     public int chunkSize;
     public int chunkHeight;
 
+    public float resolution;
+
     //Use queues to dictate which order chunks are loaded and unloaded.
     //This will be threaded. TODO.
     private Queue<Vector3Int> loadQueue;
@@ -25,11 +26,12 @@ public class World
 
     ChunkFactory chunkFactory;
 
-    public World(int worldHeight, int chunkSize, int chunkHeight)
+    public World(int worldHeight, int chunkSize, int chunkHeight, float resolution)
     {
         this.worldHeight = worldHeight;
         this.chunkSize = chunkSize;
         this.chunkHeight = chunkHeight;
+        this.resolution = resolution;
         chunks = new();
         loadQueue = new();
         unloadQueue = new();
@@ -109,9 +111,9 @@ public class World
         chunks.Add(position, newChunk);
 
         chunkObj.transform.position = new(
-            position.x * WorldController.Controller.chunkSize,
-            position.y * WorldController.Controller.chunkHeight,
-            position.z * WorldController.Controller.chunkSize
+            position.x * WorldController.Controller.chunkSize / resolution,
+            position.y * WorldController.Controller.chunkHeight / resolution,
+            position.z * WorldController.Controller.chunkSize / resolution
         );
 
         newChunk.RegenerateMesh();
@@ -171,9 +173,9 @@ public class World
     public Chunk ChunkFromGlobal(Vector3 global)
     {
         Vector3Int chunkCoordinates = new Vector3Int(
-            Mathf.FloorToInt(global.x / WorldController.Controller.chunkSize),
-            Mathf.FloorToInt(global.y / WorldController.Controller.chunkHeight),
-            Mathf.FloorToInt(global.z / WorldController.Controller.chunkSize));
+            Mathf.FloorToInt(global.x / (WorldController.Controller.chunkSize / resolution)),
+            Mathf.FloorToInt(global.y / (WorldController.Controller.chunkHeight / resolution)),
+            Mathf.FloorToInt(global.z / (WorldController.Controller.chunkSize / resolution)));
 
         return GetChunk(chunkCoordinates);
     }

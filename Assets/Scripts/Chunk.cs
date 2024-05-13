@@ -40,7 +40,7 @@ public class Chunk : MonoBehaviour
     /// </summary>
     public void MarkExposed(int x, int y, int z)
     {
-        if (IsOutOfBounds(x, y, z)) { return; }
+        if (VoxelOutOfBounds(x, y, z)) { return; }
 
         voxels[x, y, z].exposed =
             voxels[x,y,z].hasTransparency ||
@@ -122,31 +122,58 @@ public class Chunk : MonoBehaviour
                         //Bounds checking/voxel type checking
                         //Make sure to check the adjacent chunk if our needed voxel is outside this one
                         //voxels below and above the current slice
-                        VoxelType below = 
+                        VoxelType above;
+                        /*                        VoxelType below;
+
+                                                if (progress[normal] >= 0)
+                                                {
+                                                    below = voxels[
+                                                        progress[0],
+                                                        progress[1],
+                                                        progress[2]].type;
+                                                }
+                                                else
+                                                {
+                                                    below = parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
+                                                        VoxelCoordToGlobal(
+                                                        new(progress[0],
+                                                            progress[1],
+                                                            progress[2]))
+                                                        )?.type ?? VoxelType.AIR;
+                                                    if ( below != VoxelType.AIR)
+                                                    {
+                                                        print(parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
+                                                        VoxelCoordToGlobal(
+                                                        new(progress[0],
+                                                            progress[1],
+                                                            progress[2]))
+                                                        ));
+                                                    }
+                                                }*/
+
+                        VoxelType below =
                             (progress[normal] >= 0 ?
                             voxels[progress[0],
                                    progress[1],
                                    progress[2]].type :
                             parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                transform.position +
-                                new Vector3Int(
-                                    progress[0],
+                                VoxelCoordToGlobal(
+                                new(progress[0],
                                     progress[1],
-                                    progress[2])
+                                    progress[2]))
                                 )?.type ?? VoxelType.AIR); //A null voxel is treated like air
 
-                        VoxelType above =
+                        above =
                             (progress[normal] < dimensions[normal] - 1 ?
                             voxels[progress[0]+normOff[0],
                                    progress[1]+normOff[1],
                                    progress[2]+normOff[2]].type :
                             parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                transform.position +
-                                new Vector3Int(
-                                    progress[0] + normOff[0],
+                                VoxelCoordToGlobal(
+                                new(progress[0] + normOff[0],
                                     progress[1] + normOff[1],
-                                    progress[2] + normOff[2])
-                                )?.type ?? VoxelType.AIR); //A null voxel is treated like air
+                                    progress[2] + normOff[2]))
+                                )?.type ?? VoxelType.AIR);
 
                         //no face if they're both a voxel or if the're both air
                         if ((above == VoxelType.AIR) ==
@@ -243,28 +270,28 @@ public class Chunk : MonoBehaviour
         int verts = meshVertices.Count;
 
         meshVertices.Add( //Bottom left corner
-            new(
+            new Vector3(
             pos[0],
             pos[1],
-            pos[2]));
+            pos[2]) / parent.resolution);
 
         meshVertices.Add( //Bottom right corner
-            new(
+            new Vector3(
             pos[0] + uOff[0],
             pos[1] + uOff[1],
-            pos[2] + uOff[2]));
+            pos[2] + uOff[2]) / parent.resolution);
 
         meshVertices.Add( // Top right corner
-            new(
+            new Vector3(
             pos[0] + uOff[0] + vOff[0],
             pos[1] + uOff[1] + vOff[1],
-            pos[2] + uOff[2] + vOff[2]));
+            pos[2] + uOff[2] + vOff[2]) / parent.resolution);
 
         meshVertices.Add( // Top left corner
-            new(
+            new Vector3(
             pos[0] + vOff[0],
             pos[1] + vOff[1],
-            pos[2] + vOff[2]));
+            pos[2] + vOff[2]) / parent.resolution);
 
         meshColors.Add(col);
         meshColors.Add(col);
@@ -288,7 +315,7 @@ public class Chunk : MonoBehaviour
 
     bool VoxelHasTransparency(int x, int y, int z)
     {
-        if (IsOutOfBounds(x,y,z))
+        if (VoxelOutOfBounds(x,y,z))
         {
             Vector3Int pos = new Vector3Int(x, y, z);
             return OutsideVoxelHasTransparency(pos);
@@ -319,19 +346,20 @@ public class Chunk : MonoBehaviour
     }
 
     /// <summary>
-    /// Copies the voxel at the given position in this chunk.
+    /// Copies the voxel at the global position in this chunk.
     /// </summary>
     /// <param name="vec"></param>
     /// <returns></returns>
     public Voxel? GetVoxel(Vector3 vec)
     {
+        //Get from some coordinate within the chunk to the appropriate voxel coords.
         Vector3Int pos = new Vector3Int(
-            Mathf.FloorToInt(vec.x),
-            Mathf.FloorToInt(vec.y),
-            Mathf.FloorToInt(vec.z)
+            Mathf.FloorToInt(vec.x * parent.resolution),
+            Mathf.FloorToInt(vec.y * parent.resolution),
+            Mathf.FloorToInt(vec.z * parent.resolution)
         );
 
-        bool outside = IsOutOfBounds(pos.x, pos.y, pos.z);
+        bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
 
         return outside ? null : Voxel.Clone(voxels[pos.x, pos.y, pos.z]);
     }
@@ -344,13 +372,15 @@ public class Chunk : MonoBehaviour
     /// <returns> Whether the voxel was set. </returns>
     public bool SetVoxel(Vector3 vec, Voxel voxel)
     {
+        //Scale the world-space coordinate to voxel-coordinate space
+        vec *= parent.resolution;
         Vector3Int pos = new Vector3Int(
                        Mathf.FloorToInt(vec.x),
                        Mathf.FloorToInt(vec.y),
                        Mathf.FloorToInt(vec.z)
                     );
 
-        bool outside = IsOutOfBounds(pos.x, pos.y, pos.z);
+        bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
         if (outside) { return false; }
 
         voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
@@ -372,7 +402,7 @@ public class Chunk : MonoBehaviour
     /// </remarks>
     private void UpdateNeighbors(int x, int y, int z)
     {
-        if (IsOutOfBounds(x,y,z)) { return; }
+        if (VoxelOutOfBounds(x,y,z)) { return; }
 
         //Make sure when adding to this function that the things you add DO NOT trigger
         //more updates, or the updates could cascade forever.
@@ -389,12 +419,12 @@ public class Chunk : MonoBehaviour
         //Use the proper chunk to update the neighbor voxel from.
         void UseAppropriateChunk(int x, int y, int z)
         {
-            if (!IsOutOfBounds(x, y, z))
+            if (!VoxelOutOfBounds(x, y, z))
             {
                 updateList(this, x, y, z);
             }
 
-            Chunk c = parent.ChunkFromGlobal(transform.position + new Vector3(x, y, z));
+            Chunk c = parent.ChunkFromGlobal(VoxelCoordToGlobal(new Vector3Int(x,y,z)));
             if (c != null)
             {
                 Vector3 neighborPos = c.transform.InverseTransformPoint(
@@ -421,11 +451,20 @@ public class Chunk : MonoBehaviour
     /// <param name="y"></param>
     /// <param name="z"></param>
     /// <returns></returns>
-    private bool IsOutOfBounds(int x, int y, int z)
+    private bool VoxelOutOfBounds(int x, int y, int z)
     {
         return x < 0 || x >= parent.chunkSize ||
                y < 0 || y >= parent.chunkHeight ||
                z < 0 || z >= parent.chunkSize;
+    }
+    /// <summary>
+    /// Converts a voxel coordinate to its world-space position.
+    /// </summary>
+    /// <param name="coord"></param>
+    /// <returns></returns>
+    private Vector3 VoxelCoordToGlobal(Vector3 coord)
+    {
+        return transform.position + (coord / parent.resolution);
     }
 
     //Debug only
@@ -434,7 +473,9 @@ public class Chunk : MonoBehaviour
         if (voxels == null || meshFilter.mesh == null) return;
         //Outline the whole chunk
         Gizmos.color = Color.black;
-        //Gizmos.DrawCube(transform.position + new Vector3(parent.chunkSize / 2, parent.chunkHeight / 2, parent.chunkSize / 2), new Vector3(parent.chunkSize, parent.chunkHeight, parent.chunkSize));
-        Gizmos.DrawWireMesh(meshFilter.mesh, transform.position);
+        if (meshFilter.mesh.GetIndices(0).Length != 0)
+        {
+            Gizmos.DrawWireMesh(meshFilter.mesh, transform.position);
+        }
     }
 }

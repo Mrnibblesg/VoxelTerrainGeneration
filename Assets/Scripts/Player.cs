@@ -22,7 +22,7 @@ public class Player : MonoBehaviour
             this.currentWorld = value;
             Vector3 startPosition = new(
                 0.5f,
-                value.worldHeight * value.chunkHeight + 1.5f,
+                value.worldHeight * value.chunkHeight / value.resolution + 1.5f,
                 0.5f
             );
             transform.position = startPosition;
@@ -48,9 +48,9 @@ public class Player : MonoBehaviour
     private void UpdateChunkCoord()
     {
         Vector3Int chunkCoord = new(
-            Mathf.FloorToInt(transform.position.x / currentWorld.chunkSize),
-            Mathf.FloorToInt(transform.position.y / currentWorld.chunkHeight),
-            Mathf.FloorToInt(transform.position.z / currentWorld.chunkSize)
+            Mathf.FloorToInt(transform.position.x / (currentWorld.chunkSize / currentWorld.resolution)),
+            Mathf.FloorToInt(transform.position.y / (currentWorld.chunkHeight / currentWorld.resolution)),
+            Mathf.FloorToInt(transform.position.z / (currentWorld.chunkSize / currentWorld.resolution))
         );
         if (currentChunkCoord != chunkCoord)
         {

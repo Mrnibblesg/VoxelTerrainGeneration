@@ -44,7 +44,7 @@ public class VoxelInteraction : MonoBehaviour
             Vector3[] voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
-                var position = voxelInfo[0] - (voxelInfo[1] / 2);
+                Vector3 position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
                 Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
                 if (voxel != null)
                 {
@@ -58,7 +58,7 @@ public class VoxelInteraction : MonoBehaviour
             Vector3[] voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
-                var position = voxelInfo[0] + (voxelInfo[1] / 2);
+                Vector3 position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
                 Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
                 if (voxel != null && ((Voxel)voxel).type == VoxelType.AIR)
                 {
@@ -73,7 +73,7 @@ public class VoxelInteraction : MonoBehaviour
             Vector3[] voxelInfo = looking.ClickedVoxel(playerCamera);
             if (voxelInfo != null)
             {
-                var position = voxelInfo[0] - (voxelInfo[1] / 2);
+                Vector3 position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
                 Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
                 if (voxel != null)
                 {
@@ -87,7 +87,7 @@ public class VoxelInteraction : MonoBehaviour
             Vector3[] voxelInfo = looking.ClickedVoxel(playerCamera);
             if (voxelInfo != null)
             {
-                var position = voxelInfo[0] + (voxelInfo[1] / 2);
+                Vector3 position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
                 Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
                 if (voxel != null && ((Voxel)voxel).type == VoxelType.AIR)
                 {

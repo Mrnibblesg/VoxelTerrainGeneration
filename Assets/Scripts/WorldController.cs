@@ -9,9 +9,8 @@ using UnityEngine;
 public class WorldController : MonoBehaviour
 {
     public static WorldController Controller { get; private set; }
-
-    //Dimensions of world in the amount of chunks
-    public int worldSize { get; private set; }
+    //Defined as voxels per world unit
+    public float resolution { get; private set; } 
     public int worldHeight { get; private set; }
 
     //Dimensions of chunk in the amount of voxels
@@ -30,9 +29,9 @@ public class WorldController : MonoBehaviour
         worlds = new();
     }
 
-    public void SetDimensions(int size, int height, int chunkSz, int chunkHt)
+    public void SetDimensions(int resolution, int height, int chunkSz, int chunkHt)
     {
-        worldSize = size;
+        this.resolution = resolution;
         worldHeight = height;
         chunkSize = chunkSz;
         chunkHeight = chunkSz * 4;//chunkHt; //TODO Chunk height not currently configurable in the main menu. Doing this for now.
@@ -47,7 +46,7 @@ public class WorldController : MonoBehaviour
     ///
     public void CreateWorld() //race condition between this and Player.Start TODO. It's hard to set the player's initial world.
     {
-        World w = new World(worldHeight, chunkSize, chunkHeight);
+        World w = new World(worldHeight, chunkSize, chunkHeight, resolution);
         GameObject player = GameObject.FindGameObjectWithTag("Player") ?? throw new Exception("There must exist a player with the \"Player\" tag.");
         //ensure the player is loaded into the correct scene if we're having
         //different worlds exist in separate scenes.
