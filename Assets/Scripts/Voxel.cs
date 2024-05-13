@@ -21,28 +21,20 @@ public struct Voxel
     public static readonly Vector3Int RTB = new(1, 1, 1);
 
     public VoxelType type;
-    public bool isAir;
     public bool hasTransparency;
     public bool exposed;
-    public Voxel(VoxelType type, bool isAir = false, bool hasTransparency = false)
+    public Voxel(VoxelType type, bool hasTransparency = false)
     {
         this.type = type;
-        this.isAir = isAir;
-        this.hasTransparency = isAir || hasTransparency;
-        
+        this.hasTransparency = hasTransparency;
         this.exposed = true;
     }
 
     public static Voxel Clone(Voxel other)
     {
-        return new Voxel(other.type, other.isAir, other.hasTransparency);
+        return new Voxel(other.type, other.hasTransparency);
     }
 
-    public Voxel SetAir(bool isAir)
-    {
-        this.isAir = isAir;
-        return this;
-    }
     public Voxel SetTransparency(bool hasTransparency)
     {
         this.hasTransparency = hasTransparency;

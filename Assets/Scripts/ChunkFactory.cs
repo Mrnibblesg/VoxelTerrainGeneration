@@ -9,7 +9,6 @@ using UnityEngine;
 //determine what voxels are what.
 public class ChunkFactory
 {
-
     int seed;
     World world;
 
@@ -22,7 +21,8 @@ public class ChunkFactory
     {
         c.Initialize(world);
         RandomVoxels(c, chunkCoords);
-        SineFunction(c, chunkCoords);
+        //SineFunction(c, chunkCoords);
+        Perlin(c, chunkCoords);
         return c;
     }
 
@@ -44,12 +44,7 @@ public class ChunkFactory
                 for (int z = 0; z < world.chunkSize; z++)
                 {
                     VoxelType type = (VoxelType)types.GetValue(r.Next(1, types.Length - 1));
-                    c.voxels[x, y, z] = new Voxel(
-                         type,//(x + z) % 2 == 0 ? VoxelType.Type.GRASS : VoxelType.Type.DIRT, 
-                         false, false
-                    //(type == VoxelType.Type.GLASS ? true : false)
-                    //,(x + y + z) % 2 == 1
-                    );
+                    c.voxels[x, y, z] = new Voxel(type, false);
                 }
             }
         }
@@ -84,5 +79,9 @@ public class ChunkFactory
                 }
             }
         }
+    }
+    private void Perlin(Chunk c, Vector3Int chunkCoords)
+    {
+
     }
 }

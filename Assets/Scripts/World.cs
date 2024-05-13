@@ -14,10 +14,10 @@ public class World
     public int worldHeight;
 
     //Dimensions of chunk in the amount of voxels
-    public int chunkSize;
-    public int chunkHeight;
+    public readonly int chunkSize;
+    public readonly int chunkHeight;
 
-    public float resolution;
+    public readonly float resolution;
 
     //Use queues to dictate which order chunks are loaded and unloaded.
     //This will be threaded. TODO.

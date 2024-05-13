@@ -122,35 +122,6 @@ public class Chunk : MonoBehaviour
                         //Bounds checking/voxel type checking
                         //Make sure to check the adjacent chunk if our needed voxel is outside this one
                         //voxels below and above the current slice
-                        VoxelType above;
-                        /*                        VoxelType below;
-
-                                                if (progress[normal] >= 0)
-                                                {
-                                                    below = voxels[
-                                                        progress[0],
-                                                        progress[1],
-                                                        progress[2]].type;
-                                                }
-                                                else
-                                                {
-                                                    below = parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                                        VoxelCoordToGlobal(
-                                                        new(progress[0],
-                                                            progress[1],
-                                                            progress[2]))
-                                                        )?.type ?? VoxelType.AIR;
-                                                    if ( below != VoxelType.AIR)
-                                                    {
-                                                        print(parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                                        VoxelCoordToGlobal(
-                                                        new(progress[0],
-                                                            progress[1],
-                                                            progress[2]))
-                                                        ));
-                                                    }
-                                                }*/
-
                         VoxelType below =
                             (progress[normal] >= 0 ?
                             voxels[progress[0],
@@ -163,7 +134,7 @@ public class Chunk : MonoBehaviour
                                     progress[2]))
                                 )?.type ?? VoxelType.AIR); //A null voxel is treated like air
 
-                        above =
+                        VoxelType above =
                             (progress[normal] < dimensions[normal] - 1 ?
                             voxels[progress[0]+normOff[0],
                                    progress[1]+normOff[1],
