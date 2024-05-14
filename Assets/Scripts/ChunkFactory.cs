@@ -80,8 +80,48 @@ public class ChunkFactory
             }
         }
     }
+
+    //Simplex noise is simply better than Perlin noise. This is for simplicity's sake.
     private void Perlin(Chunk c, Vector3Int chunkCoords)
     {
+        //Max amplitude in world-space
+        const int amplitude = 30;
+        System.Random r = new System.Random(seed);
+        int o1Offset = r.Next(-100000,100000);
+        int o2Offset = r.Next(-100000,100000);
+        int o3Offset = r.Next(-100000,100000);
 
+        Vector3 chunkPos = new Vector3(
+            chunkCoords.x * world.chunkSize / world.resolution,
+            chunkCoords.y * world.chunkHeight / world.resolution,
+            chunkCoords.z * world.chunkSize / world.resolution);
+
+        for (int x = 0; x < world.chunkSize; x++)
+        {
+            for (int z = 0; z < world.chunkSize; z++)
+            {
+                
+                Vector2 voxelPos = new Vector2(x, z) / world.resolution;
+                voxelPos.x += chunkPos.x;
+                voxelPos.y += chunkPos.z;
+
+                double octave1 = amplitude * Mathf.PerlinNoise((voxelPos.x + o1Offset) / 50, (voxelPos.y + o1Offset) / 50);
+
+                double octave2 = amplitude * Mathf.PerlinNoise((voxelPos.x + o2Offset) / 15, (voxelPos.y + o2Offset) / 15) / 2;
+
+                //I don't understand why the input values need to be small. Dividing by 2 is perfectly fine but not dividing breaks it.
+                double octave3 = amplitude * Mathf.PerlinNoise((voxelPos.x + o3Offset) / 5, (voxelPos.y + o3Offset) / 5) / 15;
+                double targetHeight = octave1 + octave2 + octave3;
+
+                for (int y = world.chunkHeight-1; y >= 0 ; y--)
+                {
+                    if (chunkPos.y + (y / world.resolution) <= targetHeight)
+                    {
+                        break;
+                    }
+                    c.voxels[x, y, z].type = VoxelType.AIR;
+                }
+            }
+        }
     }
 }

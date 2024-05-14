@@ -26,8 +26,8 @@ public class Player : MonoBehaviour
     private Vector3Int currentChunkCoord;
 
     //Render distance in chunks
-    private int renderDist = 2;
-    private int unloadDist = 3;
+    private int renderDist = 5;
+    private int unloadDist = 8;
 
     //TODO more sophisticated get and set for potential world switching.
 
@@ -68,6 +68,10 @@ public class Player : MonoBehaviour
         if (Input.GetMouseButton(2))
         {
             UpdateLook();
+        }
+        if (Input.GetAxis("Jump") != 0)
+        {
+            GetComponent<Rigidbody>().AddForce(Vector3.up * 5);
         }
 
         UpdateChunkCoord();
