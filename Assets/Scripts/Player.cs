@@ -120,7 +120,7 @@ public class Player : MonoBehaviour
         if (currentChunkCoord != chunkCoord)
         {
             currentChunkCoord = chunkCoord;
-            currentWorld?.UpdateNearbyChunks(currentChunkCoord, renderDist, unloadDist);
+            currentWorld?.UpdatePlayerChunkPos(currentChunkCoord, renderDist, unloadDist);
         }
     }
 

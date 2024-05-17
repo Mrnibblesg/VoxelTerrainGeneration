@@ -189,6 +189,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 10
+  mouseSpeedX: 2
+  mouseSpeedY: 2
+  minMouseY: -10
+  maxMouseY: 40
 --- !u!54 &257204929
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -514,8 +518,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1069128794}
   - component: {fileID: 1069128795}
+  - component: {fileID: 1069128796}
   m_Layer: 0
-  m_Name: MapGenerator
+  m_Name: Controllers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -546,6 +551,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1da3429e438409408c999082c37b84d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1069128796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069128793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c46f3ca5541b82e46aee48d269478bd2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807

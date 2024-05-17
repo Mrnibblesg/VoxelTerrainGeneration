@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ using UnityEngine;
 //as we get ready for multiplayer setups.
 public class World
 {
-    private Dictionary<Vector3Int, Chunk> chunks;
+
     public readonly Material vertexColorMaterial = (Material) Resources.Load("Textures/Vertex Colors");
 
     //Height of world in chunks
@@ -21,8 +22,20 @@ public class World
 
     //Use queues to dictate which order chunks are loaded and unloaded.
     //This will be threaded. TODO.
-    private Queue<Vector3Int> loadQueue;
-    private Queue<Vector3Int> unloadQueue;
+
+    private Dictionary<Vector3Int, Chunk> chunks;
+    private HashSet<Vector3Int> chunksInProg; //Chunks that have been queued to generate
+    //TODO: Switch to priority queue. Prioritize nearest chunks.
+    private Queue<Vector3Int> loadQueue; //contains chunkCoord of unloaded chunks
+    //TODO: make a priority queue, furthest chunks unloaded first
+    private Queue<Vector3Int> unloadQueue; //contains loaded chunks
+
+    //TODO: Make a priority queue. Nearest first.
+    private HashSet<Vector3Int> unloadedNeighbors;
+
+    private Vector3Int playerChunkPos;
+    private int playerLoadDist;
+    private int playerUnloadDist;
 
     ChunkFactory chunkFactory;
 
@@ -32,9 +45,14 @@ public class World
         this.chunkSize = chunkSize;
         this.chunkHeight = chunkHeight;
         this.resolution = resolution;
+
         chunks = new();
+        unloadedNeighbors = new();
+        chunksInProg = new();
+
         loadQueue = new();
         unloadQueue = new();
+
         chunkFactory = new(this);
     }
 
@@ -44,52 +62,58 @@ public class World
     /// load/unload queue.
     /// </summary>
     /// <param name="chunkCoord"></param>
-    public void UpdateNearbyChunks(Vector3Int chunkCoord, int renderDist, int unloadDist)
+    public void UpdatePlayerChunkPos(Vector3Int chunkCoord, int renderDist, int unloadDist)
     {
-        //loop in growing taxicab distance
-        //Keep list of unloaded neighbor chunks? Check neighbor chunk list only.
-        //If a player were to teleport,
+        //For chained chunk updates if the player doesn't leave their chunk for a while
+        playerChunkPos = chunkCoord;
+        playerLoadDist = renderDist;
+        playerUnloadDist = unloadDist;
 
-        //Currently just attempt to load in a cube. Probably inefficient. TODO
-        for (int dx = -renderDist; dx < renderDist; dx++)
+        //If player chunk is unloaded, then start a new neighbor chunk thing here,
+        //starting a new loaded chunk structure centered around this position.
+        if (!chunks.ContainsKey(chunkCoord))
         {
-            for (int dy = -renderDist; dy < renderDist; dy++)
+            unloadedNeighbors.Add(chunkCoord);
+        }
+        
+        //Queue furthest chunks to unload. Only done when player coord changes.
+        foreach (KeyValuePair<Vector3Int, Chunk> p in chunks)
+        {
+            if (Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist)
             {
-                for (int dz = -renderDist; dz < renderDist; dz++)
-                {
-                    Vector3Int currentCoord = new Vector3Int(
-                        chunkCoord.x + dx,
-                        chunkCoord.y + dy,
-                        chunkCoord.z + dz);
-
-                    if (currentCoord.y >= worldHeight || currentCoord.y < 0)
-                    {
-                        continue;
-                    }
-                    if (!chunks.ContainsKey(currentCoord))
-                    {
-                        LoadChunk(currentCoord);
-                    }
-                }
+                unloadQueue.Enqueue(p.Key);
             }
         }
 
-        //Can't edit values within a foreach loop. Add to a queue.
-        foreach(KeyValuePair<Vector3Int, Chunk> pair in chunks)
-        {
-            if (Vector3Int.Distance(pair.Key, chunkCoord) > unloadDist)
-            {
-                unloadQueue.Enqueue(pair.Key);
-            }
-        }
-
-        //Unload chunks. This, along with loading chunks should be threaded
-        while (unloadQueue.Count > 0)
+        UpdateNeighborQueues();
+    }
+    private void UpdateNeighborQueues()
+    {
+        while (unloadQueue.Count != 0)
         {
             UnloadChunk(unloadQueue.Dequeue());
+        }
 
+        //Queue nearby chunks to load. Only if in range and not currently scheduled.
+        foreach (Vector3Int unloaded in unloadedNeighbors)
+        {
+            if (Vector3Int.Distance(unloaded, playerChunkPos) < playerLoadDist &&
+                !chunksInProg.Contains(unloaded))
+            {
+                loadQueue.Enqueue(unloaded);
+            }
+        }
+
+        while (loadQueue.Count != 0)
+        {
+            LoadChunk(loadQueue.Dequeue());
         }
     }
+
+    /// <summary>
+    /// Gets a chunk either from memory, or from chunk generator
+    /// </summary>
+    /// <param name="chunkCoords"></param>
     private void LoadChunk(Vector3Int chunkCoords)
     {
         Chunk c = GetChunk(chunkCoords);
@@ -103,23 +127,48 @@ public class World
         int y = chunkCoords.y;
         int z = chunkCoords.z;
         GameObject chunkObj = new GameObject($"Chunk{x},{y},{z}");
-
         Vector3Int position = new Vector3Int(x, y, z);
-        Chunk newChunk = chunkObj.AddComponent<Chunk>();
-        chunkFactory.GenerateChunk(newChunk, position);
-        //newChunk.Initialize(this);
-        chunks.Add(position, newChunk);
-
         chunkObj.transform.position = new(
             position.x * WorldController.Controller.chunkSize / resolution,
             position.y * WorldController.Controller.chunkHeight / resolution,
             position.z * WorldController.Controller.chunkSize / resolution
         );
 
+        Chunk newChunk = chunkObj.AddComponent<Chunk>();
+        chunkFactory.GenerateChunk(newChunk, position);
+
+        //chunks.Add(position, newChunk);
+        ChunkFinished(chunkCoords, newChunk);
+
         newChunk.RegenerateMesh();
         RefreshNeighbors(position);
 
     }
+    /// <summary>
+    /// Intended to be used as a callback function.
+    /// Called when a chunk is finished generating.
+    /// </summary>
+    /// <param name="chunkCoords"></param>
+    //While a chunk is loading, it remains as a neighbor chunk but is added to loading in progress set.
+    //When a chunk finishes loading, add its neighbors to the unloaded neighbors set if not loaded.
+    //  They get queued as well if they're in range.
+    private void ChunkFinished(Vector3Int chunkCoords, Chunk c)
+    {
+        //add to chunks
+        chunks.Add(chunkCoords, c);
+        
+        chunksInProg.Remove(chunkCoords);
+        unloadedNeighbors.Remove(chunkCoords);
+
+        AddUnloadedNeighbors(chunkCoords);
+
+        //Queue up more unloaded neighbors to generate if they're in range
+        UpdateNeighborQueues();
+    }
+    /// <summary>
+    /// Dispose of a chunk plus extra necessary bookkeeping.
+    /// </summary>
+    /// <param name="chunkCoords"></param>
     public void UnloadChunk(Vector3Int chunkCoords)
     {
 #if UNITY_EDITOR //Apparently use this if we're in the editor otherwise the destroy is ignored?
@@ -128,7 +177,64 @@ public class World
         GameObject.Destroy(chunks[chunkCoords].gameObject);
 #endif
         chunks.Remove(chunkCoords);
-        RefreshNeighbors(chunkCoords); 
+        unloadedNeighbors.Add(chunkCoords);
+
+        TryRemoveUnloadedNeighbors(chunkCoords);
+        TryRemoveUnloaded(chunkCoords);
+
+        RefreshNeighbors(chunkCoords);
+    }
+
+    /// <summary>
+    /// Try removing all unloaded neighbors. Maybe a source of inefficiency, 36 accesses per use.
+    /// </summary>
+    /// <param name="chunkCoord"></param>
+    private void TryRemoveUnloadedNeighbors(Vector3Int chunkCoord)
+    {
+        TryRemoveUnloaded(chunkCoord + Vector3Int.up);
+        TryRemoveUnloaded(chunkCoord + Vector3Int.down);
+        TryRemoveUnloaded(chunkCoord + Vector3Int.left);
+        TryRemoveUnloaded(chunkCoord + Vector3Int.right);
+        TryRemoveUnloaded(chunkCoord + Vector3Int.forward);
+        TryRemoveUnloaded(chunkCoord + Vector3Int.back);
+    }
+    /// <summary>
+    /// Remove an unloaded neighbor chunk if it is not a neighbor to a loaded chunk
+    /// </summary>
+    /// <param name="chunkCoord"></param>
+    private void TryRemoveUnloaded(Vector3Int chunkCoord)
+    {
+        if (chunks.ContainsKey(chunkCoord + Vector3Int.up) ||
+            chunks.ContainsKey(chunkCoord + Vector3Int.down) ||
+            chunks.ContainsKey(chunkCoord + Vector3Int.left) ||
+            chunks.ContainsKey(chunkCoord + Vector3Int.right) ||
+            chunks.ContainsKey(chunkCoord + Vector3Int.forward) ||
+            chunks.ContainsKey(chunkCoord + Vector3Int.back))
+        {
+            return;
+        }
+        unloadedNeighbors.Remove(chunkCoord);
+    }
+
+    /// <summary>
+    /// Attempt to add neighbors of this chunk to the unloaded neighbor set
+    /// </summary>
+    /// <param name="chunkCoord"></param>
+    private void AddUnloadedNeighbors(Vector3Int chunkCoord)
+    {
+        void addIfNotLoaded(Vector3Int neighborCoord)
+        {
+            if (!chunks.ContainsKey(neighborCoord))
+            {
+                unloadedNeighbors.Add(neighborCoord);
+            }
+        }
+        addIfNotLoaded(chunkCoord + Vector3Int.up);
+        addIfNotLoaded(chunkCoord + Vector3Int.down);
+        addIfNotLoaded(chunkCoord + Vector3Int.left);
+        addIfNotLoaded(chunkCoord + Vector3Int.right);
+        addIfNotLoaded(chunkCoord + Vector3Int.forward);
+        addIfNotLoaded(chunkCoord + Vector3Int.back);
     }
 
     //When a neighbor chunk is rendered, use this to refresh neighboring chunk meshes.
