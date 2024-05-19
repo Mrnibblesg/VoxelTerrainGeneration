@@ -3639,7 +3639,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1044076058}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1537390838}
+        m_TargetAssemblyTypeName: MenuScreenManager, Assembly-CSharp
+        m_MethodName: OpenCreateWorld
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1044076058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4063,7 +4075,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1127822333}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1537390838}
+        m_TargetAssemblyTypeName: MenuScreenManager, Assembly-CSharp
+        m_MethodName: OpenMainMenu
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1127822333
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5305,6 +5329,7 @@ GameObject:
   - component: {fileID: 1537390834}
   - component: {fileID: 1537390833}
   - component: {fileID: 1537390837}
+  - component: {fileID: 1537390838}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -5414,7 +5439,22 @@ MonoBehaviour:
   resolutionSlider: {fileID: 580813156}
   chunkSizeSlider: {fileID: 1723892146}
   generateWorldButton: {fileID: 485808405}
-  quitButton: {fileID: 1127822332}
+  quitButton: {fileID: 1897418}
+--- !u!114 &1537390838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1537390832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3db211bb38467f40a9c49ecd756e8df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainMenuPanel: {fileID: 993623679}
+  createWorldPanel: {fileID: 1003712955}
+  joinWorldPanel: {fileID: 1427692231}
 --- !u!1 &1569975218
 GameObject:
   m_ObjectHideFlags: 0
@@ -6665,7 +6705,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1967154890}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1537390838}
+        m_TargetAssemblyTypeName: MenuScreenManager, Assembly-CSharp
+        m_MethodName: OpenMainMenu
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1967154890
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6786,7 +6838,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2018772376}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1537390838}
+        m_TargetAssemblyTypeName: MenuScreenManager, Assembly-CSharp
+        m_MethodName: OpenJoinWorld
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2018772376
 MonoBehaviour:
   m_ObjectHideFlags: 0
