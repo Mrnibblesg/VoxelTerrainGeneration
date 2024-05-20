@@ -8,6 +8,9 @@ public class VoxelInteraction : MonoBehaviour
     private LookingAtVoxel looking;
     private VoxelType currType;
     private Player player;
+    private Vector3[] voxelInfo;
+    private Vector3 position;
+    private int breakCoefficient;
 
     // Start is called before the first frame update
     void Start()
@@ -15,12 +18,23 @@ public class VoxelInteraction : MonoBehaviour
         looking = gameObject.AddComponent<LookingAtVoxel>();
         player = GetComponent<Player>();
         currType = VoxelType.GRASS;
+        voxelInfo = null;
+        breakCoefficient = 2;
+        alt_position = null;
     }
 
     // Update is called once per frame
     void Update()
     {
-        // type selection
+        TypeSelection();
+
+        FirstPerson();
+
+        ThirdPerson();
+    }
+
+    private void TypeSelection()
+    {
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             currType = VoxelType.GRASS;
@@ -38,60 +52,107 @@ public class VoxelInteraction : MonoBehaviour
             currType = VoxelType.GLASS;
         }
 
-        // first person
+        if (Input.GetKeyDown(KeyCode.Period))
+        {
+            breakCoefficient++;
+            Debug.Log("Break Coefficient: " + breakCoefficient);
+        }
+        if (Input.GetKeyDown(KeyCode.Comma))
+        {
+            breakCoefficient--;
+            Debug.Log("Break Coefficient: " + breakCoefficient);
+        }
+    }
+
+    private void FirstPerson()
+    {
         if (Input.GetKeyDown(KeyCode.F))
         {
-            Vector3[] voxelInfo = looking.LookingAt(playerCamera);
+            voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
-                Vector3 position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
-                Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
-                if (voxel != null)
-                {
-                    player.TryBreak(position);
-                }
+                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                BreakVoxel(position);
             }
         }
 
         if (Input.GetKeyDown(KeyCode.T))
         {
-            Vector3[] voxelInfo = looking.LookingAt(playerCamera);
+            voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
-                Vector3 position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
-                Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
-                if (voxel != null && ((Voxel)voxel).type == VoxelType.AIR)
-                {
-                    player.TryPlace(position, currType);
-                }
+                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                PlaceVoxel(position);
             }
         }
+    }
 
-        // third person
+    private void ThirdPerson()
+    {
         if (Input.GetMouseButtonDown(0))
         {
-            Vector3[] voxelInfo = looking.ClickedVoxel(playerCamera);
+            voxelInfo = looking.ClickedVoxel(playerCamera);
             if (voxelInfo != null)
             {
-                Vector3 position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
-                Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
-                if (voxel != null)
+                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    player.TryBreak(position);
+                    
+                    MassBreak(position);
+                }
+                else
+                {
+                    BreakVoxel(position);
                 }
             }
         }
 
         if (Input.GetMouseButtonDown(1))
         {
-            Vector3[] voxelInfo = looking.ClickedVoxel(playerCamera);
+            voxelInfo = looking.ClickedVoxel(playerCamera);
             if (voxelInfo != null)
             {
-                Vector3 position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
-                Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
-                if (voxel != null && ((Voxel)voxel).type == VoxelType.AIR)
+                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                PlaceVoxel(position);
+            }
+        }
+    }
+
+    private void BreakVoxel(Vector3 position)
+    {
+        player.TryBreak(position);
+    }
+
+    private void PlaceVoxel(Vector3 position)
+    {
+        Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
+        if (voxel != null && ((Voxel)voxel).type == VoxelType.AIR)
+        {
+            player.TryPlace(position, currType);
+        }
+    }
+
+    private void MassBreak(Vector3 position)
+    {
+        Debug.Log("In Mass Break");
+
+        float voxelSize = 1 / player.CurrentWorld.resolution;
+
+        for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
+        {
+            Debug.Log("In the loop, i value is: " + i);
+            for (float j = 0; j <= voxelSize * breakCoefficient; j += voxelSize)
+            {
+                for (float k = 0; k <= voxelSize * breakCoefficient; k += voxelSize)
                 {
-                    player.TryPlace(position, currType);
+                    BreakVoxel(position + new Vector3(i, j, k));
+                    BreakVoxel(position + new Vector3(-i, j, k));
+                    BreakVoxel(position + new Vector3(i, j, -k));
+                    BreakVoxel(position + new Vector3(-i, j, -k));
+                    BreakVoxel(position + new Vector3(i, -j, k));
+                    BreakVoxel(position + new Vector3(-i, -j, k));
+                    BreakVoxel(position + new Vector3(i, -j, -k));
+                    BreakVoxel(position + new Vector3(-i, -j, -k));
                 }
             }
         }
