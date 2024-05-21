@@ -11,7 +11,18 @@ using UnityEngine;
 public class JobManager : MonoBehaviour
 {
     public static JobManager Manager { get; private set; }
-    private Dictionary<JobHandle, Action> running;
+
+
+    //Different classes might use jobs differently and expect different params in callbacks.
+    //Let classes define their own structs for their own uses.
+    private struct JobData
+    {
+        public JobHandle handle;
+        public Action<object> callback;
+        public object callbackData;
+    }
+
+    private List<JobData> jobs;
 
     private void Awake()
     {
@@ -21,32 +32,32 @@ public class JobManager : MonoBehaviour
         }
         Manager = this;
 
-        running = new();
+        jobs = new();
     }
 
     void Update()
     {
-        List<JobHandle> complete = new();
-        foreach (KeyValuePair<JobHandle, Action> p in running)
+        for (int i = jobs.Count-1; i >= 0; i--)
         {
-            if (p.Key.IsCompleted)
+            JobData current = jobs[i];
+            if (current.handle.IsCompleted)
             {
-                p.Key.Complete();
-                p.Value.Invoke();
-                complete.Add(p.Key);
-            } 
+                current.handle.Complete();
+                current.callback?.Invoke(current.callbackData);
+                jobs.RemoveAt(i);
+            }
         }
-
-        foreach (JobHandle j in complete)
-        {
-            running.Remove(j);
-        }
-
-        complete.Clear();
     }
     
-    public void addJob(JobHandle handle, Action callback)
+    public void addJob(JobHandle handle, Action<object> callback, object callbackData)
     {
-        running.Add(handle, callback);
+        jobs.Add(
+            new JobData
+            {
+                handle = handle,
+                callback = callback,
+                callbackData = callbackData
+            }
+        );
     }
 }

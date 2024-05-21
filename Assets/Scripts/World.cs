@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 
 // TODO In the future, this should *probably* only contain world info, chunks, and get chunks.
@@ -119,51 +123,51 @@ public class World
         Chunk c = GetChunk(chunkCoords);
         if (c)
         {
-            //don't generate duplicate chunks
             return;
         }
-        //if no chunk, configure and generate new one
-        int x = chunkCoords.x;
-        int y = chunkCoords.y;
-        int z = chunkCoords.z;
-        GameObject chunkObj = new GameObject($"Chunk{x},{y},{z}");
-        Vector3Int position = new Vector3Int(x, y, z);
-        chunkObj.transform.position = new(
-            position.x * WorldController.Controller.chunkSize / resolution,
-            position.y * WorldController.Controller.chunkHeight / resolution,
-            position.z * WorldController.Controller.chunkSize / resolution
-        );
-
-        Chunk newChunk = chunkObj.AddComponent<Chunk>();
-        chunkFactory.GenerateChunk(newChunk, position);
-
-        //chunks.Add(position, newChunk);
-        ChunkFinished(chunkCoords, newChunk);
-
-        newChunk.RegenerateMesh();
-        RefreshNeighbors(position);
-
+        if (chunkCoords.y < worldHeight &&
+            chunkCoords.y >= 0)
+        {
+            chunksInProg.Add(chunkCoords);
+            chunkFactory.RequestNewChunk(chunkCoords);
+        }
     }
     /// <summary>
-    /// Intended to be used as a callback function.
-    /// Called when a chunk is finished generating.
+    /// Called when a chunk finishes generating. Builds a new chunk.
     /// </summary>
     /// <param name="chunkCoords"></param>
     //While a chunk is loading, it remains as a neighbor chunk but is added to loading in progress set.
     //When a chunk finishes loading, add its neighbors to the unloaded neighbors set if not loaded.
     //  They get queued as well if they're in range.
-    private void ChunkFinished(Vector3Int chunkCoords, Chunk c)
+    public void ChunkFinished(Vector3Int chunkCoords, Voxel[,,] data)
     {
+        //if no chunk, configure and generate new one
+        GameObject chunkObj = new GameObject($"Chunk{chunkCoords.x},{chunkCoords.y},{chunkCoords.z}");
+        chunkObj.transform.position = new(
+            chunkCoords.x * chunkSize / resolution,
+            chunkCoords.y * chunkHeight / resolution,
+            chunkCoords.z * chunkSize / resolution
+        );
+
+        Chunk newChunk = chunkObj.AddComponent<Chunk>();
+        newChunk.Initialize(this);
+        newChunk.voxels = data;
+
         //add to chunks
-        chunks.Add(chunkCoords, c);
-        
+        chunks.Add(chunkCoords, newChunk);
+
+        //neighbor chunk bookkeeping
         chunksInProg.Remove(chunkCoords);
         unloadedNeighbors.Remove(chunkCoords);
 
         AddUnloadedNeighbors(chunkCoords);
 
-        //Queue up more unloaded neighbors to generate if they're in range
+        //Queue up new unloaded neighbors to generate if they're in range
         UpdateNeighborQueues();
+
+        //Regenerate mesh
+        newChunk.RegenerateMesh();
+        RefreshNeighbors(chunkCoords);
     }
     /// <summary>
     /// Dispose of a chunk plus extra necessary bookkeeping.
