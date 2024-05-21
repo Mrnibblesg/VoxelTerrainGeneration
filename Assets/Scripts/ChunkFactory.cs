@@ -35,25 +35,25 @@ public class ChunkFactory
     /// <param name="chunkCoords"></param>
     public void RequestNewChunk(Vector3Int chunkCoords)
     {
-        JobData data = new()
-        {
-            chunkCoord = chunkCoords,
-            voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.Persistent) //If this job takes more than 4 frames, switch to Allocator.Persistent
-        };
+            JobData data = new()
+            {
+                chunkCoord = chunkCoords,
+                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.Persistent) //If this job takes more than 4 frames, switch to Allocator.Persistent
+            };
 
-        ChunkGenJob chunkGenJob = new()
-        {
-            size = world.chunkSize,
-            height = world.chunkHeight,
-            seed = seed,
-            resolution = world.resolution,
-            coords = new int3(chunkCoords.x, chunkCoords.y, chunkCoords.z),
+            ChunkGenJob chunkGenJob = new()
+            {
+                size = world.chunkSize,
+                height = world.chunkHeight,
+                seed = seed,
+                resolution = world.resolution,
+                coords = new int3(chunkCoords.x, chunkCoords.y, chunkCoords.z),
 
-            voxels = data.voxels
-        };
+                voxels = data.voxels
+            };
 
-        JobManager.Manager.addJob(chunkGenJob.Schedule(), FinishChunkData, data);
-    }
+            JobManager.Manager.addJob(chunkGenJob.Schedule(), FinishChunkData, data);
+        }
     /// <summary>
     /// The callback used to return to when a chunk finishes generating.
     /// Calls world.chunkFinished()
