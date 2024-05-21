@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -206,6 +207,15 @@ public class World
     {
         SetVoxel(vec, new Voxel(type));
     }
+    public void SetVoxel(List<Vector3> vec, List<VoxelType> type)
+    {
+        List<Voxel> voxel = new List<Voxel>();
+        for (int i = 0; i < type.Count; i++)
+        {
+            voxel.Add(new Voxel(type[i]));
+        }
+        SetVoxel(vec, voxel);
+    }
     /// <summary>
     /// Set a voxel from the given world-space position
     /// </summary>
@@ -218,6 +228,35 @@ public class World
         if (c != null)
         {
             c.SetVoxel(c.transform.InverseTransformPoint(vec), voxel);
+        }
+    }
+
+    public void SetVoxel(List<Vector3> vec, List<Voxel> voxel)
+    {
+        Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>> chunks = new Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>>();
+        for (int i = 0; i < vec.Count; i++)
+        {
+            Chunk c = ChunkFromGlobal(vec[i]);
+            if (c == null)
+            {
+                continue;
+            }
+            
+            if (!chunks.ContainsKey(c))
+            {
+                List<Vector3> vecList = new List<Vector3>();
+                List<Voxel> voxelList = new List<Voxel>();
+                Tuple<List<Vector3>, List<Voxel>> container = new Tuple<List<Vector3>, List<Voxel>>(vecList, voxelList);
+                chunks.Add(c, container);
+            }
+            
+            chunks[c].Item1.Add(c.transform.InverseTransformPoint(vec[i]));
+            chunks[c].Item2.Add(voxel[i]);
+        }
+
+        foreach (var c in chunks)
+        {
+            c.Key.SetVoxel(c.Value.Item1, c.Value.Item2);
         }
     }
 }

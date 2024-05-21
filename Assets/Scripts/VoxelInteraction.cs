@@ -10,6 +10,7 @@ public class VoxelInteraction : MonoBehaviour
     private Player player;
     private Vector3[] voxelInfo;
     private Vector3 position;
+    Vector3? alt_position;
     private int breakCoefficient;
 
     // Start is called before the first frame update
@@ -97,8 +98,21 @@ public class VoxelInteraction : MonoBehaviour
                 position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
-                    
-                    MassBreak(position);
+                    if (Input.GetKey(KeyCode.LeftControl))
+                    {
+                        if (alt_position == null)
+                        {
+                            alt_position = position;
+                        }
+                        else
+                        {
+                            TwoPointBreak((Vector3)alt_position, position);
+                        }
+                    }
+                    else
+                    {
+                        MassBreak(position);
+                    }
                 }
                 else
                 {
@@ -116,6 +130,16 @@ public class VoxelInteraction : MonoBehaviour
                 PlaceVoxel(position);
             }
         }
+
+        /*if (Input.GetMouseButtonDown(0))
+        {
+            voxelInfo = looking.ClickedVoxel(playerCamera);
+            if (voxelInfo != null)
+            {
+                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                MassBreak(position);
+            }
+        }*/
     }
 
     private void BreakVoxel(Vector3 position)
@@ -135,6 +159,35 @@ public class VoxelInteraction : MonoBehaviour
     private void MassBreak(Vector3 position)
     {
         Debug.Log("In Mass Break");
+
+        List<Vector3> positions = new List<Vector3>();
+
+        float voxelSize = 1 / player.CurrentWorld.resolution;
+
+        for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
+        {
+            Debug.Log("In the loop, i value is: " + i);
+            for (float j = 0; j <= voxelSize * breakCoefficient; j += voxelSize)
+            {
+                for (float k = 0; k <= voxelSize * breakCoefficient; k += voxelSize)
+                {
+                    positions.Add(position + new Vector3(i, j, k));
+                    positions.Add(position + new Vector3(-i, j, k));
+                    positions.Add(position + new Vector3(i, j, -k));
+                    positions.Add(position + new Vector3(-i, j, -k));
+                    positions.Add(position + new Vector3(i, -j, k));
+                    positions.Add(position + new Vector3(-i, -j, k));
+                    positions.Add(position + new Vector3(i, -j, -k));
+                    positions.Add(position + new Vector3(-i, -j, -k));
+                }
+            }
+        }
+        player.TryBreak(positions);
+    }
+
+    private void TwoPointBreak(Vector3 alt_pos, Vector3 pos)
+    {
+        Debug.Log("In Two Point Break");
 
         float voxelSize = 1 / player.CurrentWorld.resolution;
 

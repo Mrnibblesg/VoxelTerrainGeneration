@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Profiling;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Chunk : MonoBehaviour
@@ -387,6 +388,32 @@ public class Chunk : MonoBehaviour
         voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
         UpdateNeighbors(pos.x, pos.y, pos.z);
         
+        // Update the mesh
+        // Brute force for now
+        RegenerateMesh();
+
+        return true;
+    }
+    public bool SetVoxel(List<Vector3> vec, List<Voxel> voxel)
+    {
+        for (int i = 0; i < vec.Count; i++)
+        {
+            //Scale the world-space coordinate to voxel-coordinate space
+            vec[i] *= parent.resolution;
+            Vector3Int pos = new Vector3Int(
+                Mathf.FloorToInt(vec[i].x),
+                Mathf.FloorToInt(vec[i].y),
+                Mathf.FloorToInt(vec[i].z)
+            );
+
+            bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
+            if (outside) { continue; }
+
+            voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+            UpdateNeighbors(pos.x, pos.y, pos.z);
+        }
+        
+
         // Update the mesh
         // Brute force for now
         RegenerateMesh();
