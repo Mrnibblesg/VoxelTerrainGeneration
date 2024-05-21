@@ -20,13 +20,20 @@ public class WorldController : MonoBehaviour
     private Dictionary<String, World> worlds;
     
     void Awake()
-    { 
+    {
+        DontDestroyOnLoad(this.gameObject);
         if (Controller != null)
         {
             throw new Exception("Only one instance of the WorldGenerator is allowed");
         }
         Controller = this;
         worlds = new();
+
+        //Main menu world params
+        resolution = 1;
+        worldHeight = 4;
+        chunkSize = 16;
+        chunkHeight = 16;
     }
 
     public void SetDimensions(int resolution, int height, int chunkSz, int chunkHt)
@@ -53,5 +60,17 @@ public class WorldController : MonoBehaviour
         player.GetComponent<Player>().CurrentWorld = w;
 
         worlds.Add("World " + worlds.Count + 1, w);
+    }
+
+    public void InitializeDefaultWorld()
+    {
+        World defaultWorld = new World(worldHeight, chunkSize, chunkHeight, resolution);
+        worlds.Add("DefaultWorld", defaultWorld);
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            player.GetComponent<MenuCameraController>().CurrentWorld = defaultWorld;
+            player.SetActive(true); // Disable player control in the main menu
+        }
     }
 }
