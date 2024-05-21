@@ -1,6 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 //The chunk factory is in charge of creating chunks. Chunk creation may be complex
@@ -9,80 +12,69 @@ using UnityEngine;
 //determine what voxels are what.
 public class ChunkFactory
 {
-
-    int seed;
+    uint seed;
     World world;
+
+    //Special data that is used when generating the world.
+    private struct JobData
+    {
+        public Vector3Int chunkCoord;
+        public NativeArray<Voxel> voxels;
+    }
 
     public ChunkFactory(World world)
     {
-        seed = 0;
+        seed = 1;
         this.world = world;
     }
-    public Chunk GenerateChunk(Chunk c, Vector3Int chunkCoords)
+
+    /// <summary>
+    /// Creates a job to build a new chunk.
+    /// </summary>
+    /// <param name="c"></param>
+    /// <param name="chunkCoords"></param>
+    public void RequestNewChunk(Vector3Int chunkCoords)
     {
-        c.Initialize(world);
-        RandomVoxels(c, chunkCoords);
-        SineFunction(c, chunkCoords);
-        return c;
-    }
-
-    private void RandomVoxels(Chunk c, Vector3Int coords)
-    {
-        //Delegate this to some kind of chunk generator factory
-        Array types = Enum.GetValues(typeof(VoxelType));
-
-        //Seeds don't really work the same way for a System random object.
-        //This generates random numbers one after another, whereas other noise
-        //functions are seeded then generate based off of space.
-        //so we gotta do it the weird way here
-        System.Random r = new System.Random(int.Parse($"{coords.x}{Math.Abs(coords.y)}{Math.Abs(coords.z)}"));
-
-        for (int x = 0; x < world.chunkSize; x++)
-        {
-            for (int y = 0; y < world.chunkHeight; y++)
+            JobData data = new()
             {
-                for (int z = 0; z < world.chunkSize; z++)
-                {
-                    VoxelType type = (VoxelType)types.GetValue(r.Next(1, types.Length - 1));
-                    c.voxels[x, y, z] = new Voxel(
-                         type,//(x + z) % 2 == 0 ? VoxelType.Type.GRASS : VoxelType.Type.DIRT, 
-                         false, false
-                    //(type == VoxelType.Type.GLASS ? true : false)
-                    //,(x + y + z) % 2 == 1
-                    );
-                }
-            }
+                chunkCoord = chunkCoords,
+                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.Persistent) //If this job takes more than 4 frames, switch to Allocator.Persistent
+            };
+
+            ChunkGenJob chunkGenJob = new()
+            {
+                size = world.chunkSize,
+                height = world.chunkHeight,
+                seed = seed,
+                resolution = world.resolution,
+                coords = new int3(chunkCoords.x, chunkCoords.y, chunkCoords.z),
+
+                voxels = data.voxels
+            };
+
+            JobManager.Manager.addJob(chunkGenJob.Schedule(), FinishChunkData, data);
+        }
+    /// <summary>
+    /// The callback used to return to when a chunk finishes generating.
+    /// Calls world.chunkFinished()
+    /// </summary>
+    /// <param name="results"></param>
+    public void FinishChunkData(object raw)
+    {
+        //Only need to convert the flat array into a 3d array
+        JobData results = (JobData)raw;
+        Voxel[,,] voxels = new Voxel[world.chunkSize, world.chunkHeight, world.chunkSize];
+
+        //Convert flat data array to 3d array
+        for (int i = 0; i < results.voxels.Length; i++)
+        {
+            voxels[i / (world.chunkHeight * world.chunkSize),
+                (i / world.chunkSize) % world.chunkHeight,
+                i % world.chunkSize] = results.voxels[i];
         }
 
-        for (int x = 0; x < world.chunkSize; x++)
-        {
-            for (int y = 0; y < world.chunkHeight; y++)
-            {
-                for (int z = 0; z < world.chunkSize; z++)
-                {
-                    c.MarkExposed(x, y, z);
-                }
-            }
-        }
-    }
-    private void SineFunction(Chunk c, Vector3Int chunkCoords)
-    {
-        Vector3 chunkPos = new Vector3(chunkCoords.x * world.chunkSize / world.resolution,
-            chunkCoords.y * world.chunkHeight / world.resolution,
-            chunkCoords.z * world.chunkSize / world.resolution);
-        for (int x = 0; x < world.chunkSize; x++)
-        {
-            for (int y = 0; y < world.chunkHeight; y++)
-            {
-                for (int z = 0; z < world.chunkSize; z++)
-                {
-                    Vector3 voxelPos = chunkPos + (new Vector3(x, y, z) / world.resolution);
-                    if (voxelPos.y > 10*Math.Sin((voxelPos.x)/16)*Math.Cos((voxelPos.z) / -16) + 10)
-                    {
-                        c.voxels[x, y, z].SetType(VoxelType.AIR);
-                    }
-                }
-            }
-        }
+        results.voxels.Dispose();
+        world.ChunkFinished(results.chunkCoord, voxels);
+        
     }
 }

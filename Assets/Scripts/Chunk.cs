@@ -3,21 +3,18 @@ using System.Collections.Generic;
 using Unity.Profiling;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class Chunk : MonoBehaviour
 {
     public Voxel[,,] voxels;
 
-    World parent;
+    public World parent;
 
     public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.RegenerateMesh"); //Profiling
 
     //more useful for chunks with many voxels
     Chunk[] neighbors;
-
-    private List<Vector3> meshVertices;
-    private List<Color32> meshColors;
-    private List<int> meshQuads;
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
@@ -58,260 +55,12 @@ public class Chunk : MonoBehaviour
     /// </summary>
     public void RegenerateMesh()
     {
-        s_ChunkGen.Begin();
-        meshVertices = new List<Vector3>();
-        meshColors = new List<Color32>();
-        meshQuads = new List<int>();
-
-        Mesh newMesh = new Mesh();
-        newMesh.name = gameObject.name;
-        //newMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-
-        GreedyMeshing();
-        newMesh.vertices = meshVertices.ToArray();
-        newMesh.colors32 = meshColors.ToArray();
-        newMesh.SetIndices(meshQuads.ToArray(), MeshTopology.Quads,0);
-
-        meshFilter.mesh = newMesh;
-        meshCollider.sharedMesh = newMesh;
-
-        newMesh.RecalculateNormals();
-        s_ChunkGen.End();
+        ChunkMeshGenerator.RequestNewMesh(this);
     }
-
-    /// <summary>
-    /// Uses greedy meshing to merge voxel faces producing a memory efficient
-    /// mesh.
-    /// </summary>
-    /// <remarks>Complicated.</remarks>
-    //Algorithm borrowed from:
-    //https://0fps.net/2012/07/07/meshing-minecraft-part-2/
-    private void GreedyMeshing()
+    public void ApplyNewMesh(Mesh m)
     {
-        int[] dimensions = new int[] { parent.chunkSize, parent.chunkHeight, parent.chunkSize };
-        //Iterate over the 3 axes.
-        //a variable representing an axis will change each iteration.
-
-        for (int normal = 0; normal < 3; normal++)
-        {
-            //The other 2 axes of the current slice direction.
-            //Not the same as texture mapping UVs.
-            int u = (normal + 1) % 3;
-            int v = (normal + 2) % 3;
-
-            //stores distinct types of vertices to
-            //turn into quads on current slice
-            int[,] mask = new int[dimensions[u],dimensions[v]];
-
-            //stores progress through the volume.
-            //each element is basically used as an iterator for that dimension.
-            int[] progress = new int[] { 0, 0, 0 };
-
-            //Add each element to your position to move up 1 slice
-            int[] normOff = new int[] { 0, 0, 0 };
-            normOff[normal] = 1;
-
-            //Compute mask for this slice
-            for (progress[normal] = -1; progress[normal] < dimensions[normal];)
-            {
-
-                int n = 0;
-                for (progress[u] = 0; progress[u] < dimensions[u]; progress[u]++)
-                {
-                    for (progress[v] = 0; progress[v] < dimensions[v]; progress[v]++, n++)
-                    {
-                        //Bounds checking/voxel type checking
-                        //Make sure to check the adjacent chunk if our needed voxel is outside this one
-                        //voxels below and above the current slice
-                        VoxelType above;
-                        /*                        VoxelType below;
-
-                                                if (progress[normal] >= 0)
-                                                {
-                                                    below = voxels[
-                                                        progress[0],
-                                                        progress[1],
-                                                        progress[2]].type;
-                                                }
-                                                else
-                                                {
-                                                    below = parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                                        VoxelCoordToGlobal(
-                                                        new(progress[0],
-                                                            progress[1],
-                                                            progress[2]))
-                                                        )?.type ?? VoxelType.AIR;
-                                                    if ( below != VoxelType.AIR)
-                                                    {
-                                                        print(parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                                        VoxelCoordToGlobal(
-                                                        new(progress[0],
-                                                            progress[1],
-                                                            progress[2]))
-                                                        ));
-                                                    }
-                                                }*/
-
-                        VoxelType below =
-                            (progress[normal] >= 0 ?
-                            voxels[progress[0],
-                                   progress[1],
-                                   progress[2]].type :
-                            parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                VoxelCoordToGlobal(
-                                new(progress[0],
-                                    progress[1],
-                                    progress[2]))
-                                )?.type ?? VoxelType.AIR); //A null voxel is treated like air
-
-                        above =
-                            (progress[normal] < dimensions[normal] - 1 ?
-                            voxels[progress[0]+normOff[0],
-                                   progress[1]+normOff[1],
-                                   progress[2]+normOff[2]].type :
-                            parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                VoxelCoordToGlobal(
-                                new(progress[0] + normOff[0],
-                                    progress[1] + normOff[1],
-                                    progress[2] + normOff[2]))
-                                )?.type ?? VoxelType.AIR);
-
-                        //no face if they're both a voxel or if the're both air
-                        if ((above == VoxelType.AIR) ==
-                            (below == VoxelType.AIR))
-                        {
-                            mask[progress[u], progress[v]] = 0;
-                        }
-                        else if (below != VoxelType.AIR)
-                        {
-                            mask[progress[u], progress[v]] = (int)below;
-                        }
-                        else
-                        {
-                            //A negative value means that the face is facing the
-                            //opposite direction.
-                            mask[progress[u], progress[v]] = -(int)above;
-                        }
-                    }
-                }
-                progress[normal]++;
-
-                //Create quads from the mask
-                for (int j = 0; j < dimensions[v]; j++)
-                {
-                    for (int i = 0; i < dimensions[u];)
-                    {
-                        int current = mask[i, j];
-                        
-                        if (current == 0)
-                        {
-                            i++;
-                            continue;
-                        }
-
-                        //Calculate width of quad
-                        int w;
-                        for (w = 1; i + w < dimensions[u] && current == mask[i + w, j]; w++) { }
-
-                        int h;
-                        //Calculate parent.chunkHeight of quad
-                        for (h = 1; j + h < dimensions[v]; h++)
-                        {
-                            for (int k = 0; k < w; k++)
-                            {
-                                if (current != mask[i+k,j+h])
-                                {
-                                    goto BreakHeight; //Break from 2 loops cleanly
-                                }
-                            }
-                        }
-                    BreakHeight:
-                        //we now have our quad: i and j are its starting pos,
-                        //w and h the width and parent.chunkHeight.
-                        progress[u] = i;
-                        progress[v] = j;
-                        //We apply the w and h in the correct dimension
-                        //according to our current axes so we can properly
-                        //calculate our quad coordinates.
-                        int[] uOff = new int[] { 0, 0, 0 };
-                        uOff[u] = w;
-                        int[] vOff = new int[] { 0, 0, 0 };
-                        vOff[v] = h;
-
-                        AddQuad(current, progress, uOff, vOff);
-
-                        //Mark the section of mask that the quad occupied as done.
-                        for (int k = 0; k < w; k++)
-                        {
-                            for (int l = 0; l < h; l++)
-                            {
-                                mask[i + k, j + l] = 0;
-                            }
-                        }
-                        i += w;
-                    }
-                }
-            }
-        }
-    }
-    /// <summary>
-    /// Add a quad to the current list of
-    /// mesh vertices, colors, and quad indices.
-    /// </summary>
-    /// <param name="type"></param>
-    /// <param name="pos"></param>
-    /// <param name="uOff"></param>
-    /// <param name="vOff"></param>
-    private void AddQuad(int type, int[] pos, int[] uOff, int[] vOff)
-    {
-        bool CCW = type < 0;
-        if (type < 0) type *= -1;
-        Color32 col = ((VoxelType) type).getVoxelAttributes().color;
-
-        int verts = meshVertices.Count;
-
-        meshVertices.Add( //Bottom left corner
-            new Vector3(
-            pos[0],
-            pos[1],
-            pos[2]) / parent.resolution);
-
-        meshVertices.Add( //Bottom right corner
-            new Vector3(
-            pos[0] + uOff[0],
-            pos[1] + uOff[1],
-            pos[2] + uOff[2]) / parent.resolution);
-
-        meshVertices.Add( // Top right corner
-            new Vector3(
-            pos[0] + uOff[0] + vOff[0],
-            pos[1] + uOff[1] + vOff[1],
-            pos[2] + uOff[2] + vOff[2]) / parent.resolution);
-
-        meshVertices.Add( // Top left corner
-            new Vector3(
-            pos[0] + vOff[0],
-            pos[1] + vOff[1],
-            pos[2] + vOff[2]) / parent.resolution);
-
-        meshColors.Add(col);
-        meshColors.Add(col);
-        meshColors.Add(col);
-        meshColors.Add(col);
-        if (CCW)
-        {
-            meshQuads.Add(verts + 3);
-            meshQuads.Add(verts + 2);
-            meshQuads.Add(verts + 1);
-            meshQuads.Add(verts);
-        }
-        else
-        {
-            meshQuads.Add(verts);
-            meshQuads.Add(verts + 1);
-            meshQuads.Add(verts + 2);
-            meshQuads.Add(verts + 3);
-        }
+        meshFilter.mesh = m;
+        meshCollider.sharedMesh = m;
     }
 
     bool VoxelHasTransparency(int x, int y, int z)

@@ -21,6 +21,22 @@ public class MainMenu : MonoBehaviour
     {
         generateWorldButton.onClick.AddListener(GenerateWorld);
         quitButton.onClick.AddListener(QuitGame);
+
+        InitializeDefaultWorld();
+    }
+
+    void InitializeDefaultWorld()
+    {
+        WorldController worldController = FindObjectOfType<WorldController>();
+        if (worldController != null)
+        {
+            Debug.Log("Initializing default world");
+            worldController.InitializeDefaultWorld();
+        }
+        else
+        {
+            Debug.LogError("WorldController not found in the MainMenu scene.");
+        }
     }
 
     void GenerateWorld()
