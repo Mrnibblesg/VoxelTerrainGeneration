@@ -9,7 +9,8 @@ public enum VoxelType
     GRASS,
     DIRT,
     STONE,
-    GLASS
+    GLASS,
+    WATER_SOURCE
 }
 
 public static class VoxelExtensions
@@ -33,6 +34,7 @@ public static class VoxelExtensions
             VoxelType.DIRT => new VoxelAttributes(new Color(0.46f, 0.333f, 0.169f)),
             VoxelType.STONE => new VoxelAttributes(new Color(0.3f, 0.3f, 0.3f)),
             VoxelType.GLASS => new VoxelAttributes(new Color(0.99f, 0.99f, 0.99f, 0.1f)),
+            VoxelType.WATER_SOURCE => new VoxelAttributes(new Color(0, 0, 0.5f, 0.5f)),
 
             _ => throw new System.NotImplementedException()
         };

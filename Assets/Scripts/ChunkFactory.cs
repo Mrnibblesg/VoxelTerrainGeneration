@@ -45,6 +45,7 @@ public class ChunkFactory
             {
                 size = world.chunkSize,
                 height = world.chunkHeight,
+                waterHeight = world.waterHeight,
                 seed = seed,
                 resolution = world.resolution,
                 coords = new int3(chunkCoords.x, chunkCoords.y, chunkCoords.z),
@@ -52,7 +53,7 @@ public class ChunkFactory
                 voxels = data.voxels
             };
 
-            JobManager.Manager.addJob(chunkGenJob.Schedule(), FinishChunkData, data);
+            JobManager.Manager.AddJob(chunkGenJob.Schedule(), FinishChunkData, data);
         }
     /// <summary>
     /// The callback used to return to when a chunk finishes generating.

@@ -16,6 +16,7 @@ public class WorldController : MonoBehaviour
     //Dimensions of chunk in the amount of voxels
     public int chunkSize { get; private set; }
     public int chunkHeight { get; private set; }
+    public int waterHeight { get; private set; }
 
     private Dictionary<String, World> worlds;
     
@@ -34,15 +35,16 @@ public class WorldController : MonoBehaviour
         worldHeight = 4;
         chunkSize = 16;
         chunkHeight = 16;
+        waterHeight = 4;
     }
 
-    public void SetDimensions(int resolution, int height, int chunkSz, int chunkHt)
+    public void SetDimensions(int resolution, int height, int chunkSz, int chunkHt, int waterHeight)
     {
         this.resolution = Mathf.Pow(2,resolution-1); //Resolution in powers of 2 to avoid odd numbers which make rendering annoying due to rounding errors
-        worldHeight = height;
-        chunkSize = chunkSz;
-        chunkHeight = chunkSz;//chunkHt;
-
+        this.worldHeight = height;
+        this.chunkSize = chunkSz;
+        this.chunkHeight = chunkSz; //chunkHt;
+        this.waterHeight = waterHeight;
     }
 
     //Different worlds should reside in different scenes.
@@ -53,7 +55,7 @@ public class WorldController : MonoBehaviour
     ///
     public void CreateWorld() //race condition between this and Player.Start TODO. It's hard to set the player's initial world.
     {
-        World w = new World(worldHeight, chunkSize, chunkHeight, resolution);
+        World w = new World(worldHeight, chunkSize, chunkHeight, waterHeight, resolution);
         GameObject player = GameObject.FindGameObjectWithTag("Player") ?? throw new Exception("There must exist a player with the \"Player\" tag.");
         //ensure the player is loaded into the correct scene if we're having
         //different worlds exist in separate scenes.
@@ -64,7 +66,7 @@ public class WorldController : MonoBehaviour
 
     public void InitializeDefaultWorld()
     {
-        World defaultWorld = new World(worldHeight, chunkSize, chunkHeight, resolution);
+        World defaultWorld = new World(worldHeight, chunkSize, chunkHeight, waterHeight, resolution);
         worlds.Add("DefaultWorld", defaultWorld);
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
