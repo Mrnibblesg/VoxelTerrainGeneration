@@ -53,6 +53,11 @@ public class VoxelInteraction : MonoBehaviour
             currType = VoxelType.GLASS;
         }
 
+        if (Input.GetKeyDown(KeyCode.Alpha5))
+        {
+            currType = VoxelType.WATER_SOURCE;
+        }
+
         if (Input.GetKeyDown(KeyCode.Period))
         {
             breakCoefficient++;

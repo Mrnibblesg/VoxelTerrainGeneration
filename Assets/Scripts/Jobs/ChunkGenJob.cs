@@ -15,6 +15,7 @@ public struct ChunkGenJob : IJob
     [ReadOnly]
     public int size;
     public int height;
+    public int waterHeight;
     public uint seed;
     public float resolution;
     public int3 coords;
@@ -85,7 +86,15 @@ public struct ChunkGenJob : IJob
                     {
                         break;
                     }
-                    voxels[height * size * x + size * y + z] = new Voxel(VoxelType.AIR);
+
+                    if (chunkPos.y + (y / resolution) <= waterHeight)
+                    {
+                        voxels[height * size * x + size * y + z] = new Voxel(VoxelType.WATER_SOURCE);
+                    }
+                    else
+                    {
+                        voxels[height * size * x + size * y + z] = new Voxel(VoxelType.AIR);
+                    }
                 }
 
             }

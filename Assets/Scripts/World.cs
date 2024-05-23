@@ -17,6 +17,7 @@ public class World
 
     //Height of world in chunks
     public int worldHeight;
+    public int waterHeight;
 
     //Dimensions of chunk in the amount of voxels
     public readonly int chunkSize;
@@ -43,11 +44,12 @@ public class World
 
     ChunkFactory chunkFactory;
 
-    public World(int worldHeight, int chunkSize, int chunkHeight, float resolution)
+    public World(int worldHeight, int chunkSize, int chunkHeight, int waterHeight, float resolution)
     {
         this.worldHeight = worldHeight;
         this.chunkSize = chunkSize;
         this.chunkHeight = chunkHeight;
+        this.waterHeight = waterHeight;
         this.resolution = resolution;
 
         chunks = new();

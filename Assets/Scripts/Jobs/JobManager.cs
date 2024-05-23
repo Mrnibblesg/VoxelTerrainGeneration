@@ -50,7 +50,7 @@ public class JobManager : MonoBehaviour
         }
     }
     
-    public void addJob(JobHandle handle, Action<object> callback, object callbackData)
+    public void AddJob(JobHandle handle, Action<object> callback, object callbackData)
     {
         jobs.Add(
             new JobData
