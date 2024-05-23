@@ -143,8 +143,13 @@ public class Chunk : MonoBehaviour
 
         return true;
     }
-    public bool SetVoxel(List<Vector3> vec, List<Voxel> voxel)
+    public bool SetVoxels(List<Vector3> vec, List<Voxel> voxel)
     {
+        if (vec.Count != voxel.Count)
+        {
+            return false;
+        }
+
         for (int i = 0; i < vec.Count; i++)
         {
             //Scale the world-space coordinate to voxel-coordinate space
@@ -159,9 +164,7 @@ public class Chunk : MonoBehaviour
             if (outside) { continue; }
 
             voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
-            UpdateNeighbors(pos.x, pos.y, pos.z);
         }
-        
 
         // Update the mesh
         // Brute force for now

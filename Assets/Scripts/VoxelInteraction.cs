@@ -171,7 +171,6 @@ public class VoxelInteraction : MonoBehaviour
 
         for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
         {
-            Debug.Log("In the loop, i value is: " + i);
             for (float j = 0; j <= voxelSize * breakCoefficient; j += voxelSize)
             {
                 for (float k = 0; k <= voxelSize * breakCoefficient; k += voxelSize)
@@ -187,7 +186,8 @@ public class VoxelInteraction : MonoBehaviour
                 }
             }
         }
-        player.TryBreak(positions);
+
+        player.TryBreakList(positions);
     }
 
     private void TwoPointBreak(Vector3 alt_pos, Vector3 pos)

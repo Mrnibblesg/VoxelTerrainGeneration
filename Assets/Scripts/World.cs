@@ -318,14 +318,14 @@ public class World
     {
         SetVoxel(vec, new Voxel(type));
     }
-    public void SetVoxel(List<Vector3> vec, List<VoxelType> type)
+    public void SetVoxels(List<Vector3> vec, List<VoxelType> type)
     {
         List<Voxel> voxel = new List<Voxel>();
         for (int i = 0; i < type.Count; i++)
         {
             voxel.Add(new Voxel(type[i]));
         }
-        SetVoxel(vec, voxel);
+        SetVoxels(vec, voxel);
     }
     /// <summary>
     /// Set a voxel from the given world-space position
@@ -341,8 +341,13 @@ public class World
             c.SetVoxel(c.transform.InverseTransformPoint(vec), voxel);
         }
     }
-
-    public void SetVoxel(List<Vector3> vec, List<Voxel> voxel)
+    /// <summary>
+    /// Set a list of voxels from the given world-space positions
+    /// </summary>
+    /// <param name="vec"></param>
+    /// <param name="voxel"></param>
+    /// <exception cref="Exception"></exception>
+    public void SetVoxels(List<Vector3> vec, List<Voxel> voxel)
     {
         Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>> chunks = new Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>>();
         for (int i = 0; i < vec.Count; i++)
@@ -367,7 +372,7 @@ public class World
 
         foreach (var c in chunks)
         {
-            c.Key.SetVoxel(c.Value.Item1, c.Value.Item2);
+            c.Key.SetVoxels(c.Value.Item1, c.Value.Item2);
         }
     }
 }
