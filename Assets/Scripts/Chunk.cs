@@ -135,7 +135,6 @@ public class Chunk : MonoBehaviour
         if (outside) { return false; }
 
         voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
-        UpdateNeighbors(pos.x, pos.y, pos.z);
         
         // Update the mesh
         // Brute force for now
