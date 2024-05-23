@@ -8,6 +8,7 @@ public class MainMenu : MonoBehaviour
     public Slider heightSlider;
     public Slider resolutionSlider;
     public Slider chunkSizeSlider;
+    public Slider waterHeightSlider;
     public Button generateWorldButton;
     public Button quitButton;
 
@@ -16,6 +17,7 @@ public class MainMenu : MonoBehaviour
     private int height;
     private int resolution;
     private int chunkSize;
+    private int waterHeight;
 
     void Start()
     {
@@ -45,9 +47,11 @@ public class MainMenu : MonoBehaviour
         height = (int)heightSlider.value;
         resolution = (int)resolutionSlider.value;
         chunkSize = (int)chunkSizeSlider.value;
+        waterHeight = (int)waterHeightSlider.value;
+
 
         // Debug to ensure values are captured correctly
-        Debug.Log($"Generating world with seed: {seed}, height: {height}, resolution: {resolution}, chunk size: {chunkSize}");
+        Debug.Log($"Generating world with seed: {seed}, height: {height}, resolution: {resolution}, chunk size: {chunkSize}, water height: {waterHeight}");
 
         // Load the world generation scene
         SceneManager.LoadScene("Za Warudo", LoadSceneMode.Single);
@@ -59,7 +63,7 @@ public class MainMenu : MonoBehaviour
         WorldController worldController = FindObjectOfType<WorldController>();
         if (worldController != null)
         {
-            worldController.SetDimensions(resolution, height, chunkSize, chunkSize); // chunk height and size the same, will make cubes
+            worldController.SetDimensions(resolution, height, chunkSize, chunkSize, waterHeight); // chunk height and size the same, will make cubes
             // resolution is controlling world size right now, could change to render distance?
             worldController.CreateWorld();
         }
