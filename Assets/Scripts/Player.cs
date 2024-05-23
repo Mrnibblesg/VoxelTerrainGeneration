@@ -132,14 +132,14 @@ public class Player : MonoBehaviour
     {
         currentWorld?.SetVoxel(pos, VoxelType.AIR);
     }
-    public void TryBreak(List<Vector3> pos)
+    public void TryBreakList(List<Vector3> pos)
     {
         List<VoxelType> types = new List<VoxelType>();
         for (int i = 0; i < pos.Count; i++)
         {
             types.Add(VoxelType.AIR);
         }
-        currentWorld?.SetVoxel(pos, types);
+        currentWorld?.SetVoxels(pos, types);
     }
     /// <summary>
     /// Attempt to place a block in the current world, at world-space position.
