@@ -12,7 +12,6 @@ using UnityEngine.UIElements;
 //as we get ready for multiplayer setups.
 public class World
 {
-
     public readonly Material vertexColorMaterial = (Material) Resources.Load("Textures/Vertex Colors");
 
     //Height of world in chunks
@@ -25,8 +24,6 @@ public class World
     public readonly float resolution;
 
     //Use queues to dictate which order chunks are loaded and unloaded.
-    //This will be threaded. TODO.
-
     private Dictionary<Vector3Int, Chunk> chunks;
     private HashSet<Vector3Int> chunksInProg; //Chunks that have been queued to generate
     //TODO: Switch to priority queue. Prioritize nearest chunks.

@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Profiling;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class Chunk : MonoBehaviour
 {
@@ -11,10 +9,11 @@ public class Chunk : MonoBehaviour
 
     public World parent;
 
-    public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.RegenerateMesh"); //Profiling
+    //Store refs to neighbors used when you request a new mesh
+    public Chunk[] neighbors;
+    //up, down, left, right, forward, back
 
-    //more useful for chunks with many voxels
-    Chunk[] neighbors;
+    public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.RegenerateMesh"); //Profiling
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
@@ -26,6 +25,8 @@ public class Chunk : MonoBehaviour
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
         meshRenderer.material = parent.vertexColorMaterial;
+
+        neighbors = new Chunk[6];
 
         this.parent = parent;
 
@@ -55,6 +56,7 @@ public class Chunk : MonoBehaviour
     /// </summary>
     public void RegenerateMesh()
     {
+        updateNeighborChunks();
         ChunkMeshGenerator.RequestNewMesh(this);
     }
     public void ApplyNewMesh(Mesh m)
@@ -242,6 +244,18 @@ public class Chunk : MonoBehaviour
     private Vector3 VoxelCoordToGlobal(Vector3 coord)
     {
         return transform.position + (coord / parent.resolution);
+    }
+    private void updateNeighborChunks()
+    {
+        Vector3 chunkPos = new(transform.position.x, transform.position.y, transform.position.z);
+
+        neighbors[0] = parent.ChunkFromGlobal(chunkPos + (Vector3.up * parent.chunkHeight));
+        neighbors[1] = parent.ChunkFromGlobal(chunkPos + (Vector3.down * parent.chunkHeight));
+        neighbors[2] = parent.ChunkFromGlobal(chunkPos + (Vector3.left * parent.chunkSize));
+        neighbors[3] = parent.ChunkFromGlobal(chunkPos + (Vector3.right * parent.chunkSize));
+        neighbors[4] = parent.ChunkFromGlobal(chunkPos + (Vector3.forward * parent.chunkSize));
+        neighbors[5] = parent.ChunkFromGlobal(chunkPos + (Vector3.back * parent.chunkSize));
+        Gizmos.color = Color.black;
     }
 
     //Debug only

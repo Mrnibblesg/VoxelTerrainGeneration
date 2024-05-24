@@ -26,7 +26,7 @@ public struct ChunkGenJob : IJob
     public void Execute()
     {
         RandomVoxels();
-        Perlin();
+        //Perlin();
     }
     private void RandomVoxels()
     {

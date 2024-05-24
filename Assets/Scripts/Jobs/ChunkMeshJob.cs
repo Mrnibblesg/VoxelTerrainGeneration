@@ -29,9 +29,14 @@ public struct ChunkMeshJob : IJob
         verticesLength = 0;
         GreedyMeshing();
     }
+
+    //index into the given voxels. Voxels are currently given in a flat array,
+    //and if you imagine the 3d representation, the current chunk's voxels are
+    //spaced out from the edges by 1 space. The first layer of the neighboring
+    //chunks fill the space between the actual chunk and the edge of the array.
     private Voxel voxel(int x, int y, int z)
     {
-        return voxels[height * size * x + size * y + z];
+        return voxels[(x + 1) * (height+2) * (size+2) + (y + 1) * (size + 2) + (z+1)];
     }
     /// <summary>
     /// Uses greedy meshing to merge voxel faces producing a memory efficient
@@ -99,29 +104,15 @@ public struct ChunkMeshJob : IJob
                         //Bounds checking/voxel type checking
                         //Make sure to check the adjacent chunk if our needed voxel is outside this one
                         //voxels below and above the current slice
-                        VoxelType below =
-                            (progress[normal] >= 0 ?
-                            voxel( progress[0],
-                                   progress[1],
-                                   progress[2]).type :
-                            /*parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                VoxelCoordToGlobal(
-                                new(progress[0],
-                                    progress[1],
-                                    progress[2]))
-                                )?.type ??*/ VoxelType.AIR); //A null voxel is treated like air
+                        VoxelType below = voxel(
+                            progress[0],
+                            progress[1],
+                            progress[2]).type;
 
-                        VoxelType above =
-                            (progress[normal] < dims[normal] - 1 ?
-                            voxel( progress[0] + normOff[0],
-                                   progress[1] + normOff[1],
-                                   progress[2] + normOff[2]).type :
-                            /*parent.VoxelFromGlobal( //local voxel coordinate -> global position -> voxel
-                                VoxelCoordToGlobal(
-                                new(progress[0] + normOff[0],
-                                    progress[1] + normOff[1],
-                                    progress[2] + normOff[2]))
-                                )?.type ?? */VoxelType.AIR);
+                        VoxelType above = voxel(
+                            progress[0] + normOff[0],
+                            progress[1] + normOff[1],
+                            progress[2] + normOff[2]).type;
 
                         //no face if they're both a voxel or if the're both air
                         if ((above == VoxelType.AIR) ==

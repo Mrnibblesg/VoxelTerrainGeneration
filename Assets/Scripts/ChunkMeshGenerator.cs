@@ -22,20 +22,64 @@ public class ChunkMeshGenerator
         JobData jobData = new()
         {
             requester = c,
-            vertices = new(Allocator.Persistent),
-            quads = new(Allocator.Persistent),
-            colors = new(Allocator.Persistent)
+            vertices = new(Allocator.TempJob),
+            quads = new(Allocator.TempJob),
+            colors = new(Allocator.TempJob)
         };
 
-        //flatten the voxel array
-        NativeArray<Voxel> flattened = new(size * height * size, Allocator.Persistent);
-        for (int i = 0; i < flattened.Length; i++)
+        //flatten the voxel array, make space for the first layer of neighboring chunks
+        NativeArray<Voxel> flattened = new((size + 2) * (height + 2) * (size + 2), Allocator.TempJob);
+
+        //Place the original chunk data in the center of the flat array.
+        for (int x = 0; x < size; x++)
         {
-            flattened[i] = c.voxels[
-                i / (height * size),
-                (i / size) % height,
-                i % size];
+            for (int y = 0; y < height; y++)
+            {
+                for (int z = 0; z < size; z++)
+                {
+                    flattened[(x + 1) * (height+2) * (size+2) + (y + 1) * (size + 2) + (z + 1)] = c.voxels[x, y, z];
+                }
+            }
         }
+
+        //Copy the top/bottom neighbor chunk slices
+        for (int x = 0; x < size; x++)
+        {
+            for (int z = 0; z < size; z++)
+            {
+                //set the top of the input data as the bottom of the above chunk
+                flattened[(x+1) * (height+2) * (size+2) + (height+1) * (size+2) + (z+1)] = 
+                    c.neighbors[0]?.voxels[x, 0, z] ?? new Voxel(VoxelType.AIR);
+
+                //set bottom of input as top of below chunk
+                flattened[(x) * (height+2) * (size+2) + (z)] =
+                    c.neighbors[1]?.voxels[x, height - 1, z] ?? new Voxel(VoxelType.AIR);
+            }
+        }
+        /*        //left/right
+                for (int y = 0; y < height; y++)
+                {
+                    for (int z = 0; z < size; z++)
+                    {
+                        //copy the right of the left chunk, left of the right chunk
+                        flattened[0 * height * size + z] =
+                            c.neighbors[2]?.voxels[size-1, y, z] ?? new Voxel(VoxelType.AIR);
+                        flattened[(size+1) * height * size + y * size + z] =
+                            c.neighbors[3]?.voxels[0, y, z] ?? new Voxel(VoxelType.AIR);
+                    }
+                }
+                //front/back
+                for (int x = 0; x < size; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        //copy the back of the front chunk, front of the back chunk
+                        flattened[x * height * size + y * size + size + 1] =
+                            c.neighbors[4]?.voxels[x, y, 0] ?? new Voxel(VoxelType.AIR);
+                        flattened[x * height * size + y * size] =
+                            c.neighbors[5]?.voxels[x, y, size - 1] ?? new Voxel(VoxelType.AIR);
+                    }
+                }*/
 
         ChunkMeshJob chunkMeshJob = new()
         {
@@ -66,9 +110,9 @@ public class ChunkMeshGenerator
         newMesh.name = results.requester.name;
 
         //Unfortunately there is no direct conversion from NativeList to a managed array. TODO. This is currently inefficient. Death by 1000 cuts type-beat. ya know.
-        NativeArray<float3> nativeVerts = results.vertices.ToArray(Allocator.Persistent);
-        NativeArray<int> nativeQuads = results.quads.ToArray(Allocator.Persistent);
-        NativeArray<Color32> nativeColors = results.colors.ToArray(Allocator.Persistent);
+        NativeArray<float3> nativeVerts = results.vertices.ToArray(Allocator.TempJob);
+        NativeArray<int> nativeQuads = results.quads.ToArray(Allocator.TempJob);
+        NativeArray<Color32> nativeColors = results.colors.ToArray(Allocator.TempJob);
 
         Vector3[] vecVerts = new Vector3[nativeVerts.Length];
         for (int i = 0; i < nativeVerts.Length; i++)
