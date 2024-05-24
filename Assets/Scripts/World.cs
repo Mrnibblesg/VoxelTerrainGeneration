@@ -12,7 +12,6 @@ using UnityEngine.UIElements;
 //as we get ready for multiplayer setups.
 public class World
 {
-
     public readonly Material vertexColorMaterial = (Material) Resources.Load("Textures/Vertex Colors");
 
     //Height of world in chunks
@@ -24,6 +23,9 @@ public class World
     public readonly int chunkHeight;
 
     public readonly float resolution;
+    public readonly string worldName;
+
+    private List<Player> players = new List<Player>();
 
     //Use queues to dictate which order chunks are loaded and unloaded.
     //This will be threaded. TODO.
@@ -44,13 +46,14 @@ public class World
 
     ChunkFactory chunkFactory;
 
-    public World(int worldHeight, int chunkSize, int chunkHeight, int waterHeight, float resolution)
+    public World(int worldHeight, int chunkSize, int chunkHeight, int waterHeight, float resolution, string worldName)
     {
         this.worldHeight = worldHeight;
         this.chunkSize = chunkSize;
         this.chunkHeight = chunkHeight;
         this.waterHeight = waterHeight;
         this.resolution = resolution;
+        this.worldName = worldName;
 
         chunks = new();
         unloadedNeighbors = new();
@@ -285,9 +288,9 @@ public class World
     public Chunk ChunkFromGlobal(Vector3 global)
     {
         Vector3Int chunkCoordinates = new Vector3Int(
-            Mathf.FloorToInt(global.x / (WorldController.Controller.chunkSize / resolution)),
-            Mathf.FloorToInt(global.y / (WorldController.Controller.chunkHeight / resolution)),
-            Mathf.FloorToInt(global.z / (WorldController.Controller.chunkSize / resolution)));
+            Mathf.FloorToInt(global.x / (chunkSize / resolution)),
+            Mathf.FloorToInt(global.y / (chunkHeight / resolution)),
+            Mathf.FloorToInt(global.z / (chunkSize / resolution)));
 
         return GetChunk(chunkCoordinates);
     }
@@ -374,5 +377,15 @@ public class World
         {
             c.Key.SetVoxels(c.Value.Item1, c.Value.Item2);
         }
+    }
+
+    public bool Contains(Player player)
+    {
+        return players.Contains(player);
+    }
+
+    public void AddPlayer(Player player)
+    {
+        players.Add(player);
     }
 }
