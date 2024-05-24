@@ -52,34 +52,36 @@ public class ChunkMeshGenerator
                     c.neighbors[0]?.voxels[x, 0, z] ?? new Voxel(VoxelType.AIR);
 
                 //set bottom of input as top of below chunk
-                flattened[(x) * (height+2) * (size+2) + (z)] =
+                flattened[(x+1) * (height+2) * (size+2) + (z+1)] =
                     c.neighbors[1]?.voxels[x, height - 1, z] ?? new Voxel(VoxelType.AIR);
             }
         }
-        /*        //left/right
-                for (int y = 0; y < height; y++)
-                {
-                    for (int z = 0; z < size; z++)
-                    {
-                        //copy the right of the left chunk, left of the right chunk
-                        flattened[0 * height * size + z] =
-                            c.neighbors[2]?.voxels[size-1, y, z] ?? new Voxel(VoxelType.AIR);
-                        flattened[(size+1) * height * size + y * size + z] =
-                            c.neighbors[3]?.voxels[0, y, z] ?? new Voxel(VoxelType.AIR);
-                    }
-                }
-                //front/back
-                for (int x = 0; x < size; x++)
-                {
-                    for (int y = 0; y < height; y++)
-                    {
-                        //copy the back of the front chunk, front of the back chunk
-                        flattened[x * height * size + y * size + size + 1] =
-                            c.neighbors[4]?.voxels[x, y, 0] ?? new Voxel(VoxelType.AIR);
-                        flattened[x * height * size + y * size] =
-                            c.neighbors[5]?.voxels[x, y, size - 1] ?? new Voxel(VoxelType.AIR);
-                    }
-                }*/
+        //left/right
+        for (int y = 0; y < height; y++)
+        {
+            for (int z = 0; z < size; z++)
+            {
+                //Set the left of the input chunk as the right slice of the left chunk
+                flattened[(y+1) * (height+2) + (z+1)] =
+                    c.neighbors[2]?.voxels[size - 1, y, z] ?? new Voxel(VoxelType.AIR);
+                //Set the right of the input as the left slice of the right chunk.
+                flattened[(size + 1) * (height + 2) * (size + 2) + (y+1) * (size+2) + (z+1)] =
+                    c.neighbors[3]?.voxels[0, y, z] ?? new Voxel(VoxelType.AIR);
+            }
+        }
+        //front/back
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                //Set the back of the input as the front of the back chunk
+                flattened[(x+1) * (height+2) * (size+2) + (y+1) * (size+2) + size + 1] =
+                    c.neighbors[4]?.voxels[x, y, 0] ?? new Voxel(VoxelType.AIR);
+                //Set the front of the input as the back of the front
+                flattened[(x + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2)] =
+                    c.neighbors[5]?.voxels[x, y, size - 1] ?? new Voxel(VoxelType.AIR);
+            }
+        }
 
         ChunkMeshJob chunkMeshJob = new()
         {
