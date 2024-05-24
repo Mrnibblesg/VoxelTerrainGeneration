@@ -61,12 +61,10 @@ public class VoxelInteraction : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Period))
         {
             breakCoefficient++;
-            Debug.Log("Break Coefficient: " + breakCoefficient);
         }
         if (Input.GetKeyDown(KeyCode.Comma))
         {
             breakCoefficient--;
-            Debug.Log("Break Coefficient: " + breakCoefficient);
         }
     }
 
@@ -163,15 +161,12 @@ public class VoxelInteraction : MonoBehaviour
 
     private void MassBreak(Vector3 position)
     {
-        Debug.Log("In Mass Break");
-
         List<Vector3> positions = new List<Vector3>();
 
         float voxelSize = 1 / player.CurrentWorld.resolution;
 
         for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
         {
-            Debug.Log("In the loop, i value is: " + i);
             for (float j = 0; j <= voxelSize * breakCoefficient; j += voxelSize)
             {
                 for (float k = 0; k <= voxelSize * breakCoefficient; k += voxelSize)
@@ -192,13 +187,10 @@ public class VoxelInteraction : MonoBehaviour
 
     private void TwoPointBreak(Vector3 alt_pos, Vector3 pos)
     {
-        Debug.Log("In Two Point Break");
-
         float voxelSize = 1 / player.CurrentWorld.resolution;
 
         for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
         {
-            Debug.Log("In the loop, i value is: " + i);
             for (float j = 0; j <= voxelSize * breakCoefficient; j += voxelSize)
             {
                 for (float k = 0; k <= voxelSize * breakCoefficient; k += voxelSize)
