@@ -162,7 +162,20 @@ public class Chunk : MonoBehaviour
             bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
             if (outside) { continue; }
 
-            voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+            if (voxel[i].type == VoxelType.AIR)
+            {
+                if (voxels[pos.x, pos.y, pos.z].type != VoxelType.AIR)
+                {
+                    voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+                }
+            }
+            else
+            {
+                if (voxels[pos.x, pos.y, pos.z].type == VoxelType.AIR)
+                {
+                    voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+                }
+            }
         }
 
         // Update the mesh

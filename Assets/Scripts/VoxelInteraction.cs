@@ -136,7 +136,33 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
-                PlaceVoxel(position);
+                position.x = Mathf.Floor(position.x) + 0.5f;
+                position.y = Mathf.Floor(position.y) + 0.5f;
+                position.z = Mathf.Floor(position.z) + 0.5f;
+
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    if (Input.GetKey(KeyCode.LeftControl))
+                    {
+                        if (alt_position == null)
+                        {
+                            alt_position = position;
+                        }
+                        else
+                        {
+                            // TwoPointPlace((Vector3)alt_position, position);
+                            alt_position = null;
+                        }
+                    }
+                    else
+                    {
+                        MassPlace(position);
+                    }
+                }
+                else
+                {
+                    PlaceVoxel(position);
+                }
             }
         }
 
@@ -158,11 +184,7 @@ public class VoxelInteraction : MonoBehaviour
 
     private void PlaceVoxel(Vector3 position)
     {
-        Voxel? voxel = player.CurrentWorld.VoxelFromGlobal(position);
-        if (voxel != null && ((Voxel)voxel).type == VoxelType.AIR)
-        {
-            player.TryPlace(position, currType);
-        }
+        player.TryPlace(position, currType);
     }
 
     private void MassBreak(Vector3 position)
@@ -190,6 +212,43 @@ public class VoxelInteraction : MonoBehaviour
         }
 
         player.TryBreakList(positions);
+    }
+
+    private void MassPlace(Vector3 position)
+    {
+        List<Vector3> positions = new List<Vector3>();
+        List<VoxelType> types = new List<VoxelType>();
+
+        float voxelSize = 1 / player.CurrentWorld.resolution;
+
+        for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
+        {
+            for (float j = 0; j <= voxelSize * breakCoefficient; j += voxelSize)
+            {
+                for (float k = 0; k <= voxelSize * breakCoefficient; k += voxelSize)
+                {
+                    positions.Add(position + new Vector3(i, j, k));
+                    positions.Add(position + new Vector3(-i, j, k));
+                    positions.Add(position + new Vector3(i, j, -k));
+                    positions.Add(position + new Vector3(-i, j, -k));
+                    positions.Add(position + new Vector3(i, -j, k));
+                    positions.Add(position + new Vector3(-i, -j, k));
+                    positions.Add(position + new Vector3(i, -j, -k));
+                    positions.Add(position + new Vector3(-i, -j, -k));
+                    
+                    types.Add(currType);
+                    types.Add(currType);
+                    types.Add(currType);
+                    types.Add(currType);
+                    types.Add(currType);
+                    types.Add(currType);
+                    types.Add(currType);
+                    types.Add(currType);
+                }
+            }
+        }
+
+        player.TryPlaceList(positions, types);
     }
 
     private void TwoPointBreak(Vector3 alt_pos, Vector3 pos)
