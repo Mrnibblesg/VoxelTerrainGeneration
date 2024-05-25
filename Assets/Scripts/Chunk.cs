@@ -19,6 +19,9 @@ public class Chunk : MonoBehaviour
     private MeshRenderer meshRenderer;
     private MeshCollider meshCollider;
 
+    //Use to avoid race conditions related to mesh requests & job completion time
+    private long lastMeshUpdateTime;
+
     public void Initialize(World parent)
     {
         meshFilter = gameObject.AddComponent<MeshFilter>();
@@ -59,10 +62,16 @@ public class Chunk : MonoBehaviour
         updateNeighborChunks();
         ChunkMeshGenerator.RequestNewMesh(this);
     }
-    public void ApplyNewMesh(Mesh m)
+    public void ApplyNewMesh(Mesh m, long requestTime)
     {
+        //Ignore if the mesh was requested earlier than the current one was (outdated mesh)
+        if (requestTime < lastMeshUpdateTime)
+        {
+            return;
+        }
         meshFilter.mesh = m;
         meshCollider.sharedMesh = m;
+        lastMeshUpdateTime = requestTime;
     }
 
     bool VoxelHasTransparency(int x, int y, int z)
@@ -255,7 +264,6 @@ public class Chunk : MonoBehaviour
         neighbors[3] = parent.ChunkFromGlobal(chunkPos + (Vector3.right * parent.chunkSize));
         neighbors[4] = parent.ChunkFromGlobal(chunkPos + (Vector3.forward * parent.chunkSize));
         neighbors[5] = parent.ChunkFromGlobal(chunkPos + (Vector3.back * parent.chunkSize));
-        Gizmos.color = Color.black;
     }
 
     //Debug only

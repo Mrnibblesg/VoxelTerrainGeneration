@@ -38,6 +38,12 @@ public struct ChunkMeshJob : IJob
     {
         return voxels[(x + 1) * (height+2) * (size+2) + (y + 1) * (size + 2) + (z+1)];
     }
+    private bool outsideChunk(int x, int y, int z)
+    {
+        return (x < 0 || x >= size ||
+                y < 0 || y >= height ||
+                z < 0 || z >= size);
+    }
     /// <summary>
     /// Uses greedy meshing to merge voxel faces producing a memory efficient
     /// mesh.
@@ -115,8 +121,12 @@ public struct ChunkMeshJob : IJob
                             progress[2] + normOff[2]).type;
 
                         //no face if they're both a voxel or if the're both air
+                        //no face if the solid block is in the neighbor chunk
+                        //We need the last 2 checks to avoid overdraw.
                         if ((above == VoxelType.AIR) ==
-                            (below == VoxelType.AIR))
+                            (below == VoxelType.AIR) || 
+                            (below != VoxelType.AIR && outsideChunk(progress[0], progress[1], progress[2])) ||
+                            (above != VoxelType.AIR && outsideChunk(progress[0] + normOff[0], progress[1] + normOff[1], progress[2] + normOff[2])))
                         {
                             mask[progress[u] * dims[v] + progress[v]] = 0;
                         }
@@ -152,7 +162,7 @@ public struct ChunkMeshJob : IJob
                         for (w = 1; i + w < dims[u] && current == mask[(i + w)*dims[v] + j]; w++) { }
 
                         int h;
-                        //Calculate parent.chunkHeight of quad
+                        //Calculate height of quad
                         for (h = 1; j + h < dims[v]; h++)
                         {
                             for (int k = 0; k < w; k++)
@@ -165,7 +175,7 @@ public struct ChunkMeshJob : IJob
                         }
                     BreakHeight:
                         //we now have our quad: i and j are its starting pos,
-                        //w and h the width and parent.chunkHeight.
+                        //w and h the width and height.
                         progress[u] = i;
                         progress[v] = j;
                         

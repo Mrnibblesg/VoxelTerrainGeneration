@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using System;
 
 public class ChunkMeshGenerator
 {
@@ -11,6 +12,7 @@ public class ChunkMeshGenerator
     private struct JobData
     {
         public Chunk requester;
+        public long requestTime;
         public NativeList<float3> vertices;
         public NativeList<int> quads;
         public NativeList<Color32> colors;
@@ -22,6 +24,7 @@ public class ChunkMeshGenerator
         JobData jobData = new()
         {
             requester = c,
+            requestTime = DateTime.Now.Ticks,
             vertices = new(Allocator.TempJob),
             quads = new(Allocator.TempJob),
             colors = new(Allocator.TempJob)
@@ -128,7 +131,7 @@ public class ChunkMeshGenerator
         newMesh.SetIndices(nativeQuads.ToArray(), MeshTopology.Quads, 0);
 
         newMesh.RecalculateNormals();
-        results.requester.ApplyNewMesh(newMesh);
+        results.requester.ApplyNewMesh(newMesh, results.requestTime);
         
         nativeVerts.Dispose();
         nativeQuads.Dispose();
