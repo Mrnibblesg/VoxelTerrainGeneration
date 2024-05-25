@@ -36,7 +36,10 @@ public class Player : MonoBehaviour
     //becomes active, we must always use the null-conditional operator ?. with it.
     private World currentWorld;
     public World CurrentWorld {
-        get { return this.currentWorld; }
+        get
+        {
+            return currentWorld;
+        }
         set
         {
             this.currentWorld = value;
@@ -57,6 +60,16 @@ public class Player : MonoBehaviour
 
         this.mouseX = transform.eulerAngles.y;
         this.mouseY = playerCamera.transform.eulerAngles.x;
+        
+        // Check in WorldAccessor for a world
+        World world = WorldAccessor.Identify(this);
+
+        if (world is null)
+        {
+            world = WorldAccessor.Join(this);
+        }
+
+        CurrentWorld = world;
     }
 
     private void FixedUpdate()
@@ -75,7 +88,8 @@ public class Player : MonoBehaviour
             GetComponent<Rigidbody>().AddForce(Vector3.up * 5);
         }
 
-        UpdateChunkCoord();
+        if (this.CurrentWorld is not null)
+            UpdateChunkCoord();
     }
     
     /// <summary>
@@ -113,11 +127,18 @@ public class Player : MonoBehaviour
     /// </summary>
     private void UpdateChunkCoord()
     {
+        // Ensure JobManager is initialized before taking any actions
+        if (JobManager.Manager is null)
+        {
+            return;
+        }
+
         Vector3Int chunkCoord = new(
             Mathf.FloorToInt(transform.position.x / (currentWorld.chunkSize / currentWorld.resolution)),
             Mathf.FloorToInt(transform.position.y / (currentWorld.chunkHeight / currentWorld.resolution)),
             Mathf.FloorToInt(transform.position.z / (currentWorld.chunkSize / currentWorld.resolution))
         );
+
         if (currentChunkCoord != chunkCoord)
         {
             currentChunkCoord = chunkCoord;
@@ -132,14 +153,14 @@ public class Player : MonoBehaviour
     {
         currentWorld?.SetVoxel(pos, VoxelType.AIR);
     }
-    public void TryBreak(List<Vector3> pos)
+    public void TryBreakList(List<Vector3> pos)
     {
         List<VoxelType> types = new List<VoxelType>();
         for (int i = 0; i < pos.Count; i++)
         {
             types.Add(VoxelType.AIR);
         }
-        currentWorld?.SetVoxel(pos, types);
+        currentWorld?.SetVoxels(pos, types);
     }
     /// <summary>
     /// Attempt to place a block in the current world, at world-space position.
@@ -147,5 +168,9 @@ public class Player : MonoBehaviour
     public void TryPlace(Vector3 pos, VoxelType type)
     {
         currentWorld?.SetVoxel(pos, type);
+    }
+    public void TryPlaceList(List<Vector3> pos, List<VoxelType> types)
+    {
+        currentWorld?.SetVoxels(pos, types);
     }
 }

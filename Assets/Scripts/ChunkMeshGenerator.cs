@@ -98,7 +98,7 @@ public class ChunkMeshGenerator
             colors = jobData.colors,
         };
 
-        JobManager.Manager.addJob(chunkMeshJob.Schedule(), finishNewMesh, jobData);
+        JobManager.Manager.AddJob(chunkMeshJob.Schedule(), finishNewMesh, jobData);
     }
     public static void finishNewMesh(object raw)
     {

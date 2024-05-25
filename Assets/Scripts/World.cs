@@ -16,12 +16,16 @@ public class World
 
     //Height of world in chunks
     public int worldHeight;
+    public int waterHeight;
 
     //Dimensions of chunk in the amount of voxels
     public readonly int chunkSize;
     public readonly int chunkHeight;
 
     public readonly float resolution;
+    public readonly string worldName;
+
+    private List<Player> players = new List<Player>();
 
     //Use queues to dictate which order chunks are loaded and unloaded.
     private Dictionary<Vector3Int, Chunk> chunks;
@@ -40,12 +44,14 @@ public class World
 
     ChunkFactory chunkFactory;
 
-    public World(int worldHeight, int chunkSize, int chunkHeight, float resolution)
+    public World(int worldHeight, int chunkSize, int chunkHeight, int waterHeight, float resolution, string worldName)
     {
         this.worldHeight = worldHeight;
         this.chunkSize = chunkSize;
         this.chunkHeight = chunkHeight;
+        this.waterHeight = waterHeight;
         this.resolution = resolution;
+        this.worldName = worldName;
 
         chunks = new();
         unloadedNeighbors = new();
@@ -280,9 +286,9 @@ public class World
     public Chunk ChunkFromGlobal(Vector3 global)
     {
         Vector3Int chunkCoordinates = new Vector3Int(
-            Mathf.FloorToInt(global.x / (WorldController.Controller.chunkSize / resolution)),
-            Mathf.FloorToInt(global.y / (WorldController.Controller.chunkHeight / resolution)),
-            Mathf.FloorToInt(global.z / (WorldController.Controller.chunkSize / resolution)));
+            Mathf.FloorToInt(global.x / (chunkSize / resolution)),
+            Mathf.FloorToInt(global.y / (chunkHeight / resolution)),
+            Mathf.FloorToInt(global.z / (chunkSize / resolution)));
 
         return GetChunk(chunkCoordinates);
     }
@@ -313,14 +319,14 @@ public class World
     {
         SetVoxel(vec, new Voxel(type));
     }
-    public void SetVoxel(List<Vector3> vec, List<VoxelType> type)
+    public void SetVoxels(List<Vector3> vec, List<VoxelType> type)
     {
         List<Voxel> voxel = new List<Voxel>();
         for (int i = 0; i < type.Count; i++)
         {
             voxel.Add(new Voxel(type[i]));
         }
-        SetVoxel(vec, voxel);
+        SetVoxels(vec, voxel);
     }
     /// <summary>
     /// Set a voxel from the given world-space position
@@ -336,8 +342,13 @@ public class World
             c.SetVoxel(c.transform.InverseTransformPoint(vec), voxel);
         }
     }
-
-    public void SetVoxel(List<Vector3> vec, List<Voxel> voxel)
+    /// <summary>
+    /// Set a list of voxels from the given world-space positions
+    /// </summary>
+    /// <param name="vec"></param>
+    /// <param name="voxel"></param>
+    /// <exception cref="Exception"></exception>
+    public void SetVoxels(List<Vector3> vec, List<Voxel> voxel)
     {
         Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>> chunks = new Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>>();
         for (int i = 0; i < vec.Count; i++)
@@ -362,7 +373,17 @@ public class World
 
         foreach (var c in chunks)
         {
-            c.Key.SetVoxel(c.Value.Item1, c.Value.Item2);
+            c.Key.SetVoxels(c.Value.Item1, c.Value.Item2);
         }
+    }
+
+    public bool Contains(Player player)
+    {
+        return players.Contains(player);
+    }
+
+    public void AddPlayer(Player player)
+    {
+        players.Add(player);
     }
 }

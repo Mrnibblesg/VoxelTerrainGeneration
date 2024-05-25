@@ -26,14 +26,17 @@ public class JobManager : MonoBehaviour
 
     private void Awake()
     {
-        DontDestroyOnLoad(this.gameObject);
-        if (Manager != null)
+        if (Manager is not null)
         {
-            throw new Exception("Only one instance of the JobManager is allowed!");
+            Destroy(this.gameObject);
         }
-        Manager = this;
 
-        jobs = new();
+        else
+        {
+            DontDestroyOnLoad(this.gameObject);
+            Manager = this;
+            jobs = new();
+        }
     }
 
     void Update()
@@ -50,7 +53,7 @@ public class JobManager : MonoBehaviour
         }
     }
     
-    public void addJob(JobHandle handle, Action<object> callback, object callbackData)
+    public void AddJob(JobHandle handle, Action<object> callback, object callbackData)
     {
         jobs.Add(
             new JobData
