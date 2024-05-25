@@ -37,24 +37,6 @@ public class Chunk : MonoBehaviour
     }
 
     /// <summary>
-    /// Mark the given voxel as exposed if it's transparent or
-    /// adjacent to something transparent.
-    /// </summary>
-    public void MarkExposed(int x, int y, int z)
-    {
-        if (VoxelOutOfBounds(x, y, z)) { return; }
-
-        voxels[x, y, z].exposed =
-            voxels[x,y,z].hasTransparency ||
-            VoxelHasTransparency(x + 1, y, z) ||
-            VoxelHasTransparency(x - 1, y, z) ||
-            VoxelHasTransparency(x, y + 1, z) ||
-            VoxelHasTransparency(x, y - 1, z) ||
-            VoxelHasTransparency(x, y, z + 1) ||
-            VoxelHasTransparency(x, y, z - 1);
-    }
-
-    /// <summary>
     /// Generates a mesh for this chunk
     /// </summary>
     public void RegenerateMesh()
@@ -72,38 +54,6 @@ public class Chunk : MonoBehaviour
         meshFilter.mesh = m;
         meshCollider.sharedMesh = m;
         lastMeshUpdateTime = requestTime;
-    }
-
-    bool VoxelHasTransparency(int x, int y, int z)
-    {
-        if (VoxelOutOfBounds(x,y,z))
-        {
-            Vector3Int pos = new Vector3Int(x, y, z);
-            return OutsideVoxelHasTransparency(pos);
-        }
-        return voxels[x, y, z].hasTransparency;
-    }
-
-    bool OutsideVoxelHasTransparency(Vector3 pos)
-    {
-        Vector3 globalPos = transform.position + pos;
-        Chunk neighbor = parent.ChunkFromGlobal(globalPos);
-        if (neighbor == null)
-        {
-            return true;
-        }
-        
-        //Ensure we don't somehow use an invalid index
-        try
-        {
-            Vector3 neighborPos = neighbor.gameObject.transform.InverseTransformPoint(globalPos);
-            return neighbor.voxels[(int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z].hasTransparency;
-        }
-        catch(IndexOutOfRangeException e)
-        {
-            print(e);
-        }
-        return true;
     }
 
     /// <summary>
@@ -146,9 +96,10 @@ public class Chunk : MonoBehaviour
         if (outside) { return false; }
 
         voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
-        
+
         // Update the mesh
         // Brute force for now
+        UpdateNeighbors(pos.x, pos.y, pos.z);
         RegenerateMesh();
 
         return true;
@@ -211,7 +162,6 @@ public class Chunk : MonoBehaviour
         //more updates, or the updates could cascade forever.
         void updateList(Chunk c, int x, int y, int z)
         {
-            c.MarkExposed(x, y, z);
 
             if (c != this)
             {
