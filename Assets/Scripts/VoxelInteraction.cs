@@ -60,12 +60,10 @@ public class VoxelInteraction : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Period))
         {
             breakCoefficient++;
-            Debug.Log("Break Coefficient: " + breakCoefficient);
         }
         if (Input.GetKeyDown(KeyCode.Comma))
         {
             breakCoefficient--;
-            Debug.Log("Break Coefficient: " + breakCoefficient);
         }
     }
 
