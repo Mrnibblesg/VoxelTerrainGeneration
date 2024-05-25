@@ -169,4 +169,8 @@ public class Player : MonoBehaviour
     {
         currentWorld?.SetVoxel(pos, type);
     }
+    public void TryPlaceList(List<Vector3> pos, List<VoxelType> types)
+    {
+        currentWorld?.SetVoxels(pos, types);
+    }
 }

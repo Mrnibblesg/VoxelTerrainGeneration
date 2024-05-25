@@ -135,7 +135,6 @@ public class Chunk : MonoBehaviour
         if (outside) { return false; }
 
         voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
-        UpdateNeighbors(pos.x, pos.y, pos.z);
         
         // Update the mesh
         // Brute force for now
@@ -163,7 +162,20 @@ public class Chunk : MonoBehaviour
             bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
             if (outside) { continue; }
 
-            voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+            if (voxel[i].type == VoxelType.AIR)
+            {
+                if (voxels[pos.x, pos.y, pos.z].type != VoxelType.AIR)
+                {
+                    voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+                }
+            }
+            else
+            {
+                if (voxels[pos.x, pos.y, pos.z].type == VoxelType.AIR)
+                {
+                    voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+                }
+            }
         }
 
         // Update the mesh
