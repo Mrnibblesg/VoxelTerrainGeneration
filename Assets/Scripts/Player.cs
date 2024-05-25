@@ -83,10 +83,6 @@ public class Player : MonoBehaviour
         {
             UpdateLook();
         }
-        if (Input.GetAxis("Jump") != 0)
-        {
-            GetComponent<Rigidbody>().AddForce(Vector3.up * 5);
-        }
 
         if (this.CurrentWorld is not null)
             UpdateChunkCoord();
@@ -119,6 +115,11 @@ public class Player : MonoBehaviour
         Vector3 right = Input.GetAxis("Horizontal") * transform.right;
 
         transform.position += (forward + right).normalized * combinedMultiplier;
+
+        if (Input.GetAxis("Jump") != 0)
+        {
+            GetComponent<Rigidbody>().AddForce(Vector3.up * 45);
+        }
     }
 
     /// <summary>
