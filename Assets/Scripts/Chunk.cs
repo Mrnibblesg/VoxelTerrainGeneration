@@ -134,8 +134,29 @@ public class Chunk : MonoBehaviour
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
         if (outside) { return false; }
 
-        voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
-        
+        if (voxel.type == VoxelType.AIR)
+        {
+            if (voxels[pos.x, pos.y, pos.z].type != VoxelType.AIR)
+            {
+                voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
+                if (pos.x == 0 || pos.x == parent.chunkSize-1 || pos.y == 0 || pos.y == parent.chunkSize-1 || pos.z == 0 || pos.z == parent.chunkSize-1)
+                {
+                    UpdateNeighbors(pos.x, pos.y, pos.z);
+                }
+            }
+        }
+        else
+        {
+            if (voxels[pos.x, pos.y, pos.z].type == VoxelType.AIR)
+            {
+                voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
+                if (pos.x == 0 || pos.x == parent.chunkSize-1 || pos.y == 0 || pos.y == parent.chunkSize-1 || pos.z == 0 || pos.z == parent.chunkSize-1)
+                {
+                    UpdateNeighbors(pos.x, pos.y, pos.z);
+                }
+            }
+        }
+
         // Update the mesh
         // Brute force for now
         RegenerateMesh();
@@ -167,6 +188,10 @@ public class Chunk : MonoBehaviour
                 if (voxels[pos.x, pos.y, pos.z].type != VoxelType.AIR)
                 {
                     voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+                    if (pos.x == 0 || pos.x == parent.chunkSize-1 || pos.y == 0 || pos.y == parent.chunkSize-1 || pos.z == 0 || pos.z == parent.chunkSize-1)
+                    {
+                        UpdateNeighbors(pos.x, pos.y, pos.z);
+                    }
                 }
             }
             else
@@ -174,6 +199,10 @@ public class Chunk : MonoBehaviour
                 if (voxels[pos.x, pos.y, pos.z].type == VoxelType.AIR)
                 {
                     voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+                    if (pos.x == 0 || pos.x == parent.chunkSize-1 || pos.y == 0 || pos.y == parent.chunkSize-1 || pos.z == 0 || pos.z == parent.chunkSize-1)
+                    {
+                        UpdateNeighbors(pos.x, pos.y, pos.z);
+                    }
                 }
             }
         }
@@ -194,36 +223,21 @@ public class Chunk : MonoBehaviour
     /// </remarks>
     private void UpdateNeighbors(int x, int y, int z)
     {
-        if (VoxelOutOfBounds(x,y,z)) { return; }
+        if (VoxelOutOfBounds(x, y, z)) { return; }
 
         //Make sure when adding to this function that the things you add DO NOT trigger
         //more updates, or the updates could cascade forever.
-        void updateList(Chunk c, int x, int y, int z)
-        {
-            c.MarkExposed(x, y, z);
-
-            if (c != this)
-            {
-                c.RegenerateMesh();
-            }
-        }
 
         //Use the proper chunk to update the neighbor voxel from.
         void UseAppropriateChunk(int x, int y, int z)
         {
-            if (!VoxelOutOfBounds(x, y, z))
+            if (VoxelOutOfBounds(x, y, z))
             {
-                updateList(this, x, y, z);
-            }
-
-            Chunk c = parent.ChunkFromGlobal(VoxelCoordToGlobal(new Vector3Int(x,y,z)));
-            if (c != null)
-            {
-                Vector3 neighborPos = c.transform.InverseTransformPoint(
-                    transform.position + new Vector3Int(x, y, z)
-                );
-
-                updateList(c, (int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z);
+                Chunk c = parent.ChunkFromGlobal(VoxelCoordToGlobal(new Vector3Int(x, y, z)));
+                if (c != null)
+                {
+                    c.RegenerateMesh();
+                }
             }
         }
 
