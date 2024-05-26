@@ -109,7 +109,7 @@ public class VoxelRun
                 start.type = type;
             }
         }
-        else //scenarios 4,5,6,7
+        else //scenarios 5,6,7,8
         {
             if (!fromBeginning && !toEnd)//scenario 7
             {

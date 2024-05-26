@@ -49,8 +49,10 @@ public class Chunk : MonoBehaviour
         //Ignore if the mesh was requested earlier than the current one was (outdated mesh)
         if (requestTime < lastMeshUpdateTime)
         {
+            Destroy(m);
             return;
         }
+        Destroy(meshFilter.mesh);
         meshFilter.mesh = m;
         meshCollider.sharedMesh = m;
         lastMeshUpdateTime = requestTime;
