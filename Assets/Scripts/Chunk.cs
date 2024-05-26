@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Unity.Profiling;
 using UnityEngine;
-using static UnityEditor.PlayerSettings;
 
 public class Chunk : MonoBehaviour
 {
