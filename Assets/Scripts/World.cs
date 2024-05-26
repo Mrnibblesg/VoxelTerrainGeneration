@@ -179,9 +179,9 @@ public class World
     public void UnloadChunk(Vector3Int chunkCoords)
     {
 #if UNITY_EDITOR //Apparently use this if we're in the editor otherwise the destroy is ignored?
-        GameObject.DestroyImmediate(chunks[chunkCoords].gameObject);
+        GameObject.DestroyImmediate(chunks[chunkCoords]);
 #else
-        GameObject.Destroy(chunks[chunkCoords].gameObject);
+        GameObject.Destroy(chunks[chunkCoords]);
 #endif
         chunks.Remove(chunkCoords);
         unloadedNeighbors.Add(chunkCoords);

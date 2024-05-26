@@ -20,7 +20,7 @@ public class Chunk : MonoBehaviour
     private MeshCollider meshCollider;
 
     //Use to avoid race conditions related to mesh requests & job completion time
-    private long lastMeshUpdateTime;
+    private long lastMeshUpdateTime = -1;
 
     public void Initialize(World parent)
     {
@@ -52,8 +52,8 @@ public class Chunk : MonoBehaviour
             Destroy(m);
             return;
         }
-        Destroy(meshFilter.mesh);
-        meshFilter.mesh = m;
+        Destroy(meshFilter.sharedMesh);
+        meshFilter.sharedMesh = m;
         meshCollider.sharedMesh = m;
         lastMeshUpdateTime = requestTime;
     }
