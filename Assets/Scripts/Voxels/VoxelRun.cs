@@ -1,22 +1,20 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using Unity.Collections;
 
 //Represent the volume of chunks using runs of voxels instead of an array.
 //A linked list.
 public class VoxelRun
 {
     private VoxelRun next;
-    private uint runLength; //Always at least 1.
+    private int runLength; //Always at least 1.
     private Voxel type;
 
-    public VoxelRun(uint size, uint height)
+    public VoxelRun(int size, int height)
     {
         next = null;
         type = new Voxel(VoxelType.AIR);
         runLength = size * height * size;
     }
-    private VoxelRun(Voxel type, uint length)
+    private VoxelRun(Voxel type, int length)
     {
         next = null;
         runLength = length;
@@ -27,7 +25,7 @@ public class VoxelRun
     /// </summary>
     /// <param name="head">The head of the list</param>
     /// <returns>The voxel at the requested index</returns>
-    public static Voxel Get(VoxelRun head, uint index)
+    public static Voxel Get(VoxelRun head, int index)
     {
         return FindRun(head, ref index).type;
     }
@@ -37,7 +35,7 @@ public class VoxelRun
     /// <param name="head"></param>
     /// <param name="index"></param>
     /// <exception cref="System.Exception"></exception>
-    private static VoxelRun FindRun(VoxelRun head, ref uint index)
+    private static VoxelRun FindRun(VoxelRun head, ref int index)
     {
         while (head != null && index >= head.runLength)
         {
@@ -60,11 +58,11 @@ public class VoxelRun
     /// <param name="index">The starting index</param>
     /// <param name="length">The run length</param>
     /// <returns>True if the list was modified, false otherwise</returns>
-    public static bool Set(VoxelRun head, Voxel type, uint index, uint length=1)
+    public static bool Set(VoxelRun head, Voxel type, int index, int length=1)
     {
         //This is implicitly a bounds check. An error will be thrown if out of range.
         VoxelRun start = FindRun(head, ref index);
-        uint lastIndex = index + length-1;
+        int lastIndex = index + length-1;
         VoxelRun end = FindRun(start, ref lastIndex);
 
         bool fromBeginning = index == 0;
@@ -165,9 +163,9 @@ public class VoxelRun
             }
         }
     }
-    public static uint GetSize(VoxelRun head)
+    public static int GetSize(VoxelRun head)
     {
-        uint size = 0;
+        int size = 0;
         while (head != null)
         {
             size += head.runLength;
@@ -175,5 +173,47 @@ public class VoxelRun
         }
         return size;
     }
-
+    public static VoxelRun toVoxelRun(NativeArray<Voxel> voxels)
+    {
+        VoxelRun head = new VoxelRun(voxels[0], 1);
+        VoxelRun current = head;
+        for (int i = 1; i < voxels.Length; i++)
+        {
+            if (Voxel.Equals(current.type, voxels[i]))
+            {
+                current.runLength++;
+            }
+            else
+            {
+                VoxelRun newRun = new(voxels[i], 1);
+                current.next = newRun;
+                current = newRun;
+            }
+        }
+        return head;
+    }
+    // Old render pipeline: Voxels -> expanded voxels, all in main thread
+    // New render pipeline: Voxel run -> voxels -> expanded voxels, all in main thread
+    //idea: Convert voxel runs for needed arrays into some form we can input to the render job, create the expanded voxels array inside the job.
+    //readonly native list of pairs of voxel, length?
+    public static Voxel[,,] toArray(VoxelRun head, int size, int height)
+    {
+        if (head == null)
+        {
+            head = new VoxelRun(size, height);
+        }
+        Voxel[,,] arr = new Voxel[size, height, size];
+        int i = 0;
+        while (head != null)
+        {
+            for (int run = 0; run < head.runLength; run++, i++)
+            {
+                arr[i / (height * size),
+                (i /size) % height,
+                i % size] = head.type;
+            }
+            head = head.next;
+        }
+        return arr;
+    }
 }

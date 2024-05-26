@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using Unity.Profiling;
 using UnityEngine;
+using static UnityEditor.PlayerSettings;
 
 public class Chunk : MonoBehaviour
 {
-    public Voxel[,,] voxels;
+    public VoxelRun voxels;
 
     public World parent;
 
@@ -33,7 +34,7 @@ public class Chunk : MonoBehaviour
 
         this.parent = parent;
 
-        voxels = new Voxel[parent.chunkSize, parent.chunkHeight, parent.chunkSize];
+        voxels = new VoxelRun(parent.chunkSize, parent.chunkHeight);
     }
 
     /// <summary>
@@ -61,7 +62,7 @@ public class Chunk : MonoBehaviour
     /// </summary>
     /// <param name="vec"></param>
     /// <returns></returns>
-    public Voxel? GetVoxel(Vector3 vec)
+    public Voxel? VoxelFromLocal(Vector3 vec)
     {
         //Get from some coordinate within the chunk to the appropriate voxel coords.
         vec *= parent.resolution;
@@ -73,7 +74,26 @@ public class Chunk : MonoBehaviour
 
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
 
-        return outside ? null : Voxel.Clone(voxels[pos.x, pos.y, pos.z]);
+        return outside ? null : GetVoxel(pos);
+    }
+    /// <summary>
+    /// Get the voxel
+    /// </summary>
+    /// <param name="voxCoords"></param>
+    /// <returns></returns>
+    public Voxel GetVoxel(Vector3Int voxCoords)
+    {
+        return VoxelRun.Get(voxels,
+            voxCoords.x * parent.chunkSize * parent.chunkHeight +
+            voxCoords.y * parent.chunkSize +
+            voxCoords.z);
+    }
+public Voxel GetVoxel(int x, int y, int z)
+    {
+        return VoxelRun.Get(voxels,
+            x * parent.chunkSize * parent.chunkHeight +
+            y * parent.chunkSize +
+            z);
     }
 
     /// <summary>
@@ -82,7 +102,7 @@ public class Chunk : MonoBehaviour
     /// <param name="vec"></param>
     /// <param name="voxel"></param>
     /// <returns> Whether the voxel was set. </returns>
-    public bool SetVoxel(Vector3 vec, Voxel voxel)
+    public bool SetVoxelFromLocal(Vector3 vec, Voxel voxel)
     {
         //Scale the world-space coordinate to voxel-coordinate space
         vec *= parent.resolution;
@@ -95,14 +115,20 @@ public class Chunk : MonoBehaviour
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
         if (outside) { return false; }
 
-        voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
-
-        // Update the mesh
-        // Brute force for now
-        UpdateNeighbors(pos.x, pos.y, pos.z);
-        RegenerateMesh();
-
-        return true;
+        if (SetVoxel(pos, Voxel.Clone(voxel)))
+        {
+            UpdateNeighbors(pos.x, pos.y, pos.z);
+            RegenerateMesh();
+            return true;
+        }
+        return false;
+    }
+    private bool SetVoxel(Vector3Int voxCoords, Voxel voxel)
+    {
+        return VoxelRun.Set(voxels, voxel,
+            voxCoords.x * parent.chunkSize * parent.chunkHeight + 
+            voxCoords.y * parent.chunkSize + 
+            voxCoords.z);
     }
     public bool SetVoxels(List<Vector3> vec, List<Voxel> voxel)
     {
@@ -126,16 +152,16 @@ public class Chunk : MonoBehaviour
 
             if (voxel[i].type == VoxelType.AIR)
             {
-                if (voxels[pos.x, pos.y, pos.z].type != VoxelType.AIR)
+                if (GetVoxel(pos).type != VoxelType.AIR)
                 {
-                    voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+                    SetVoxel(pos, Voxel.Clone(voxel[i]));
                 }
             }
             else
             {
-                if (voxels[pos.x, pos.y, pos.z].type == VoxelType.AIR)
+                if (GetVoxel(pos).type == VoxelType.AIR)
                 {
-                    voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel[i]);
+                    SetVoxel(pos, Voxel.Clone(voxel[i]));
                 }
             }
         }

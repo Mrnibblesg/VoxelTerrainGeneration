@@ -142,7 +142,7 @@ public class World
     //While a chunk is loading, it remains as a neighbor chunk but is added to loading in progress set.
     //When a chunk finishes loading, add its neighbors to the unloaded neighbors set if not loaded.
     //  They get queued as well if they're in range.
-    public void ChunkFinished(Vector3Int chunkCoords, Voxel[,,] data)
+    public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
         //if no chunk, configure and generate new one
         GameObject chunkObj = new GameObject($"Chunk{chunkCoords.x},{chunkCoords.y},{chunkCoords.z}");
@@ -154,7 +154,7 @@ public class World
 
         Chunk newChunk = chunkObj.AddComponent<Chunk>();
         newChunk.Initialize(this);
-        newChunk.voxels = data;
+        newChunk.voxels = voxels;
 
         //add to chunks
         chunks.Add(chunkCoords, newChunk);
@@ -304,7 +304,7 @@ public class World
         Chunk c = ChunkFromGlobal(vec);
         if (c != null)
         {
-            return (Voxel)c.GetVoxel(c.transform.InverseTransformPoint(vec));
+            return (Voxel)c.VoxelFromLocal(c.transform.InverseTransformPoint(vec));
         }
         return null;
     }
@@ -339,7 +339,7 @@ public class World
         Chunk c = ChunkFromGlobal(vec);
         if (c != null)
         {
-            c.SetVoxel(c.transform.InverseTransformPoint(vec), voxel);
+            c.SetVoxelFromLocal(c.transform.InverseTransformPoint(vec), voxel);
         }
     }
     /// <summary>

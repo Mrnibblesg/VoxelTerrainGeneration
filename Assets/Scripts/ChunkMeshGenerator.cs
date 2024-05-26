@@ -32,6 +32,14 @@ public class ChunkMeshGenerator
 
         //flatten the voxel array, make space for the first layer of neighboring chunks
         NativeArray<Voxel> flattened = new((size + 2) * (height + 2) * (size + 2), Allocator.TempJob);
+        Voxel[,,] arr = VoxelRun.toArray(c.voxels, size, height);
+
+        Voxel[,,] up = VoxelRun.toArray(c.neighbors[0]?.voxels, size, height);
+        Voxel[,,] down = VoxelRun.toArray(c.neighbors[1]?.voxels, size, height);
+        Voxel[,,] left = VoxelRun.toArray(c.neighbors[2]?.voxels, size, height);
+        Voxel[,,] right = VoxelRun.toArray(c.neighbors[3]?.voxels, size, height);
+        Voxel[,,] forward = VoxelRun.toArray(c.neighbors[4]?.voxels, size, height);
+        Voxel[,,] back = VoxelRun.toArray(c.neighbors[5]?.voxels, size, height);
 
         //Place the original chunk data in the center of the flat array.
         for (int x = 0; x < size; x++)
@@ -40,7 +48,7 @@ public class ChunkMeshGenerator
             {
                 for (int z = 0; z < size; z++)
                 {
-                    flattened[(x + 1) * (height+2) * (size+2) + (y + 1) * (size + 2) + (z + 1)] = c.voxels[x, y, z];
+                    flattened[(x + 1) * (height+2) * (size+2) + (y + 1) * (size + 2) + (z + 1)] = arr[x,y,z];
                 }
             }
         }
@@ -52,11 +60,11 @@ public class ChunkMeshGenerator
             {
                 //set the top of the input data as the bottom of the above chunk
                 flattened[(x+1) * (height+2) * (size+2) + (height+1) * (size+2) + (z+1)] = 
-                    c.neighbors[0]?.voxels[x, 0, z] ?? new Voxel(VoxelType.AIR);
+                    up[x, 0, z];
 
                 //set bottom of input as top of below chunk
-                flattened[(x+1) * (height+2) * (size+2) + (z+1)] =
-                    c.neighbors[1]?.voxels[x, height - 1, z] ?? new Voxel(VoxelType.AIR);
+                flattened[(x + 1) * (height + 2) * (size + 2) + (z + 1)] =
+                    down[x, height - 1, z];
             }
         }
         //left/right
@@ -65,11 +73,11 @@ public class ChunkMeshGenerator
             for (int z = 0; z < size; z++)
             {
                 //Set the left of the input chunk as the right slice of the left chunk
-                flattened[(y+1) * (height+2) + (z+1)] =
-                    c.neighbors[2]?.voxels[size - 1, y, z] ?? new Voxel(VoxelType.AIR);
+                flattened[(y + 1) * (height + 2) + (z + 1)] =
+                    left[size - 1, y, z];
                 //Set the right of the input as the left slice of the right chunk.
-                flattened[(size + 1) * (height + 2) * (size + 2) + (y+1) * (size+2) + (z+1)] =
-                    c.neighbors[3]?.voxels[0, y, z] ?? new Voxel(VoxelType.AIR);
+                flattened[(size + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2) + (z + 1)] =
+                    right[0, y, z];
             }
         }
         //front/back
@@ -78,11 +86,11 @@ public class ChunkMeshGenerator
             for (int y = 0; y < height; y++)
             {
                 //Set the back of the input as the front of the back chunk
-                flattened[(x+1) * (height+2) * (size+2) + (y+1) * (size+2) + size + 1] =
-                    c.neighbors[4]?.voxels[x, y, 0] ?? new Voxel(VoxelType.AIR);
+                flattened[(x + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2) + size + 1] =
+                    forward[x, y, 0];
                 //Set the front of the input as the back of the front
                 flattened[(x + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2)] =
-                    c.neighbors[5]?.voxels[x, y, size - 1] ?? new Voxel(VoxelType.AIR);
+                    back[x, y, size - 1];
             }
         }
 
