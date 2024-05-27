@@ -10,10 +10,32 @@ using Unity.Mathematics;
 public struct ChunkMeshJob : IJob
 {
 
+    //Passed in
     [ReadOnly]
     public int size;
     public int height;
     public float resolution;
+    
+    [DeallocateOnJobCompletion]
+    public NativeArray<Voxel> orig;
+
+    [DeallocateOnJobCompletion]
+    public NativeArray<Voxel> up;
+
+    [DeallocateOnJobCompletion]
+    public NativeArray<Voxel> down;
+
+    [DeallocateOnJobCompletion]
+    public NativeArray<Voxel> left;
+
+    [DeallocateOnJobCompletion]
+    public NativeArray<Voxel> right;
+
+    [DeallocateOnJobCompletion]
+    public NativeArray<Voxel> forward;
+
+    [DeallocateOnJobCompletion]
+    public NativeArray<Voxel> back;
 
     [DeallocateOnJobCompletion]
     public NativeArray<Voxel> voxels;
@@ -23,17 +45,74 @@ public struct ChunkMeshJob : IJob
     public NativeList<int> quads;
     public NativeList<Color32> colors;
 
-    //We aren't allowed to read from vertices, so we keep track of its length on our own
+    //This object only
     private int verticesLength;
+
 
     public void Execute()
     {
+        BuildExpandedChunk();
         verticesLength = 0;
         GreedyMeshing();
+
+    }
+    public void BuildExpandedChunk()
+    {
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int z = 0; z < size; z++)
+                {
+                    voxels[(x + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2) + (z + 1)] = orig[x * height * size + y * size + z];
+                }
+            }
+        }
+
+        //Copy the top/bottom neighbor chunk slices
+        for (int x = 0; x < size; x++)
+        {
+            for (int z = 0; z < size; z++)
+            {
+                //set the top of the input data as the bottom of the above chunk
+                voxels[(x + 1) * (height + 2) * (size + 2) + (height + 1) * (size + 2) + (z + 1)] =
+                    up[x * height * size + z];
+
+                //set bottom of input as top of below chunk
+                voxels[(x + 1) * (height + 2) * (size + 2) + (z + 1)] =
+                    down[x * height * size + (height-1) * size + z];
+            }
+        }
+        //left/right
+        for (int y = 0; y < height; y++)
+        {
+            for (int z = 0; z < size; z++)
+            {
+                //Set the left of the input chunk as the right slice of the left chunk
+                voxels[(y + 1) * (height + 2) + (z + 1)] =
+                    left[(size-1) * height * size + y * size + z];
+                //Set the right of the input as the left slice of the right chunk.
+                voxels[(size + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2) + (z + 1)] =
+                    right[y * size + z];
+            }
+        }
+        //forward/back
+        for (int x = 0; x < size; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                //Set the back of the input as the forward of the back chunk
+                voxels[(x + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2) + size + 1] =
+                    forward[x * height * size + y * size];
+                //Set the forward of the input as the back of the forward
+                voxels[(x + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2)] =
+                    back[x * height * size + y * size + (size-1)];
+            }
+        }
     }
 
-    //index into the given voxels. Voxels are currently given in a flat array,
-    //and if you imagine the 3d representation, the current chunk's voxels are
+    //index into the given orig. Voxels are currently given in a flat array,
+    //and if you imagine the 3d representation, the current chunk's orig are
     //spaced out from the edges by 1 space. The first layer of the neighboring
     //chunks fill the space between the actual chunk and the edge of the array.
     private Voxel voxel(int x, int y, int z)
@@ -111,7 +190,7 @@ public struct ChunkMeshJob : IJob
                     {
                         //Bounds checking/voxel type checking
                         //Make sure to check the adjacent chunk if our needed voxel is outside this one
-                        //voxels below and above the current slice
+                        //orig below and above the current slice
                         VoxelType below = voxel(
                             progress[0],
                             progress[1],

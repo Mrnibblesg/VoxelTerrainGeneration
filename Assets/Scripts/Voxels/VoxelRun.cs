@@ -1,6 +1,6 @@
 using Unity.Collections;
 
-//Represent the volume of chunks using runs of voxels instead of an array.
+//Represent the volume of chunks using runs of orig instead of an array.
 //A linked list.
 public class VoxelRun
 {
@@ -51,7 +51,7 @@ public class VoxelRun
         return head;
     }
     /// <summary>
-    /// Set the voxels at the index and for the length to the given voxel.
+    /// Set the orig at the index and for the length to the given voxel.
     /// </summary>
     /// <param name="head">The head of the list</param>
     /// <param name="type">The voxel type to insert</param>
@@ -192,28 +192,29 @@ public class VoxelRun
         }
         return head;
     }
-    // Old render pipeline: Voxels -> expanded voxels, all in main thread
-    // New render pipeline: Voxel run -> voxels -> expanded voxels, all in main thread
-    //idea: Convert voxel runs for needed arrays into some form we can input to the render job, create the expanded voxels array inside the job.
-    //readonly native list of pairs of voxel, length?
-    public static Voxel[,,] toArray(VoxelRun head, int size, int height)
+
+    /// <summary>
+    /// Mainly for use in prepping for a job.
+    /// MAKE SURE YOU DISPOSE WHEN FINISHED!
+    /// </summary>
+    public static NativeArray<Voxel> ToFlatNativeArray(VoxelRun head, int size, int height)
     {
         if (head == null)
         {
             head = new VoxelRun(size, height);
         }
-        Voxel[,,] arr = new Voxel[size, height, size];
+        NativeArray<Voxel> newArr = new(size * height * size, Allocator.TempJob);
+
         int i = 0;
         while (head != null)
         {
             for (int run = 0; run < head.runLength; run++, i++)
             {
-                arr[i / (height * size),
-                (i /size) % height,
-                i % size] = head.type;
+                newArr[i] = head.type;
             }
             head = head.next;
         }
-        return arr;
+
+        return newArr;
     }
 }
