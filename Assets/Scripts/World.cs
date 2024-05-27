@@ -74,6 +74,9 @@ public class World
     public void UpdatePlayerChunkPos(Vector3Int chunkCoord, int renderDist, int unloadDist)
     {
         //Add 1 to compensate for the current chunk mesh method
+        renderDist *= (int)resolution;
+        unloadDist *= (int)resolution;
+
         renderDist += 1;
         unloadDist += 1;
 
@@ -188,6 +191,7 @@ public class World
 
         //Now that this chunk has had its terrain generated, we should see if the neighboring chunks should generate their meshes.
         TryMeshNeighbors(chunkCoords);
+        TryMesh(chunkCoords);
     }
     /// <summary>
     /// Dispose of a chunk plus extra necessary bookkeeping.
