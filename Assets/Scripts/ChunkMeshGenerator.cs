@@ -5,9 +5,11 @@ using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
 using System;
+using Unity.Profiling;
 
 public class ChunkMeshGenerator
 {
+    private static ProfilerMarker s_chunkFinish = new ProfilerMarker(ProfilerCategory.Render, "Finish chunk");
     //The stuff you want back when the job finishes. All else is lost
     private struct JobData
     {
@@ -110,6 +112,7 @@ public class ChunkMeshGenerator
     }
     public static void finishNewMesh(object raw)
     {
+        s_chunkFinish.Begin();
         JobData results = (JobData)raw;
         if (results.requester == null)
         {
@@ -147,6 +150,7 @@ public class ChunkMeshGenerator
         results.quads.Dispose();
         results.vertices.Dispose();
         results.colors.Dispose();
+        s_chunkFinish.End();
     }
 
 }

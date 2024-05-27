@@ -14,6 +14,8 @@ public struct ChunkMeshJob : IJob
     public int size;
     public int height;
     public float resolution;
+
+    [DeallocateOnJobCompletion]
     public NativeArray<Voxel> voxels;
 
     [WriteOnly]

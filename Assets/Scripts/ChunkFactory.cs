@@ -38,7 +38,7 @@ public class ChunkFactory
             JobData data = new()
             {
                 chunkCoord = chunkCoords,
-                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.Persistent) //If this job takes more than 4 frames, switch to Allocator.Persistent
+                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.TempJob) //If this job takes more than 4 frames, switch to Allocator.Persistent
             };
 
             ChunkGenJob chunkGenJob = new()

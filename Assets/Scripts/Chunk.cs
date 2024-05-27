@@ -13,7 +13,7 @@ public class Chunk : MonoBehaviour
     public Chunk[] neighbors;
     //up, down, left, right, forward, back
 
-    public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.RegenerateMesh"); //Profiling
+    public static ProfilerMarker s_ChunkReq = new(ProfilerCategory.Render, "Chunk request new mesh"); //Profiling
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
@@ -41,8 +41,10 @@ public class Chunk : MonoBehaviour
     /// </summary>
     public void RegenerateMesh()
     {
+        s_ChunkReq.Begin();
         updateNeighborChunks();
         ChunkMeshGenerator.RequestNewMesh(this);
+        s_ChunkReq.End();
     }
     public void ApplyNewMesh(Mesh m, long requestTime)
     {
