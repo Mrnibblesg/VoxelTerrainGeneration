@@ -126,7 +126,7 @@ public struct ChunkMeshJob : IJob
                         //no face if the solid block is in the neighbor chunk
                         //We need the last 2 checks to avoid overdraw.
                         if ((above == VoxelType.AIR) ==
-                            (below == VoxelType.AIR) || 
+                            (below == VoxelType.AIR) ||
                             (below != VoxelType.AIR && outsideChunk(progress[0], progress[1], progress[2])) ||
                             (above != VoxelType.AIR && outsideChunk(progress[0] + normOff[0], progress[1] + normOff[1], progress[2] + normOff[2])))
                         {
