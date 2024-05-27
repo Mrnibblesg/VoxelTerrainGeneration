@@ -73,6 +73,10 @@ public class World
     /// <param name="chunkCoord"></param>
     public void UpdatePlayerChunkPos(Vector3Int chunkCoord, int renderDist, int unloadDist)
     {
+        //Add 1 to compensate for the current chunk mesh method
+        renderDist += 1;
+        unloadDist += 1;
+
         s_moveChunk.Begin();
         
         //For when a chunk finishes and new jobs must be queued
@@ -133,13 +137,22 @@ public class World
         {
             return;
         }
-        if (chunkCoords.y < worldHeight &&
-            chunkCoords.y >= 0)
+        if (ChunkWithinWorld(chunkCoords)) 
         {
             chunksInProg.Add(chunkCoords);
             chunkFactory.RequestNewChunk(chunkCoords);
         }
     }
+
+    /// <param name="chunkCoords"></param>
+    /// <returns>True if chunk is within world bounds</returns>
+    private bool ChunkWithinWorld(Vector3Int chunkCoords)
+    {
+        return
+            chunkCoords.y < worldHeight &&
+            chunkCoords.y >= 0;
+    }
+
     /// <summary>
     /// Called when a chunk finishes generating. Builds a new chunk.
     /// </summary>
@@ -173,9 +186,8 @@ public class World
         //Queue up new unloaded neighbors to generate if they're in range
         UpdateNeighborQueues();
 
-        //Regenerate mesh
-        newChunk.RegenerateMesh();
-        RefreshNeighbors(chunkCoords);
+        //Now that this chunk has had its terrain generated, we should see if the neighboring chunks should generate their meshes.
+        TryMeshNeighbors(chunkCoords);
     }
     /// <summary>
     /// Dispose of a chunk plus extra necessary bookkeeping.
@@ -191,10 +203,9 @@ public class World
         chunks.Remove(chunkCoords);
         unloadedNeighbors.Add(chunkCoords);
 
+        //Extra bookkeeping
         TryRemoveUnloadedNeighbors(chunkCoords);
         TryRemoveUnloaded(chunkCoords);
-
-        RefreshNeighbors(chunkCoords);
     }
 
     /// <summary>
@@ -248,29 +259,42 @@ public class World
         addIfNotLoaded(chunkCoord + Vector3Int.forward);
         addIfNotLoaded(chunkCoord + Vector3Int.back);
     }
-
-    //When a neighbor chunk is rendered, use this to refresh neighboring chunk meshes.
-    //Honestly inefficient...
-    //Render 6 chunks for the price of 1!!
-    private void RefreshNeighbors(Vector3Int chunkCoord)
+    /// <summary>
+    /// When a chunk has its terrain generated, use this to alert its neighboring chunks
+    /// so they can attempt to create a mesh.
+    /// </summary>
+    /// <param name="chunkCoord"></param>
+    private void TryMeshNeighbors(Vector3Int chunkCoord)
     {
-        RefreshChunk(chunkCoord + Vector3Int.left);
-        RefreshChunk(chunkCoord + Vector3Int.right);
-        RefreshChunk(chunkCoord + Vector3Int.up);
-        RefreshChunk(chunkCoord + Vector3Int.down);
-        RefreshChunk(chunkCoord + Vector3Int.back);
-        RefreshChunk(chunkCoord + Vector3Int.forward);
+        TryMesh(chunkCoord + Vector3Int.left);
+        TryMesh(chunkCoord + Vector3Int.right);
+        TryMesh(chunkCoord + Vector3Int.up);
+        TryMesh(chunkCoord + Vector3Int.down);
+        TryMesh(chunkCoord + Vector3Int.back);
+        TryMesh(chunkCoord + Vector3Int.forward);
     }
 
     /// <summary>
-    /// For when a chunk should be re-rendered or something, like when a neighbor 
-    /// loads and the supplied one should reload.
+    /// Tell a chunk to regenerate its mesh if all its valid chunk neighbors have
+    /// their terrains generated.
     /// </summary>
     /// <param name="c"></param>
-    private void RefreshChunk(Vector3Int chunkCoord)
+    private void TryMesh(Vector3Int chunkCoord)
     {
+        //should fail until the last chunk neighbor has terrain generated
+        
+        bool valid(Vector3Int neighbor)
+        {
+            return chunks.ContainsKey(neighbor) || !ChunkWithinWorld(neighbor);
+        }
         Chunk c = GetChunk(chunkCoord);
-        if (c != null)
+        if (c != null &&
+            valid(chunkCoord + Vector3Int.left) &&
+            valid(chunkCoord + Vector3Int.right) &&
+            valid(chunkCoord + Vector3Int.up) &&
+            valid(chunkCoord + Vector3Int.down) &&
+            valid(chunkCoord + Vector3Int.back) &&
+            valid(chunkCoord + Vector3Int.forward))
         {
             c.RegenerateMesh();
         }
