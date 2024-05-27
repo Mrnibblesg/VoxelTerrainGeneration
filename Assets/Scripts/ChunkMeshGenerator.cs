@@ -130,16 +130,9 @@ public class ChunkMeshGenerator
         NativeArray<int> nativeQuads = results.quads.ToArray(Allocator.TempJob);
         NativeArray<Color32> nativeColors = results.colors.ToArray(Allocator.TempJob);
 
-        Vector3[] vecVerts = new Vector3[nativeVerts.Length];
-        for (int i = 0; i < nativeVerts.Length; i++)
-        {
-            vecVerts[i] = nativeVerts[i];
-        }
-
-        newMesh.vertices = vecVerts;
-        newMesh.colors32 = nativeColors.ToArray();
-        //newMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        newMesh.SetIndices(nativeQuads.ToArray(), MeshTopology.Quads, 0);
+        newMesh.SetVertices(nativeVerts);
+        newMesh.SetIndices(nativeQuads, MeshTopology.Quads, 0);
+        newMesh.SetColors(nativeColors);
 
         newMesh.RecalculateNormals();
         results.requester.ApplyNewMesh(newMesh, results.requestTime);
