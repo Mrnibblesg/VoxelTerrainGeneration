@@ -130,9 +130,6 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
-                position.x = Mathf.Floor(position.x) + 0.5f;
-                position.y = Mathf.Floor(position.y) + 0.5f;
-                position.z = Mathf.Floor(position.z) + 0.5f;
 
                 if (Input.GetKey(KeyCode.LeftShift))
                 {

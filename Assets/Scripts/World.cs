@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 
 // TODO In the future, this should *probably* only contain world info, chunks, and get chunks.
@@ -44,6 +44,8 @@ public class World
 
     ChunkFactory chunkFactory;
 
+    private static ProfilerMarker s_moveChunk = new ProfilerMarker(ProfilerCategory.Scripts, "Move Chunk");
+
     public World(int worldHeight, int chunkSize, int chunkHeight, int waterHeight, float resolution, string worldName)
     {
         this.worldHeight = worldHeight;
@@ -71,7 +73,9 @@ public class World
     /// <param name="chunkCoord"></param>
     public void UpdatePlayerChunkPos(Vector3Int chunkCoord, int renderDist, int unloadDist)
     {
-        //For chained chunk updates if the player doesn't leave their chunk for a while
+        s_moveChunk.Begin();
+        
+        //For when a chunk finishes and new jobs must be queued
         playerChunkPos = chunkCoord;
         playerLoadDist = renderDist;
         playerUnloadDist = unloadDist;
@@ -93,6 +97,7 @@ public class World
         }
 
         UpdateNeighborQueues();
+        s_moveChunk.End();
     }
     private void UpdateNeighborQueues()
     {

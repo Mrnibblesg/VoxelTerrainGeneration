@@ -100,7 +100,7 @@ public Voxel GetVoxel(int x, int y, int z)
     }
 
     /// <summary>
-    /// Sets the voxel at the world-space position in this chunk.
+    /// Sets the voxel at the local world-space position in this chunk.
     /// </summary>
     /// <param name="vec"></param>
     /// <param name="voxel"></param>
