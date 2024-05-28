@@ -2,26 +2,28 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.ConstrainedExecution;
 using Unity.Profiling;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class Chunk : MonoBehaviour
 {
-    public Voxel[,,] voxels;
+    public VoxelRun voxels;
 
     public World parent;
 
-    public static ProfilerMarker s_ChunkGen = new(ProfilerCategory.Render, "Chunk.RegenerateMesh"); //Profiling
+    //Store refs to neighbors used when you request a new mesh
+    public Chunk[] neighbors;
+    //up, down, left, right, forward, back
 
     public static ProfilerMarker s_VoxelUpdate = new(ProfilerCategory.Render, "Chunk.SetVoxels"); //Profiling
 
-    //more useful for chunks with many voxels
-    Chunk[] neighbors;
+    public static ProfilerMarker s_ChunkReq = new(ProfilerCategory.Render, "Chunk request new mesh"); //Profiling
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
     private MeshCollider meshCollider;
+
+    //Use to avoid race conditions related to mesh requests & job completion time
+    private long lastMeshUpdateTime = -1;
 
     //directional face bit flags
     public static int POSXFACE = 0b00000001;
@@ -38,27 +40,11 @@ public class Chunk : MonoBehaviour
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
         meshRenderer.material = parent.vertexColorMaterial;
 
+        neighbors = new Chunk[6];
+
         this.parent = parent;
 
-        voxels = new Voxel[parent.chunkSize, parent.chunkHeight, parent.chunkSize];
-    }
-
-    /// <summary>
-    /// Mark the given voxel as exposed if it's transparent or
-    /// adjacent to something transparent.
-    /// </summary>
-    public void MarkExposed(int x, int y, int z)
-    {
-        if (VoxelOutOfBounds(x, y, z)) { return; }
-
-        voxels[x, y, z].exposed =
-            voxels[x,y,z].hasTransparency ||
-            VoxelHasTransparency(x + 1, y, z) ||
-            VoxelHasTransparency(x - 1, y, z) ||
-            VoxelHasTransparency(x, y + 1, z) ||
-            VoxelHasTransparency(x, y - 1, z) ||
-            VoxelHasTransparency(x, y, z + 1) ||
-            VoxelHasTransparency(x, y, z - 1);
+        voxels = new VoxelRun(parent.chunkSize, parent.chunkHeight);
     }
 
     /// <summary>
@@ -66,44 +52,23 @@ public class Chunk : MonoBehaviour
     /// </summary>
     public void RegenerateMesh()
     {
+        s_ChunkReq.Begin();
+        updateNeighborChunks();
         ChunkMeshGenerator.RequestNewMesh(this);
+        s_ChunkReq.End();
     }
-    public void ApplyNewMesh(Mesh m)
+    public void ApplyNewMesh(Mesh m, long requestTime)
     {
-        meshFilter.mesh = m;
+        //Ignore if the mesh was requested earlier than the current one was (outdated mesh)
+        if (requestTime < lastMeshUpdateTime)
+        {
+            Destroy(m);
+            return;
+        }
+        Destroy(meshFilter.sharedMesh);
+        meshFilter.sharedMesh = m;
         meshCollider.sharedMesh = m;
-    }
-
-    bool VoxelHasTransparency(int x, int y, int z)
-    {
-        if (VoxelOutOfBounds(x,y,z))
-        {
-            Vector3Int pos = new Vector3Int(x, y, z);
-            return OutsideVoxelHasTransparency(pos);
-        }
-        return voxels[x, y, z].hasTransparency;
-    }
-
-    bool OutsideVoxelHasTransparency(Vector3 pos)
-    {
-        Vector3 globalPos = transform.position + pos;
-        Chunk neighbor = parent.ChunkFromGlobal(globalPos);
-        if (neighbor == null)
-        {
-            return true;
-        }
-        
-        //Ensure we don't somehow use an invalid index
-        try
-        {
-            Vector3 neighborPos = neighbor.gameObject.transform.InverseTransformPoint(globalPos);
-            return neighbor.voxels[(int)neighborPos.x, (int)neighborPos.y, (int)neighborPos.z].hasTransparency;
-        }
-        catch(IndexOutOfRangeException e)
-        {
-            print(e);
-        }
-        return true;
+        lastMeshUpdateTime = requestTime;
     }
 
     /// <summary>
@@ -111,7 +76,7 @@ public class Chunk : MonoBehaviour
     /// </summary>
     /// <param name="vec"></param>
     /// <returns></returns>
-    public Voxel? GetVoxel(Vector3 vec)
+    public Voxel? VoxelFromLocal(Vector3 vec)
     {
         //Get from some coordinate within the chunk to the appropriate voxel coords.
         vec *= parent.resolution;
@@ -123,16 +88,35 @@ public class Chunk : MonoBehaviour
 
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
 
-        return outside ? null : Voxel.Clone(voxels[pos.x, pos.y, pos.z]);
+        return outside ? null : GetVoxel(pos);
+    }
+    /// <summary>
+    /// Get the voxel
+    /// </summary>
+    /// <param name="voxCoords"></param>
+    /// <returns></returns>
+    public Voxel GetVoxel(Vector3Int voxCoords)
+    {
+        return VoxelRun.Get(voxels,
+            voxCoords.x * parent.chunkSize * parent.chunkHeight +
+            voxCoords.y * parent.chunkSize +
+            voxCoords.z);
+    }
+public Voxel GetVoxel(int x, int y, int z)
+    {
+        return VoxelRun.Get(voxels,
+            x * parent.chunkSize * parent.chunkHeight +
+            y * parent.chunkSize +
+            z);
     }
 
     /// <summary>
-    /// Sets the voxel at the world-space position in this chunk.
+    /// Sets the voxel at the local world-space position in this chunk.
     /// </summary>
     /// <param name="vec"></param>
     /// <param name="voxel"></param>
     /// <returns> Whether the voxel was set. </returns>
-    public bool SetVoxel(Vector3 vec, Voxel voxel)
+    public bool SetVoxelFromLocal(Vector3 vec, Voxel voxel)
     {
         //Scale the world-space coordinate to voxel-coordinate space
         vec *= parent.resolution;
@@ -145,34 +129,20 @@ public class Chunk : MonoBehaviour
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
         if (outside) { return false; }
 
-        if (voxel.type == VoxelType.AIR)
+        if (SetVoxel(pos, Voxel.Clone(voxel)))
         {
-            if (voxels[pos.x, pos.y, pos.z].type != VoxelType.AIR)
-            {
-                voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
-                if (pos.x == 0 || pos.x == parent.chunkSize-1 || pos.y == 0 || pos.y == parent.chunkSize-1 || pos.z == 0 || pos.z == parent.chunkSize-1)
-                {
-                    UpdateNeighbors(pos.x, pos.y, pos.z);
-                }
-            }
+            UpdateNeighbors(pos.x, pos.y, pos.z);
+            RegenerateMesh();
+            return true;
         }
-        else
-        {
-            if (voxels[pos.x, pos.y, pos.z].type == VoxelType.AIR)
-            {
-                voxels[pos.x, pos.y, pos.z] = Voxel.Clone(voxel);
-                if (pos.x == 0 || pos.x == parent.chunkSize-1 || pos.y == 0 || pos.y == parent.chunkSize-1 || pos.z == 0 || pos.z == parent.chunkSize-1)
-                {
-                    UpdateNeighbors(pos.x, pos.y, pos.z);
-                }
-            }
-        }
-
-        // Update the mesh
-        // Brute force for now
-        RegenerateMesh();
-
-        return true;
+        return false;
+    }
+    private bool SetVoxel(Vector3Int voxCoords, Voxel voxel)
+    {
+        return VoxelRun.Set(voxels, voxel,
+            voxCoords.x * parent.chunkSize * parent.chunkHeight + 
+            voxCoords.y * parent.chunkSize + 
+            voxCoords.z);
     }
     public bool SetVoxels(Vector3[,,] vectors, Voxel[,,] newVoxels, int openFaces)
     {
@@ -201,35 +171,21 @@ public class Chunk : MonoBehaviour
                     bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
                     if (outside) { continue; }
 
-                    if (newVoxels[i,j,k].type == VoxelType.AIR)
-                    {
-                        if (voxels[pos.x, pos.y, pos.z].type != VoxelType.AIR)
-                        {
-                            voxels[pos.x, pos.y, pos.z] = Voxel.Clone(newVoxels[i,j,k]);
-                        }
-                    }
-                    else
-                    {
-                        if (voxels[pos.x, pos.y, pos.z].type == VoxelType.AIR)
-                        {
-                            voxels[pos.x, pos.y, pos.z] = Voxel.Clone(newVoxels[i,j,k]);
-                        }
-                    }
+            if (voxel[i].type == VoxelType.AIR)
+            {
+                if (GetVoxel(pos).type != VoxelType.AIR)
+                {
+                    SetVoxel(pos, Voxel.Clone(voxel[i]));
                 }
             }
+            else
+            {
+                if (GetVoxel(pos).type == VoxelType.AIR)
+                {
+                    SetVoxel(pos, Voxel.Clone(voxel[i]));
+                }
             }
-
-        Vector3Int chunkPos = new Vector3Int(
-            (int)transform.position.x, 
-            (int)transform.position.y, 
-            (int)transform.position.z);
-
-        if ((openFaces & POSXFACE) == POSXFACE) { UpdateNeighbors(chunkPos.x + parent.chunkSize, chunkPos.y + 1, chunkPos.z + 1); }
-        if ((openFaces & POSYFACE) == POSYFACE) { UpdateNeighbors(chunkPos.x + 1, chunkPos.y + parent.chunkSize, chunkPos.z + 1); }
-        if ((openFaces & POSZFACE) == POSZFACE) { UpdateNeighbors(chunkPos.x + 1, chunkPos.y + 1, chunkPos.z + parent.chunkSize); }
-        if ((openFaces & NEGXFACE) == NEGXFACE) { UpdateNeighbors(chunkPos.x, chunkPos.y + 1, chunkPos.z + 1); }
-        if ((openFaces & NEGYFACE) == NEGYFACE) { UpdateNeighbors(chunkPos.x + 1, chunkPos.y, chunkPos.z + 1); }
-        if ((openFaces & NEGZFACE) == NEGZFACE) { UpdateNeighbors(chunkPos.x + 1, chunkPos.y + 1, chunkPos.z); }
+        }
 
         // Update the mesh
         // Brute force for now
@@ -252,6 +208,14 @@ public class Chunk : MonoBehaviour
 
         //Make sure when adding to this function that the things you add DO NOT trigger
         //more updates, or the updates could cascade forever.
+        void updateList(Chunk c, int x, int y, int z)
+        {
+
+            if (c != this)
+            {
+                c.RegenerateMesh();
+            }
+        }
 
         //Use the proper chunk to update the neighbor voxel from.
         void UseAppropriateChunk(int x, int y, int z)
@@ -313,6 +277,17 @@ public class Chunk : MonoBehaviour
     private Vector3 VoxelCoordToGlobal(Vector3 coord)
     {
         return transform.position + (coord / parent.resolution);
+    }
+    private void updateNeighborChunks()
+    {
+        Vector3 chunkPos = new(transform.position.x, transform.position.y, transform.position.z);
+
+        neighbors[0] = parent.ChunkFromGlobal(chunkPos + (Vector3.up * parent.chunkHeight / parent.resolution));
+        neighbors[1] = parent.ChunkFromGlobal(chunkPos + (Vector3.down * parent.chunkHeight / parent.resolution));
+        neighbors[2] = parent.ChunkFromGlobal(chunkPos + (Vector3.left * parent.chunkSize / parent.resolution));
+        neighbors[3] = parent.ChunkFromGlobal(chunkPos + (Vector3.right * parent.chunkSize / parent.resolution));
+        neighbors[4] = parent.ChunkFromGlobal(chunkPos + (Vector3.forward * parent.chunkSize / parent.resolution));
+        neighbors[5] = parent.ChunkFromGlobal(chunkPos + (Vector3.back * parent.chunkSize / parent.resolution));
     }
 
     //Debug only

@@ -38,7 +38,7 @@ public class ChunkFactory
             JobData data = new()
             {
                 chunkCoord = chunkCoords,
-                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.Persistent) //If this job takes more than 4 frames, switch to Allocator.Persistent
+                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.TempJob) //If this job takes more than 4 frames, switch to Allocator.Persistent
             };
 
             ChunkGenJob chunkGenJob = new()
@@ -54,7 +54,7 @@ public class ChunkFactory
             };
 
             JobManager.Manager.AddJob(chunkGenJob.Schedule(), FinishChunkData, data);
-        }
+    }
     /// <summary>
     /// The callback used to return to when a chunk finishes generating.
     /// Calls world.chunkFinished()
@@ -64,18 +64,8 @@ public class ChunkFactory
     {
         //Only need to convert the flat array into a 3d array
         JobData results = (JobData)raw;
-        Voxel[,,] voxels = new Voxel[world.chunkSize, world.chunkHeight, world.chunkSize];
 
-        //Convert flat data array to 3d array
-        for (int i = 0; i < results.voxels.Length; i++)
-        {
-            voxels[i / (world.chunkHeight * world.chunkSize),
-                (i / world.chunkSize) % world.chunkHeight,
-                i % world.chunkSize] = results.voxels[i];
-        }
-
+        world.ChunkFinished(results.chunkCoord, VoxelRun.toVoxelRun(results.voxels));
         results.voxels.Dispose();
-        world.ChunkFinished(results.chunkCoord, voxels);
-        
     }
 }

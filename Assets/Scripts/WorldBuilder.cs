@@ -41,7 +41,7 @@ public class WorldBuilder
     public WorldBuilder SetDimensions(int resolution, int height, int chunkSize, int chunkHeight, int waterHeight)
     {
         this.Resolution = (int) Mathf.Pow(2, resolution - 1); //Resolution in powers of 2 to avoid odd numbers which make rendering annoying due to rounding errors
-        this.WorldHeight = height;
+        this.WorldHeight = height * this.Resolution;
         this.ChunkSize = chunkSize;
         this.ChunkHeight = chunkSize; //chunkHt;
         this.WaterHeight = waterHeight;

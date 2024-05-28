@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 
 // TODO In the future, this should *probably* only contain world info, chunks, and get chunks.
@@ -28,8 +28,6 @@ public class World
     private List<Player> players = new List<Player>();
 
     //Use queues to dictate which order chunks are loaded and unloaded.
-    //This will be threaded. TODO.
-
     private Dictionary<Vector3Int, Chunk> chunks;
     private HashSet<Vector3Int> chunksInProg; //Chunks that have been queued to generate
     //TODO: Switch to priority queue. Prioritize nearest chunks.
@@ -45,6 +43,8 @@ public class World
     private int playerUnloadDist;
 
     ChunkFactory chunkFactory;
+
+    private static ProfilerMarker s_moveChunk = new ProfilerMarker(ProfilerCategory.Scripts, "Move Chunk");
 
     //directional face bit flags
     public static int POSXFACE = 1;
@@ -85,7 +85,16 @@ public class World
     /// <param name="chunkCoord"></param>
     public void UpdatePlayerChunkPos(Vector3Int chunkCoord, int renderDist, int unloadDist)
     {
-        //For chained chunk updates if the player doesn't leave their chunk for a while
+        //Add 1 to compensate for the current chunk mesh method
+        renderDist *= (int)resolution;
+        unloadDist *= (int)resolution;
+
+        renderDist += 1;
+        unloadDist += 1;
+
+        s_moveChunk.Begin();
+        
+        //For when a chunk finishes and new jobs must be queued
         playerChunkPos = chunkCoord;
         playerLoadDist = renderDist;
         playerUnloadDist = unloadDist;
@@ -107,6 +116,7 @@ public class World
         }
 
         UpdateNeighborQueues();
+        s_moveChunk.End();
     }
     private void UpdateNeighborQueues()
     {
@@ -142,13 +152,22 @@ public class World
         {
             return;
         }
-        if (chunkCoords.y < worldHeight &&
-            chunkCoords.y >= 0)
+        if (ChunkWithinWorld(chunkCoords)) 
         {
             chunksInProg.Add(chunkCoords);
             chunkFactory.RequestNewChunk(chunkCoords);
         }
     }
+
+    /// <param name="chunkCoords"></param>
+    /// <returns>True if chunk is within world bounds</returns>
+    private bool ChunkWithinWorld(Vector3Int chunkCoords)
+    {
+        return
+            chunkCoords.y < worldHeight &&
+            chunkCoords.y >= 0;
+    }
+
     /// <summary>
     /// Called when a chunk finishes generating. Builds a new chunk.
     /// </summary>
@@ -156,7 +175,7 @@ public class World
     //While a chunk is loading, it remains as a neighbor chunk but is added to loading in progress set.
     //When a chunk finishes loading, add its neighbors to the unloaded neighbors set if not loaded.
     //  They get queued as well if they're in range.
-    public void ChunkFinished(Vector3Int chunkCoords, Voxel[,,] data)
+    public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
         //if no chunk, configure and generate new one
         GameObject chunkObj = new GameObject($"Chunk{chunkCoords.x},{chunkCoords.y},{chunkCoords.z}");
@@ -168,7 +187,7 @@ public class World
 
         Chunk newChunk = chunkObj.AddComponent<Chunk>();
         newChunk.Initialize(this);
-        newChunk.voxels = data;
+        newChunk.voxels = voxels;
 
         //add to chunks
         chunks.Add(chunkCoords, newChunk);
@@ -182,9 +201,9 @@ public class World
         //Queue up new unloaded neighbors to generate if they're in range
         UpdateNeighborQueues();
 
-        //Regenerate mesh
-        newChunk.RegenerateMesh();
-        RefreshNeighbors(chunkCoords);
+        //Now that this chunk has had its terrain generated, we should see if the neighboring chunks should generate their meshes.
+        TryMeshNeighbors(chunkCoords);
+        TryMesh(chunkCoords);
     }
     /// <summary>
     /// Dispose of a chunk plus extra necessary bookkeeping.
@@ -200,10 +219,9 @@ public class World
         chunks.Remove(chunkCoords);
         unloadedNeighbors.Add(chunkCoords);
 
+        //Extra bookkeeping
         TryRemoveUnloadedNeighbors(chunkCoords);
         TryRemoveUnloaded(chunkCoords);
-
-        RefreshNeighbors(chunkCoords);
     }
 
     /// <summary>
@@ -257,29 +275,42 @@ public class World
         addIfNotLoaded(chunkCoord + Vector3Int.forward);
         addIfNotLoaded(chunkCoord + Vector3Int.back);
     }
-
-    //When a neighbor chunk is rendered, use this to refresh neighboring chunk meshes.
-    //Honestly inefficient...
-    //Render 6 chunks for the price of 1!!
-    private void RefreshNeighbors(Vector3Int chunkCoord)
+    /// <summary>
+    /// When a chunk has its terrain generated, use this to alert its neighboring chunks
+    /// so they can attempt to create a mesh.
+    /// </summary>
+    /// <param name="chunkCoord"></param>
+    private void TryMeshNeighbors(Vector3Int chunkCoord)
     {
-        RefreshChunk(chunkCoord + Vector3Int.left);
-        RefreshChunk(chunkCoord + Vector3Int.right);
-        RefreshChunk(chunkCoord + Vector3Int.up);
-        RefreshChunk(chunkCoord + Vector3Int.down);
-        RefreshChunk(chunkCoord + Vector3Int.back);
-        RefreshChunk(chunkCoord + Vector3Int.forward);
+        TryMesh(chunkCoord + Vector3Int.left);
+        TryMesh(chunkCoord + Vector3Int.right);
+        TryMesh(chunkCoord + Vector3Int.up);
+        TryMesh(chunkCoord + Vector3Int.down);
+        TryMesh(chunkCoord + Vector3Int.back);
+        TryMesh(chunkCoord + Vector3Int.forward);
     }
 
     /// <summary>
-    /// For when a chunk should be re-rendered or something, like when a neighbor 
-    /// loads and the supplied one should reload.
+    /// Tell a chunk to regenerate its mesh if all its valid chunk neighbors have
+    /// their terrains generated.
     /// </summary>
     /// <param name="c"></param>
-    private void RefreshChunk(Vector3Int chunkCoord)
+    private void TryMesh(Vector3Int chunkCoord)
     {
+        //should fail until the last chunk neighbor has terrain generated
+        
+        bool valid(Vector3Int neighbor)
+        {
+            return chunks.ContainsKey(neighbor) || !ChunkWithinWorld(neighbor);
+        }
         Chunk c = GetChunk(chunkCoord);
-        if (c != null)
+        if (c != null &&
+            valid(chunkCoord + Vector3Int.left) &&
+            valid(chunkCoord + Vector3Int.right) &&
+            valid(chunkCoord + Vector3Int.up) &&
+            valid(chunkCoord + Vector3Int.down) &&
+            valid(chunkCoord + Vector3Int.back) &&
+            valid(chunkCoord + Vector3Int.forward))
         {
             c.RegenerateMesh();
         }
@@ -318,7 +349,7 @@ public class World
         Chunk c = ChunkFromGlobal(vec);
         if (c != null)
         {
-            return (Voxel)c.GetVoxel(c.transform.InverseTransformPoint(vec));
+            return (Voxel)c.VoxelFromLocal(c.transform.InverseTransformPoint(vec));
         }
         return null;
     }
@@ -353,7 +384,7 @@ public class World
         Chunk c = ChunkFromGlobal(vec);
         if (c != null)
         {
-            c.SetVoxel(c.transform.InverseTransformPoint(vec), voxel);
+            c.SetVoxelFromLocal(c.transform.InverseTransformPoint(vec), voxel);
         }
     }
     /// <summary>

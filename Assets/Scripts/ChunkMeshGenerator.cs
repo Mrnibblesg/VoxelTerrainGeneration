@@ -4,13 +4,17 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using System;
+using Unity.Profiling;
 
 public class ChunkMeshGenerator
 {
+    private static ProfilerMarker s_chunkFinish = new ProfilerMarker(ProfilerCategory.Render, "Finish chunk");
     //The stuff you want back when the job finishes. All else is lost
     private struct JobData
     {
         public Chunk requester;
+        public long requestTime;
         public NativeList<float3> vertices;
         public NativeList<int> quads;
         public NativeList<Color32> colors;
@@ -22,37 +26,63 @@ public class ChunkMeshGenerator
         JobData jobData = new()
         {
             requester = c,
-            vertices = new(Allocator.Persistent),
-            quads = new(Allocator.Persistent),
-            colors = new(Allocator.Persistent)
+            requestTime = DateTime.Now.Ticks,
+            vertices = new(Allocator.TempJob),
+            quads = new(Allocator.TempJob),
+            colors = new(Allocator.TempJob)
         };
 
-        //flatten the voxel array
-        NativeArray<Voxel> flattened = new(size * height * size, Allocator.Persistent);
-        for (int i = 0; i < flattened.Length; i++)
-        {
-            flattened[i] = c.voxels[
-                i / (height * size),
-                (i / size) % height,
-                i % size];
-        }
+        //flatten the voxel array, make space for the first layer of neighboring chunks
+        //All deallocated by job when finished
+        
+
+        NativeList<VoxelRun.Pair<Voxel, int>> orig = VoxelRun.ToNativeList(c.voxels, size, height);
+
+        NativeList<VoxelRun.Pair<Voxel, int>> up = VoxelRun.ToNativeList(c.neighbors[0]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> down = VoxelRun.ToNativeList(c.neighbors[1]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> left = VoxelRun.ToNativeList(c.neighbors[2]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> right = VoxelRun.ToNativeList(c.neighbors[3]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> forward = VoxelRun.ToNativeList(c.neighbors[4]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> back = VoxelRun.ToNativeList(c.neighbors[5]?.voxels, size, height);
 
         ChunkMeshJob chunkMeshJob = new()
         {
             size = size,
             height = height,
             resolution = c.parent.resolution,
-            voxels = flattened,
+            
+            orig = orig,
+            
+            up = up,
+            down = down,
+            left = left,
+            right = right,
+            forward = forward,
+            back = back,
 
             vertices = jobData.vertices,
             quads = jobData.quads,
             colors = jobData.colors,
         };
+        JobHandle handle = chunkMeshJob.Schedule();
 
-        JobManager.Manager.AddJob(chunkMeshJob.Schedule(), finishNewMesh, jobData);
+        JobManager.Manager.AddJob(handle, finishNewMesh, jobData);
+
+        //DeallocateOnJobCompletion only works on NativeArrays, not NativeLists.
+        //Hopefully this doesn't go on the main thread but it probably does :(
+        orig.Dispose(handle);
+
+        up.Dispose(handle);
+        down.Dispose(handle);
+        left.Dispose(handle);
+        right.Dispose(handle);
+        forward.Dispose(handle);
+        back.Dispose(handle);
+
     }
     public static void finishNewMesh(object raw)
     {
+        s_chunkFinish.Begin();
         JobData results = (JobData)raw;
         if (results.requester == null)
         {
@@ -65,24 +95,16 @@ public class ChunkMeshGenerator
         Mesh newMesh = new();
         newMesh.name = results.requester.name;
 
-        //Unfortunately there is no direct conversion from NativeList to a managed array. TODO. This is currently inefficient. Death by 1000 cuts type-beat. ya know.
-        NativeArray<float3> nativeVerts = results.vertices.ToArray(Allocator.Persistent);
-        NativeArray<int> nativeQuads = results.quads.ToArray(Allocator.Persistent);
-        NativeArray<Color32> nativeColors = results.colors.ToArray(Allocator.Persistent);
+        NativeArray<float3> nativeVerts = results.vertices.ToArray(Allocator.Temp);
+        NativeArray<int> nativeQuads = results.quads.ToArray(Allocator.Temp);
+        NativeArray<Color32> nativeColors = results.colors.ToArray(Allocator.Temp);
 
-        Vector3[] vecVerts = new Vector3[nativeVerts.Length];
-        for (int i = 0; i < nativeVerts.Length; i++)
-        {
-            vecVerts[i] = nativeVerts[i];
-        }
-
-        newMesh.vertices = vecVerts;
-        newMesh.colors32 = nativeColors.ToArray();
-        //newMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        newMesh.SetIndices(nativeQuads.ToArray(), MeshTopology.Quads, 0);
+        newMesh.SetVertices(nativeVerts);
+        newMesh.SetIndices(nativeQuads, MeshTopology.Quads, 0);
+        newMesh.SetColors(nativeColors);
 
         newMesh.RecalculateNormals();
-        results.requester.ApplyNewMesh(newMesh);
+        results.requester.ApplyNewMesh(newMesh, results.requestTime);
         
         nativeVerts.Dispose();
         nativeQuads.Dispose();
@@ -90,6 +112,7 @@ public class ChunkMeshGenerator
         results.quads.Dispose();
         results.vertices.Dispose();
         results.colors.Dispose();
+        s_chunkFinish.End();
     }
 
 }
