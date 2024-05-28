@@ -34,24 +34,22 @@ public class ChunkMeshGenerator
 
         //flatten the voxel array, make space for the first layer of neighboring chunks
         //All deallocated by job when finished
-        NativeArray<Voxel> voxels = new((size + 2) * (height + 2) * (size + 2), Allocator.TempJob);
+        
 
-        NativeArray<Voxel> orig = VoxelRun.ToFlatNativeArray(c.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> orig = VoxelRun.ToNativeList(c.voxels, size, height);
 
-        NativeArray<Voxel> up = VoxelRun.ToFlatNativeArray(c.neighbors[0]?.voxels, size, height);
-        NativeArray<Voxel> down = VoxelRun.ToFlatNativeArray(c.neighbors[1]?.voxels, size, height);
-        NativeArray<Voxel> left = VoxelRun.ToFlatNativeArray(c.neighbors[2]?.voxels, size, height);
-        NativeArray<Voxel> right = VoxelRun.ToFlatNativeArray(c.neighbors[3]?.voxels, size, height);
-        NativeArray<Voxel> forward = VoxelRun.ToFlatNativeArray(c.neighbors[4]?.voxels, size, height);
-        NativeArray<Voxel> back = VoxelRun.ToFlatNativeArray(c.neighbors[5]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> up = VoxelRun.ToNativeList(c.neighbors[0]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> down = VoxelRun.ToNativeList(c.neighbors[1]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> left = VoxelRun.ToNativeList(c.neighbors[2]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> right = VoxelRun.ToNativeList(c.neighbors[3]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> forward = VoxelRun.ToNativeList(c.neighbors[4]?.voxels, size, height);
+        NativeList<VoxelRun.Pair<Voxel, int>> back = VoxelRun.ToNativeList(c.neighbors[5]?.voxels, size, height);
 
         ChunkMeshJob chunkMeshJob = new()
         {
             size = size,
             height = height,
             resolution = c.parent.resolution,
-
-            voxels = voxels,
             
             orig = orig,
             
@@ -66,8 +64,21 @@ public class ChunkMeshGenerator
             quads = jobData.quads,
             colors = jobData.colors,
         };
+        JobHandle handle = chunkMeshJob.Schedule();
 
-        JobManager.Manager.AddJob(chunkMeshJob.Schedule(), finishNewMesh, jobData);
+        JobManager.Manager.AddJob(handle, finishNewMesh, jobData);
+
+        //DeallocateOnJobCompletion only works on NativeArrays, not NativeLists.
+        //Hopefully this doesn't go on the main thread but it probably does :(
+        orig.Dispose(handle);
+
+        up.Dispose(handle);
+        down.Dispose(handle);
+        left.Dispose(handle);
+        right.Dispose(handle);
+        forward.Dispose(handle);
+        back.Dispose(handle);
+
     }
     public static void finishNewMesh(object raw)
     {

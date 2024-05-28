@@ -173,6 +173,12 @@ public class VoxelRun
         }
         return size;
     }
+
+    /// <summary>
+    /// Used after a job completes.
+    /// </summary>
+    /// <param name="voxels"></param>
+    /// <returns></returns>
     public static VoxelRun toVoxelRun(NativeArray<Voxel> voxels)
     {
         VoxelRun head = new VoxelRun(voxels[0], 1);
@@ -194,27 +200,39 @@ public class VoxelRun
     }
 
     /// <summary>
-    /// Mainly for use in prepping for a job.
+    /// Used by the toNativeList function to convert this VoxelRun to something
+    /// usable by a job.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T2"></typeparam>
+    public struct Pair<T, T2>
+    {
+        public T key;
+        public T2 value;
+        public Pair(T key, T2 value)
+        {
+            this.key = key;
+            this.value = value;
+        }
+    }
+
+    /// <summary>
+    /// Turns the VoxelRun data into something you can pass into a job.
     /// MAKE SURE YOU DISPOSE WHEN FINISHED!
     /// </summary>
-    public static NativeArray<Voxel> ToFlatNativeArray(VoxelRun head, int size, int height)
+    public static NativeList<Pair<Voxel, int>> ToNativeList(VoxelRun head, int size, int height)
     {
         if (head == null)
         {
             head = new VoxelRun(size, height);
         }
-        NativeArray<Voxel> newArr = new(size * height * size, Allocator.TempJob);
+        NativeList<Pair<Voxel, int>> newList = new(Allocator.TempJob);
 
-        int i = 0;
         while (head != null)
         {
-            for (int run = 0; run < head.runLength; run++, i++)
-            {
-                newArr[i] = head.type;
-            }
+            newList.Add(new(head.type, head.runLength));
             head = head.next;
         }
-
-        return newArr;
+        return newList;
     }
 }
