@@ -46,6 +46,18 @@ public class World
 
     ChunkFactory chunkFactory;
 
+    //directional face bit flags
+    public static int POSXFACE = 1;
+    public static int POSYFACE = 2;
+    public static int POSZFACE = 4;
+    public static int NEGXFACE = 8;
+    public static int NEGYFACE = 16;
+    public static int NEGZFACE = 32;
+    int openFaces;
+
+    // Chunk list for use in SetVoxels
+    Dictionary<Chunk, Tuple<Vector3[,,], Voxel[,,]>> chunkList;
+
     public World(int worldHeight, int chunkSize, int chunkHeight, int waterHeight, float resolution, string worldName)
     {
         this.worldHeight = worldHeight;
@@ -350,32 +362,43 @@ public class World
     /// <param name="vec"></param>
     /// <param name="voxel"></param>
     /// <exception cref="Exception"></exception>
-    public void SetVoxels(List<Vector3> vec, List<Voxel> voxel)
+    public void SetVoxels(List<Vector3> vectors, List<Voxel> voxels)
     {
-        Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>> chunks = new Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>>();
-        for (int i = 0; i < vec.Count; i++)
+        chunkList = new Dictionary<Chunk, Tuple<Vector3[,,], Voxel[,,]>>();
+        int chunkPosX, chunkPosY, chunkPosZ;
+
+        for (int i = 0; i < vectors.Count; i++)
         {
-            Chunk c = ChunkFromGlobal(vec[i]);
+            Chunk c = ChunkFromGlobal(vectors[i]);
             if (c == null)
             {
                 continue;
             }
             
-            if (!chunks.ContainsKey(c))
+            if (!chunkList.ContainsKey(c))
             {
-                List<Vector3> vecList = new List<Vector3>();
-                List<Voxel> voxelList = new List<Voxel>();
-                Tuple<List<Vector3>, List<Voxel>> container = new Tuple<List<Vector3>, List<Voxel>>(vecList, voxelList);
-                chunks.Add(c, container);
+                Vector3[,,] vecList = new Vector3[chunkSize, chunkSize, chunkSize];
+                Voxel[,,] voxelList = new Voxel[chunkSize, chunkSize, chunkSize];
+                Tuple<Vector3[,,], Voxel[,,]> container = new Tuple<Vector3[,,], Voxel[,,]>(vecList, voxelList);
+                chunkList.Add(c, container);
             }
-            
-            chunks[c].Item1.Add(c.transform.InverseTransformPoint(vec[i]));
-            chunks[c].Item2.Add(voxel[i]);
+
+            chunkPosX = math.abs(Mathf.FloorToInt(vectors[i].x) % chunkSize);
+            chunkPosY = math.abs(Mathf.FloorToInt(vectors[i].y) % chunkSize);
+            chunkPosZ = math.abs(Mathf.FloorToInt(vectors[i].z) % chunkSize);
+
+            chunkList[c].Item1[chunkPosX, chunkPosY, chunkPosZ] = c.transform.InverseTransformPoint(vectors[i]);
+            chunkList[c].Item2[chunkPosX, chunkPosY, chunkPosZ] = voxels[i];
         }
 
-        foreach (var c in chunks)
+        foreach (var dict in chunkList)
         {
-            c.Key.SetVoxels(c.Value.Item1, c.Value.Item2);
+            openFaces = openFaces | POSXFACE | POSYFACE | POSZFACE | NEGXFACE | NEGYFACE | NEGZFACE;
+            dict.Key.SetVoxels(dict.Value.Item1, dict.Value.Item2, openFaces);
+        }
+        foreach (var c in chunkList.Keys)
+        {
+            c.RegenerateMesh();
         }
     }
 

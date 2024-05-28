@@ -233,15 +233,15 @@ public class VoxelInteraction : MonoBehaviour
                     positions.Add(position + new Vector3(-i, -j, k));
                     positions.Add(position + new Vector3(i, -j, -k));
                     positions.Add(position + new Vector3(-i, -j, -k));
-                    
+
                     types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
+                    //types.Add(currType);
+                    //types.Add(currType);
+                    //types.Add(currType);
+                    //types.Add(currType);
+                    //types.Add(currType);
+                    //types.Add(currType);
+                    //types.Add(currType);
                 }
             }
         }
