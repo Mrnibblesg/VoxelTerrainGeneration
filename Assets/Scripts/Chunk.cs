@@ -161,31 +161,45 @@ public Voxel GetVoxel(int x, int y, int z)
                 for (int k = 0; k < parent.chunkSize; k++)
                 {
                     //Scale the world-space coordinate to voxel-coordinate space
-                    vectors[i,j,k] *= parent.resolution;
+                    vectors[i, j, k] *= parent.resolution;
                     Vector3Int pos = new Vector3Int(
-                        Mathf.FloorToInt(vectors[i,j,k].x),
-                        Mathf.FloorToInt(vectors[i,j,k].y),
-                        Mathf.FloorToInt(vectors[i,j,k].z)
+                        Mathf.FloorToInt(vectors[i, j, k].x),
+                        Mathf.FloorToInt(vectors[i, j, k].y),
+                        Mathf.FloorToInt(vectors[i, j, k].z)
                     );
 
                     bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
                     if (outside) { continue; }
 
-            if (voxel[i].type == VoxelType.AIR)
-            {
-                if (GetVoxel(pos).type != VoxelType.AIR)
-                {
-                    SetVoxel(pos, Voxel.Clone(voxel[i]));
-                }
-            }
-            else
-            {
-                if (GetVoxel(pos).type == VoxelType.AIR)
-                {
-                    SetVoxel(pos, Voxel.Clone(voxel[i]));
+                    if (newVoxels[i,j,k].type == VoxelType.AIR)
+                    {
+                        if (GetVoxel(pos).type != VoxelType.AIR)
+                        {
+                            SetVoxel(pos, Voxel.Clone(newVoxels[i,j,k]));
+                        }
+                    }
+                    else
+                    {
+                        if (GetVoxel(pos).type == VoxelType.AIR)
+                        {
+                            SetVoxel(pos, Voxel.Clone(newVoxels[i,j,k]));
+                        }
+                    }
                 }
             }
         }
+
+        Vector3Int chunkPos = new Vector3Int(
+            (int)transform.position.x,
+            (int)transform.position.y,
+            (int)transform.position.z);
+
+        UpdateNeighbors(chunkPos.x, chunkPos.y + 1, chunkPos.z + 1);
+        UpdateNeighbors(chunkPos.x + 1, chunkPos.y, chunkPos.z + 1);
+        UpdateNeighbors(chunkPos.x + 1, chunkPos.y + 1, chunkPos.z);
+        UpdateNeighbors(chunkPos.x + parent.chunkSize, chunkPos.y + 1, chunkPos.z + 1);
+        UpdateNeighbors(chunkPos.x + 1, chunkPos.y + parent.chunkSize, chunkPos.z + 1);
+        UpdateNeighbors(chunkPos.x + 1, chunkPos.y + 1, chunkPos.z + parent.chunkSize);
 
         // Update the mesh
         // Brute force for now
@@ -208,14 +222,6 @@ public Voxel GetVoxel(int x, int y, int z)
 
         //Make sure when adding to this function that the things you add DO NOT trigger
         //more updates, or the updates could cascade forever.
-        void updateList(Chunk c, int x, int y, int z)
-        {
-
-            if (c != this)
-            {
-                c.RegenerateMesh();
-            }
-        }
 
         //Use the proper chunk to update the neighbor voxel from.
         void UseAppropriateChunk(int x, int y, int z)
@@ -230,30 +236,12 @@ public Voxel GetVoxel(int x, int y, int z)
             }
         }
 
-        if (x == 0)
-        {
-            UseAppropriateChunk(x - 1, y, z);
-        }
-        if (x == parent.chunkSize-1)
-        {
-            UseAppropriateChunk(x + 1, y, z);
-        }
-        if (y == 0)
-        {
-            UseAppropriateChunk(x, y - 1, z);
-        }
-        if (y == parent.chunkSize - 1)
-        {
-            UseAppropriateChunk(x, y + 1, z);
-        }
-        if (z == 0)
-        {
-            UseAppropriateChunk(x, y, z - 1);
-        }
-        if (z == parent.chunkSize - 1)
-        {
-            UseAppropriateChunk(x, y, z + 1);
-        }
+        if (x == 0) { UseAppropriateChunk(x - 1, y, z); }
+        if (y == 0) { UseAppropriateChunk(x, y - 1, z); }
+        if (z == 0) { UseAppropriateChunk(x, y, z - 1); }
+        if (x == parent.chunkSize - 1) { UseAppropriateChunk(x + 1, y, z); }
+        if (y == parent.chunkSize - 1) { UseAppropriateChunk(x, y + 1, z); }
+        if (z == parent.chunkSize - 1) { UseAppropriateChunk(x, y, z + 1); }
     }
 
     /// <summary>
