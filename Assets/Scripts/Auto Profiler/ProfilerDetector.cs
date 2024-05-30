@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class ProfilerDetector : MonoBehaviour
 {
-    // Start is called before the first frame update
     public bool showIfProfilerEnabled;
     private void Awake()
     {

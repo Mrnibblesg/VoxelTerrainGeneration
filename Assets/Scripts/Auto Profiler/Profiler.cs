@@ -1,5 +1,5 @@
 
-//TO ENABLE/DISABLE THE AUTOMATIC PROFILER (only for use in the player) then set/remove the
+//TO ENABLE/DISABLE THE AUTOMATIC PROFILER then set/remove the
 //scripting variable "PROFILER_ENABLED" in
 //Edit>Project Settings>Player>Other settings>Script compilation.
 
