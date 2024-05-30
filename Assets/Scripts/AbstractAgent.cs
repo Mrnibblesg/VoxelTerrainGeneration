@@ -8,15 +8,15 @@ public abstract class AbstractAgent : MonoBehaviour
 
     private Vector3Int currentChunkCoord;
 
-    private int renderDist = 7;
-    private int unloadDist = 8;
+    protected int renderDist = 7;
+    protected int unloadDist = 8;
 
     //TODO more sophisticated get and set for potential world switching.
 
     //Until we can ensure that the player's world is set before the player
     //becomes active, we must always use the null-conditional operator ?. with it.
-    private World currentWorld;
-    public World CurrentWorld
+    protected World currentWorld;
+    public virtual World CurrentWorld
     {
         get
         {
@@ -42,7 +42,7 @@ public abstract class AbstractAgent : MonoBehaviour
     /// </summary>
     public void TryBreak(Vector3 pos)
     {
-        currentWorld?.SetVoxel(pos, VoxelType.AIR);
+        CurrentWorld?.SetVoxel(pos, VoxelType.AIR);
     }
     public void TryBreakList(List<Vector3> pos)
     {
@@ -51,18 +51,18 @@ public abstract class AbstractAgent : MonoBehaviour
         {
             types.Add(VoxelType.AIR);
         }
-        currentWorld?.SetVoxels(pos, types);
+        CurrentWorld?.SetVoxels(pos, types);
     }
     /// <summary>
     /// Attempt to place a block in the current world, at world-space position.
     /// </summary>
     public void TryPlace(Vector3 pos, VoxelType type)
     {
-        currentWorld?.SetVoxel(pos, type);
+        CurrentWorld?.SetVoxel(pos, type);
     }
     public void TryPlaceList(List<Vector3> pos, List<VoxelType> types)
     {
-        currentWorld?.SetVoxels(pos, types);
+        CurrentWorld?.SetVoxels(pos, types);
     }
 
     /// <summary>
@@ -79,15 +79,15 @@ public abstract class AbstractAgent : MonoBehaviour
         }
 
         Vector3Int chunkCoord = new(
-            Mathf.FloorToInt(transform.position.x / (currentWorld.chunkSize / currentWorld.resolution)),
-            Mathf.FloorToInt(transform.position.y / (currentWorld.chunkHeight / currentWorld.resolution)),
-            Mathf.FloorToInt(transform.position.z / (currentWorld.chunkSize / currentWorld.resolution))
+            Mathf.FloorToInt(transform.position.x / (CurrentWorld.chunkSize / CurrentWorld.resolution)),
+            Mathf.FloorToInt(transform.position.y / (CurrentWorld.chunkHeight / CurrentWorld.resolution)),
+            Mathf.FloorToInt(transform.position.z / (CurrentWorld.chunkSize / CurrentWorld.resolution))
         );
 
         if (currentChunkCoord != chunkCoord)
         {
             currentChunkCoord = chunkCoord;
-            currentWorld?.UpdatePlayerChunkPos(currentChunkCoord, renderDist, unloadDist);
+            CurrentWorld?.UpdatePlayerChunkPos(currentChunkCoord, renderDist, unloadDist);
         }
     }
 }
