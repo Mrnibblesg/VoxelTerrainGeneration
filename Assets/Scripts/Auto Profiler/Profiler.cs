@@ -47,7 +47,7 @@ public class Profiler
     }
 
     /// <summary>
-    /// 
+    ///     
     /// </summary>
     /// <returns>whether it was successful or not</returns>
     bool RecordToFile()

@@ -2,28 +2,20 @@ using UnityEngine;
 
 public class MenuScreenManager : MonoBehaviour
 {
-    public GameObject mainMenuPanel;
-    public GameObject createWorldPanel;
-    public GameObject joinWorldPanel;
 
-    public void OpenMainMenu()
-    {
-        mainMenuPanel.SetActive(true);
-        createWorldPanel.SetActive(false);
-        joinWorldPanel.SetActive(false);
-    }
+    public GameObject[] menuPanels;
 
-    public void OpenCreateWorld()
+    /// <summary>
+    /// Sets the supplied menu to active, while deactivating all other ones.
+    /// </summary>
+    /// <param name="menu"></param>
+    public void SetActive(GameObject menu)
     {
-        mainMenuPanel.SetActive(false);
-        createWorldPanel.SetActive(true);
-        joinWorldPanel.SetActive(false);
-    }
+        for (int i = 0; i < menuPanels.Length; i++)
+        {
+            menuPanels[i].SetActive(false);
+        }
+        menu.SetActive(true);
 
-    public void OpenJoinWorld()
-    {
-        mainMenuPanel.SetActive(false);
-        createWorldPanel.SetActive(false);
-        joinWorldPanel.SetActive(true);
     }
 }
