@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
+using Unity.VisualScripting;
 public class MainMenu : MonoBehaviour
 {
     public TMP_InputField seedInput;
@@ -43,8 +44,7 @@ public class MainMenu : MonoBehaviour
         // Debug to ensure values are captured correctly
         Debug.Log($"Generating world with seed: {seed}, height: {height}, resolution: {resolution}, chunk size: {chunkSize}, water height: {waterHeight}");
 
-        // Build the world
-        new WorldBuilder().SetDimensions(resolution, height, chunkSize, chunkSize, waterHeight).Build();
+        
 
         // Load the world generation scene
         SceneManager.LoadScene("Za Warudo", LoadSceneMode.Single);
@@ -56,7 +56,16 @@ public class MainMenu : MonoBehaviour
 
     public void PlayUsingPlayerAgent(Scene scene, LoadSceneMode mode)
     {
-        Instantiate(Resources.Load("Prefabs/Player"), null, true);
+        // Build the world
+        World w = new WorldBuilder()
+            .SetDimensions(resolution, height, chunkSize, chunkSize, waterHeight)
+            .Build();
+
+        //Spawn a new clone of the player prefab, and save a reference to its script
+        Player p = Instantiate(Resources.Load("Prefabs/Player"), null, true)
+            .GetComponent<Player>();
+
+        p.CurrentWorld = w;
         SceneManager.sceneLoaded -= PlayUsingPlayerAgent;
     }
 

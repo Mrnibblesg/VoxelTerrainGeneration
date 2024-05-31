@@ -66,13 +66,17 @@ public class World
     }
 
     /// <summary>
-    /// Updates the loaded and unloaded area surrounding the player.
+    /// Updates the loaded and unloaded area surrounding the supplied agent.
     /// Chunks that come in range or go out of range are added to the
-    /// load/unload queue.
+    /// load/unload queue. TODO this shouldn't really be in World. It should be in something that interacts with World, as well as the loaded chunks.
     /// </summary>
     /// <param name="chunkCoord"></param>
-    public void UpdateAgentChunkPos(Vector3Int chunkCoord, int renderDist, int unloadDist)
+    public void UpdateAuthAgentChunkPos(AuthoritativeAgent agent)
     {
+        int renderDist = agent.RenderDist;
+        int unloadDist = agent.UnloadDist;
+        Vector3Int chunkCoord = agent.chunkCoord;
+
         //Add 1 to compensate for the current chunk mesh method
         renderDist *= (int)resolution;
         unloadDist *= (int)resolution;

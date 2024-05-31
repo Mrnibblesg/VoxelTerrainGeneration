@@ -47,9 +47,7 @@ public class ProfilerManager : MonoBehaviour
 #if !PROFILER_ENABLED
         return false;
 #endif
-
-        agent = Resources.Load("Prefabs/ProfilerAgent").GetComponent<ProfilerAgent>();
-
+        //Load a scene for the profiler agent to play in :3
         SceneManager.LoadScene("Za Warudo", LoadSceneMode.Single);
         SceneManager.sceneLoaded += FinishSetup;
 
@@ -57,11 +55,14 @@ public class ProfilerManager : MonoBehaviour
     public void FinishSetup(Scene scene,  LoadSceneMode mode)
     {
         SceneManager.sceneLoaded -= FinishSetup;
-        Instantiate(agent, null, true);
-        Debug.Log("Two");
+        agent = SpawnAgent();
         agent.CurrentWorld = new WorldBuilder().Build();
-        Debug.Log("Three");
         RunTestSuite();
+    }
+    private ProfilerAgent SpawnAgent()
+    {
+        return Instantiate(Resources.Load("Prefabs/ProfilerAgent"), null, true)
+            .GetComponent<ProfilerAgent>();
     }
 
 

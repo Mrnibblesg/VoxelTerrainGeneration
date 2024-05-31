@@ -46,15 +46,6 @@ public class Player : AuthoritativeAgent
         this.mouseX = transform.eulerAngles.y;
         this.mouseY = playerCamera.transform.eulerAngles.x;
         
-        // Check in WorldAccessor for a world
-        World world = WorldAccessor.Identify(this);
-
-        if (world is null)
-        {
-            world = WorldAccessor.Join(this);
-        }
-
-        CurrentWorld = world;
     }
 
     private void FixedUpdate()

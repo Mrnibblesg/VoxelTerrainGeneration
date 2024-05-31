@@ -10,14 +10,24 @@ using UnityEngine;
 /// hierarchy and are only loaded & simulated when there's an AuthoritativeAgent
 /// nearby with them in their render distance.
 /// 
-/// An object that inherits this and does nothing else will render surrounding 
+/// An object that inherits this and does nothing else will be able to render surrounding 
 /// chunks in its current set world and do nothing else. If it doesn't have a
 /// world set, then it will do nothing, falling into the void.
 /// </summary>
 public abstract class AuthoritativeAgent : AbstractAgent
 {
-    protected int renderDist = 7;
-    protected int unloadDist = 8;
+    private int renderDist = 7;
+    private int unloadDist = 8;
+
+    public int RenderDist {
+        get { return renderDist; }
+        protected set { renderDist = value; }
+    }
+    public int UnloadDist {
+        get { return unloadDist; }
+        protected set { unloadDist = value; }
+    }
+
 
     public override World CurrentWorld
     {
@@ -59,10 +69,10 @@ public abstract class AuthoritativeAgent : AbstractAgent
             Mathf.FloorToInt(transform.position.z / (CurrentWorld.chunkSize / CurrentWorld.resolution))
         );
 
-        if (currentChunkCoord != chunkCoord)
+        if (base.chunkCoord != chunkCoord)
         {
-            currentChunkCoord = chunkCoord;
-            CurrentWorld?.UpdateAgentChunkPos(currentChunkCoord, renderDist, unloadDist);
+            base.chunkCoord = chunkCoord;
+            CurrentWorld?.UpdateAuthAgentChunkPos(this);
         }
     }
 }

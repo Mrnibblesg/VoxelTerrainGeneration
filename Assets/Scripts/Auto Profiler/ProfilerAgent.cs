@@ -23,17 +23,4 @@ public class ProfilerAgent : AuthoritativeAgent
             UpdateChunkCoord();
         }
     }
-/*    public void Start()
-    {
-        // Check in WorldAccessor for a world
-        World world = WorldAccessor.Identify(this);
-
-        if (world is null)
-        {
-            world = WorldAccessor.Join(this);
-        }
-        Debug.Log("One");
-        CurrentWorld = world;
-    }*/
-
 }

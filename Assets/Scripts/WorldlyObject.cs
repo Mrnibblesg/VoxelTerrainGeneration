@@ -4,11 +4,11 @@ using UnityEngine;
 
 /// <summary>
 /// A WorldlyObject is some object that exists in a particular world.
-/// An object that inherits this and does nothing else won't do anything.
+/// An object that inherits this and does nothing else won't do anything special.
 /// </summary>
 public abstract class WorldlyObject : MonoBehaviour
 {
-    protected Vector3Int currentChunkCoord;
+    public Vector3Int chunkCoord;
 
     protected World currentWorld;
     public virtual World CurrentWorld {
