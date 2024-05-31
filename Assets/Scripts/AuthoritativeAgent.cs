@@ -28,7 +28,6 @@ public abstract class AuthoritativeAgent : AbstractAgent
         protected set { unloadDist = value; }
     }
 
-
     public override World CurrentWorld
     {
         get

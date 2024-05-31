@@ -23,4 +23,10 @@ public class ProfilerAgent : AuthoritativeAgent
             UpdateChunkCoord();
         }
     }
+
+    public override void Update()
+    {
+        base.Update();
+        
+    }
 }

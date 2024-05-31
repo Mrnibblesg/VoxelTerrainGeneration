@@ -9,7 +9,8 @@ public class MenuCameraController : AuthoritativeAgent
 
     public override void Update()
     {
+        base.Update();
         transform.Translate(speed * Time.deltaTime * Vector3.right);
-        UpdateChunkCoord();
+        
     }
 }

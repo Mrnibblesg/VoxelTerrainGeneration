@@ -55,14 +55,10 @@ public class Player : AuthoritativeAgent
 
     public override void Update()
     {
+        base.Update();
         if (Input.GetMouseButton(2))
         {
             UpdateLook();
-        }
-
-        if (this.CurrentWorld is not null)
-        {
-            UpdateChunkCoord();
         }
     }
     
