@@ -28,7 +28,7 @@ public class JobManager : MonoBehaviour
     {
         if (Manager is not null)
         {
-            Destroy(this.gameObject);
+            Destroy(this);
         }
 
         else

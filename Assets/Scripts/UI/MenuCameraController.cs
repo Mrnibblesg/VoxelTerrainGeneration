@@ -1,21 +1,15 @@
 using UnityEngine;
 
-public class MenuCameraController : AbstractAgent
+public class MenuCameraController : AuthoritativeAgent
 {
-    public float speed = 2.0f;
+    public int speed;
 
-    public override World CurrentWorld {
-        set
-        {
-            currentWorld = value;
-            UpdateChunkCoord();
-        }
-    }
+    //The camera has its world automatically set from the
+    //WorldBuilder file
 
-    void Update()
+    public override void Update()
     {
-        transform.Translate(Vector3.right * speed * Time.deltaTime);
+        transform.Translate(speed * Time.deltaTime * Vector3.right);
         UpdateChunkCoord();
     }
-
 }

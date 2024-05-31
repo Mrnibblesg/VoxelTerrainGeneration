@@ -14,7 +14,7 @@ public class WorldAccessor : MonoBehaviour
     {
         if (Accessor is not null)
         {
-            Destroy(this.gameObject);
+            Destroy(this);
         }
 
         else
@@ -30,7 +30,7 @@ public class WorldAccessor : MonoBehaviour
     }
 
     public static World GetWorld(string name)
-    {
+    { 
         return worldDictionary[name];
     }
 
@@ -59,7 +59,7 @@ public class WorldAccessor : MonoBehaviour
     /// If there are no worlds, create a new one.
     /// </summary>
     /// <returns></returns>
-    public static World Join(Player player) { 
+    public static World Join(AbstractAgent player) {
         World world = worldDictionary.Values.FirstOrDefault(world => !world.worldName.Equals("Menu")) ?? WorldBuilder.CreatePresetWorld();
         world.AddPlayer(player);
 
@@ -67,7 +67,7 @@ public class WorldAccessor : MonoBehaviour
     }
 
     // Iterate through the dictionary and return the first world that the player is in
-    public static World Identify(Player player)
+    public static World Identify(AbstractAgent player)
     {
         foreach (KeyValuePair<string, World> entry in worldDictionary)
         {

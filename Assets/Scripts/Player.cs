@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class Player : AbstractAgent
+public class Player : AuthoritativeAgent
 {
     public float speed = 10f;
 
@@ -23,11 +23,23 @@ public class Player : AbstractAgent
 
     private Camera playerCamera;
 
-    //Render distance in chunks
-    private int renderDist = 7;
-    private int unloadDist = 8;
+    public override World CurrentWorld {
+        get => currentWorld;
+        set
+        {
+            this.currentWorld = value;
+            Vector3 startPosition = new(
+                0.5f,
+                value.worldHeight * value.chunkHeight / value.resolution + 1.5f,
+                0.5f
+            );
+            transform.position = startPosition;
 
-    private void Start()
+            UpdateChunkCoord();
+        }
+    }
+
+    public void Start()
     {
         this.playerCamera = GetComponentInChildren<Camera>();
 
@@ -50,7 +62,7 @@ public class Player : AbstractAgent
         UpdateMove();
     }
 
-    void Update()
+    public override void Update()
     {
         if (Input.GetMouseButton(2))
         {
@@ -58,7 +70,9 @@ public class Player : AbstractAgent
         }
 
         if (this.CurrentWorld is not null)
+        {
             UpdateChunkCoord();
+        }
     }
     
     /// <summary>

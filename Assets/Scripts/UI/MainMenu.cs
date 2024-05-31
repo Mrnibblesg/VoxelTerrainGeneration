@@ -48,9 +48,18 @@ public class MainMenu : MonoBehaviour
 
         // Load the world generation scene
         SceneManager.LoadScene("Za Warudo", LoadSceneMode.Single);
-        
-        //SceneManager.sceneLoaded += OnSceneLoaded; //race condition from loading scene before adding to the list of callbacks? TODO
+
+        //When we generate a world with this method, we want to place in an agent the player can control.
+        //Other methods like the profiler will create a different agent.
+        SceneManager.sceneLoaded += PlayUsingPlayerAgent;
     }
+
+    public void PlayUsingPlayerAgent(Scene scene, LoadSceneMode mode)
+    {
+        Instantiate(Resources.Load("Prefabs/Player"), null, true);
+        SceneManager.sceneLoaded -= PlayUsingPlayerAgent;
+    }
+
     void QuitGame()
     {
         Application.Quit();
