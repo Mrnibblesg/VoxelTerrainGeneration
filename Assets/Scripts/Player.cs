@@ -88,11 +88,24 @@ public class Player : AuthoritativeAgent
         Vector3 forward = Input.GetAxis("Vertical") * transform.forward;
         Vector3 right = Input.GetAxis("Horizontal") * transform.right;
 
-        transform.position += (forward + right).normalized * combinedMultiplier;
-
+        Vector3 up = new();
         if (Input.GetAxis("Jump") != 0)
         {
-            GetComponent<Rigidbody>().AddForce(Vector3.up * 45);
+            up = Vector3.up * 45;
         }
+
+        Move((forward + right).normalized * combinedMultiplier, up);
+
+        
+    }
+    /// <summary>
+    /// Move the player. The player has a rigidbody, so we override it and use
+    /// the rigidbody.
+    /// </summary>
+    public override void Move(Vector3 offset, Vector3 force = new())
+    {
+        Rigidbody rb = GetComponent<Rigidbody>();
+        rb.MovePosition(transform.position + offset);
+        rb.AddForce(force);
     }
 }

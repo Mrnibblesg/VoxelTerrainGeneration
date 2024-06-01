@@ -10,7 +10,6 @@ public class MenuCameraController : AuthoritativeAgent
     public override void Update()
     {
         base.Update();
-        transform.Translate(speed * Time.deltaTime * Vector3.right);
-        
+        Move(speed * Time.deltaTime * Vector3.right);
     }
 }

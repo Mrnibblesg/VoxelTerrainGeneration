@@ -36,4 +36,16 @@ public abstract class AbstractAgent : WorldlyObject
         CurrentWorld?.SetVoxels(pos, types);
     }
 
+    /// <summary>
+    /// A way to move this agent. There's position offset & there's force to be
+    /// added to the object. By default, force isn't used, because AbstractAgent
+    /// type objects don't necessarily have a RigidBody.
+    /// </summary>
+    /// <param name="offset"></param>
+    /// <param name="force"></param>
+    public virtual void Move(Vector3 offset, Vector3 force = new())
+    {
+        transform.Translate(offset);
+    }
+
 }

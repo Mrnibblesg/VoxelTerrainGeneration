@@ -15,6 +15,17 @@ public class ProfilerManager : MonoBehaviour
 {
     public static ProfilerManager Manager { get; private set; }
     ProfilerAgent agent;
+    public ProfilerAgent Agent {
+        get { return agent; }
+        protected set
+        {
+            if (agent != null)
+            {
+                Destroy(agent.gameObject);
+            }
+            agent = value;
+        }
+    }
 
     /// <summary>
     /// Create this to start a profiling session. It doesn't begin until
@@ -55,8 +66,8 @@ public class ProfilerManager : MonoBehaviour
     public void FinishSetup(Scene scene,  LoadSceneMode mode)
     {
         SceneManager.sceneLoaded -= FinishSetup;
-        agent = SpawnAgent();
-        agent.CurrentWorld = new WorldBuilder().Build();
+        Agent = SpawnAgent();
+        Agent.CurrentWorld = new WorldBuilder().Build();
         RunTestSuite();
     }
     private ProfilerAgent SpawnAgent()
