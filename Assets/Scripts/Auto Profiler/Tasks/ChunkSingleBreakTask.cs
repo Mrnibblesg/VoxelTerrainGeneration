@@ -43,8 +43,8 @@ public class ChunkSingleBreakTask : WorldTask
     }
     private void SetUpDestroyOrder()
     {
-        int size = c.parent.chunkSize;
-        int height = c.parent.chunkHeight;
+        int size = c.world.parameters.ChunkSize;
+        int height = c.world.parameters.ChunkHeight;
         int voxels = size * height * size;
         DestroyOrder = new Vector3[voxels];
         for (int i = 0; i < voxels; i++)
@@ -52,7 +52,7 @@ public class ChunkSingleBreakTask : WorldTask
             DestroyOrder[i] = c.transform.position + (new Vector3(
                 i / (size * height),
                 (i / size) % height,
-                i % size) / c.parent.resolution);
+                i % size) / c.world.parameters.Resolution);
         }
 
         //Shuffle array using Fisher-Yates

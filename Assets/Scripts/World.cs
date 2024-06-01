@@ -14,16 +14,7 @@ public class World
 {
     public readonly Material vertexColorMaterial = (Material) Resources.Load("Textures/Vertex Colors");
 
-    //Height of world in chunks
-    public int worldHeight;
-    public int waterHeight;
-
-    //Dimensions of chunk in the amount of voxels
-    public readonly int chunkSize;
-    public readonly int chunkHeight;
-
-    public readonly float resolution;
-    public readonly string worldName;
+    public WorldParameters parameters;
 
     private List<Agent> players = new List<Agent>();
 
@@ -46,14 +37,9 @@ public class World
 
     private static ProfilerMarker s_moveChunk = new ProfilerMarker(ProfilerCategory.Scripts, "Move Chunk");
 
-    public World(int worldHeight, int chunkSize, int chunkHeight, int waterHeight, float resolution, string worldName)
+    public World(WorldParameters worldParams)
     {
-        this.worldHeight = worldHeight;
-        this.chunkSize = chunkSize;
-        this.chunkHeight = chunkHeight;
-        this.waterHeight = waterHeight;
-        this.resolution = resolution;
-        this.worldName = worldName;
+        this.parameters = worldParams;
 
         chunks = new();
         unloadedNeighbors = new();
@@ -78,8 +64,8 @@ public class World
         Vector3Int chunkCoord = agent.chunkCoord;
 
         //Add 1 to compensate for the current chunk mesh method
-        renderDist *= (int)resolution;
-        unloadDist *= (int)resolution;
+        renderDist *= (int)parameters.Resolution;
+        unloadDist *= (int)parameters.Resolution;
 
         renderDist += 1;
         unloadDist += 1;
@@ -156,7 +142,7 @@ public class World
     private bool ChunkWithinWorld(Vector3Int chunkCoords)
     {
         return
-            chunkCoords.y < worldHeight &&
+            chunkCoords.y < parameters.WorldHeightInChunks &&
             chunkCoords.y >= 0;
     }
 
@@ -169,12 +155,12 @@ public class World
     //  They get queued as well if they're in range.
     public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
-        //if no chunk, configure and generate new one
+        
         GameObject chunkObj = new GameObject($"Chunk{chunkCoords.x},{chunkCoords.y},{chunkCoords.z}");
         chunkObj.transform.position = new(
-            chunkCoords.x * chunkSize / resolution,
-            chunkCoords.y * chunkHeight / resolution,
-            chunkCoords.z * chunkSize / resolution
+            chunkCoords.x * parameters.ChunkSize / parameters.Resolution,
+            chunkCoords.y * parameters.ChunkHeight / parameters.Resolution,
+            chunkCoords.z * parameters.ChunkSize / parameters.Resolution
         );
 
         Chunk newChunk = chunkObj.AddComponent<Chunk>();
@@ -323,9 +309,9 @@ public class World
     public Chunk ChunkFromGlobal(Vector3 global)
     {
         Vector3Int chunkCoordinates = new Vector3Int(
-            Mathf.FloorToInt(global.x / (chunkSize / resolution)),
-            Mathf.FloorToInt(global.y / (chunkHeight / resolution)),
-            Mathf.FloorToInt(global.z / (chunkSize / resolution)));
+            Mathf.FloorToInt(global.x / (parameters.ChunkSize / parameters.Resolution)),
+            Mathf.FloorToInt(global.y / (parameters.ChunkHeight / parameters.Resolution)),
+            Mathf.FloorToInt(global.z / (parameters.ChunkSize / parameters.Resolution)));
 
         return GetChunk(chunkCoordinates);
     }
@@ -417,22 +403,22 @@ public class World
     /// Min world height if there's no ground. </returns>
     public float HeightAtLocation(float globalX, float globalZ)
     {
-        float globalChunkWidth = chunkSize / resolution;
+        float globalChunkWidth = parameters.ChunkSize / parameters.Resolution;
         int chunkX = Mathf.FloorToInt(globalX / globalChunkWidth);
         int chunkZ = Mathf.FloorToInt(globalZ / globalChunkWidth);
         Vector3 pos = new Vector3(globalX % globalChunkWidth, 0, globalZ % globalChunkWidth);
 
-        for (int chunkY = worldHeight; chunkY >= 0; chunkY--){
+        for (int chunkY = parameters.WorldHeightInChunks; chunkY >= 0; chunkY--){
             Chunk c = GetChunk(new Vector3Int(chunkX, chunkY, chunkZ));
             if (c == null) continue;
 
-            for (int y = chunkHeight - 1; y >= 0; y--)
+            for (int y = parameters.ChunkHeight - 1; y >= 0; y--)
             {
                 pos.y = y;
                 VoxelType voxel = c.VoxelFromLocal(pos)?.type ?? VoxelType.AIR;
                 if (voxel != VoxelType.AIR)
                 {
-                    return c.transform.position.y + ((pos.y + 1) / resolution);
+                    return c.transform.position.y + (pos.y / parameters.Resolution);
                 }
             }
         }

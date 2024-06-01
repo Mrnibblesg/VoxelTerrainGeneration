@@ -7,7 +7,7 @@ public class Chunk : MonoBehaviour
 {
     public VoxelRun voxels;
 
-    public World parent;
+    public World world;
 
     //Store refs to neighbors used when you request a new mesh
     public Chunk[] neighbors;
@@ -22,18 +22,18 @@ public class Chunk : MonoBehaviour
     //Use to avoid race conditions related to mesh requests & job completion time
     private long lastMeshUpdateTime = -1;
 
-    public void Initialize(World parent)
+    public void Initialize(World world)
     {
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        meshRenderer.material = parent.vertexColorMaterial;
+        meshRenderer.material = world.vertexColorMaterial;
 
         neighbors = new Chunk[6];
 
-        this.parent = parent;
+        this.world = world;
 
-        voxels = new VoxelRun(parent.chunkSize, parent.chunkHeight);
+        voxels = new VoxelRun(world.parameters.ChunkSize, world.parameters.ChunkHeight);
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public class Chunk : MonoBehaviour
     public Voxel? VoxelFromLocal(Vector3 vec)
     {
         //Get from some coordinate within the chunk to the appropriate voxel coords.
-        vec *= parent.resolution;
+        vec *= world.parameters.Resolution;
         Vector3Int pos = new Vector3Int(
             Mathf.FloorToInt(vec.x),
             Mathf.FloorToInt(vec.y),
@@ -87,8 +87,8 @@ public class Chunk : MonoBehaviour
     public Voxel GetVoxel(Vector3Int voxCoords)
     {
         return VoxelRun.Get(voxels,
-            voxCoords.x * parent.chunkSize * parent.chunkHeight +
-            voxCoords.y * parent.chunkSize +
+            voxCoords.x * world.parameters.ChunkSize * world.parameters.ChunkHeight +
+            voxCoords.y * world.parameters.ChunkSize +
             voxCoords.z);
     }
 
@@ -101,7 +101,7 @@ public class Chunk : MonoBehaviour
     public bool SetVoxelFromLocal(Vector3 vec, Voxel voxel)
     {
         //Scale the world-space coordinate to voxel-coordinate space
-        vec *= parent.resolution;
+        vec *= world.parameters.Resolution;
         Vector3Int pos = new Vector3Int(
             Mathf.FloorToInt(vec.x),
             Mathf.FloorToInt(vec.y),
@@ -122,8 +122,8 @@ public class Chunk : MonoBehaviour
     private bool SetVoxel(Vector3Int voxCoords, Voxel voxel)
     {
         return VoxelRun.Set(voxels, voxel,
-            voxCoords.x * parent.chunkSize * parent.chunkHeight + 
-            voxCoords.y * parent.chunkSize + 
+            voxCoords.x * world.parameters.ChunkSize * world.parameters.ChunkHeight + 
+            voxCoords.y * world.parameters.ChunkSize + 
             voxCoords.z);
     }
     public bool SetVoxels(List<Vector3> vec, List<Voxel> voxel)
@@ -136,7 +136,7 @@ public class Chunk : MonoBehaviour
         for (int i = 0; i < vec.Count; i++)
         {
             //Scale the world-space coordinate to voxel-coordinate space
-            vec[i] *= parent.resolution;
+            vec[i] *= world.parameters.Resolution;
             Vector3Int pos = new Vector3Int(
                 Mathf.FloorToInt(vec[i].x),
                 Mathf.FloorToInt(vec[i].y),
@@ -199,7 +199,7 @@ public class Chunk : MonoBehaviour
                 updateList(this, x, y, z);
             }
 
-            Chunk c = parent.ChunkFromGlobal(VoxelCoordToGlobal(new Vector3Int(x,y,z)));
+            Chunk c = world.ChunkFromGlobal(VoxelCoordToGlobal(new Vector3Int(x,y,z)));
             if (c != null)
             {
                 Vector3 neighborPos = c.transform.InverseTransformPoint(
@@ -228,9 +228,9 @@ public class Chunk : MonoBehaviour
     /// <returns></returns>
     private bool VoxelOutOfBounds(int x, int y, int z)
     {
-        return x < 0 || x >= parent.chunkSize ||
-               y < 0 || y >= parent.chunkHeight ||
-               z < 0 || z >= parent.chunkSize;
+        return x < 0 || x >= world.parameters.ChunkSize ||
+               y < 0 || y >= world.parameters.ChunkHeight ||
+               z < 0 || z >= world.parameters.ChunkSize;
     }
     /// <summary>
     /// Converts a voxel coordinate to its world-space position.
@@ -239,18 +239,21 @@ public class Chunk : MonoBehaviour
     /// <returns></returns>
     private Vector3 VoxelCoordToGlobal(Vector3 coord)
     {
-        return transform.position + (coord / parent.resolution);
+        return transform.position + (coord / world.parameters.Resolution);
     }
     private void updateNeighborChunks()
     {
         Vector3 chunkPos = new(transform.position.x, transform.position.y, transform.position.z);
 
-        neighbors[0] = parent.ChunkFromGlobal(chunkPos + (Vector3.up * parent.chunkHeight / parent.resolution));
-        neighbors[1] = parent.ChunkFromGlobal(chunkPos + (Vector3.down * parent.chunkHeight / parent.resolution));
-        neighbors[2] = parent.ChunkFromGlobal(chunkPos + (Vector3.left * parent.chunkSize / parent.resolution));
-        neighbors[3] = parent.ChunkFromGlobal(chunkPos + (Vector3.right * parent.chunkSize / parent.resolution));
-        neighbors[4] = parent.ChunkFromGlobal(chunkPos + (Vector3.forward * parent.chunkSize / parent.resolution));
-        neighbors[5] = parent.ChunkFromGlobal(chunkPos + (Vector3.back * parent.chunkSize / parent.resolution));
+        float globalChunkHeight = world.parameters.ChunkHeight / world.parameters.Resolution;
+        float globalChunkSize = world.parameters.ChunkSize / world.parameters.Resolution;
+
+        neighbors[0] = world.ChunkFromGlobal(chunkPos + (Vector3.up * globalChunkHeight));
+        neighbors[1] = world.ChunkFromGlobal(chunkPos + (Vector3.down * globalChunkHeight));
+        neighbors[2] = world.ChunkFromGlobal(chunkPos + (Vector3.left * globalChunkSize));
+        neighbors[3] = world.ChunkFromGlobal(chunkPos + (Vector3.right * globalChunkSize));
+        neighbors[4] = world.ChunkFromGlobal(chunkPos + (Vector3.forward * globalChunkSize));
+        neighbors[5] = world.ChunkFromGlobal(chunkPos + (Vector3.back * globalChunkSize));
     }
 
     //Debug only

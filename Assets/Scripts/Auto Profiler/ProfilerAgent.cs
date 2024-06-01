@@ -22,7 +22,7 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
             currentWorld = value;
             Vector3 startPosition = new(
                 0.5f,
-                value.worldHeight * value.chunkHeight / value.resolution,
+                value.parameters.WorldHeightInChunks * value.parameters.ChunkHeight / value.parameters.Resolution,
                 0.5f
             );
             transform.position = startPosition;
@@ -56,6 +56,7 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
         else if (!complete)
         {
             callback();
+            ProfilerManager.Manager.FinishProfiling();
             complete = true;
         }
     }
@@ -66,6 +67,7 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
 
     public void AddTask(WorldTask task)
     {
+        complete = false;
         tasks.Push(task);
     }
 }

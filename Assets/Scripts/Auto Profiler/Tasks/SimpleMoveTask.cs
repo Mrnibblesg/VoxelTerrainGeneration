@@ -24,11 +24,7 @@ public class SimpleMoveTask : WorldTask
         {
             float x = this.destination.x;
             float z = this.destination.z;
-            this.destination = new Vector3(
-                x,
-                agent.CurrentWorld.HeightAtLocation(x, z),
-                z
-            );
+            this.destination.y = agent.CurrentWorld.HeightAtLocation(x, z)+1;
             surfaceSet = true;
         }
         Vector3 difference = destination - agent.transform.position;

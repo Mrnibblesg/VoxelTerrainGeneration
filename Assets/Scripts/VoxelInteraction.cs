@@ -74,7 +74,7 @@ public class VoxelInteraction : MonoBehaviour
             voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
                 BreakVoxel(position);
             }
         }
@@ -84,7 +84,7 @@ public class VoxelInteraction : MonoBehaviour
             voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
                 PlaceVoxel(position);
             }
         }
@@ -97,7 +97,7 @@ public class VoxelInteraction : MonoBehaviour
             voxelInfo = looking.ClickedVoxel(playerCamera);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
@@ -129,7 +129,7 @@ public class VoxelInteraction : MonoBehaviour
             voxelInfo = looking.ClickedVoxel(playerCamera);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
 
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
@@ -182,7 +182,7 @@ public class VoxelInteraction : MonoBehaviour
     {
         List<Vector3> positions = new List<Vector3>();
 
-        float voxelSize = 1 / player.CurrentWorld.resolution;
+        float voxelSize = 1 / player.CurrentWorld.parameters.Resolution;
 
         for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
         {
@@ -210,7 +210,7 @@ public class VoxelInteraction : MonoBehaviour
         List<Vector3> positions = new List<Vector3>();
         List<VoxelType> types = new List<VoxelType>();
 
-        float voxelSize = 1 / player.CurrentWorld.resolution;
+        float voxelSize = 1 / player.CurrentWorld.parameters.Resolution;
 
         for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
         {
@@ -246,7 +246,7 @@ public class VoxelInteraction : MonoBehaviour
     {
         List<Vector3> positions = new List<Vector3>();
 
-        float voxelSize = 1 / player.CurrentWorld.resolution;
+        float voxelSize = 1 / player.CurrentWorld.parameters.Resolution;
 
         float start_x;
         float start_y;

@@ -67,7 +67,7 @@ public class ProfilerManager : MonoBehaviour
     {
         SceneManager.sceneLoaded -= FinishSetup;
         Agent = SpawnAgent();
-        Agent.CurrentWorld = new WorldBuilder().Build();
+        //Agent.CurrentWorld = new WorldBuilder().Build();
         Agent.Initialize(FinishProfiling);
         Agent.gameObject.SetActive(true);
         RunTestSuite();
@@ -78,6 +78,17 @@ public class ProfilerManager : MonoBehaviour
             .GetComponent<ProfilerAgent>();
     }
 
+    /// <summary>
+    /// We have a hard time doing certain tasks like world creation and world joining,
+    /// so for now we tell the profiler manager to do this for our agent.
+    /// </summary>
+    public void SetProfilerAgentWorld(WorldParameters parameters)
+    {
+        World w = new WorldBuilder()
+            .SetParameters(parameters)
+            .Build();
+        Agent.CurrentWorld = w;
+    }
 
     /// <summary>
     /// Runs the entire test suite. Performs player actions autonomously.
@@ -87,8 +98,8 @@ public class ProfilerManager : MonoBehaviour
     public bool RunTestSuite()
     {
         Agent.AddTask(new ProfileGameTask(Agent));
-        //Stress test scenario
-        return RecordToFile();
+        return true;
+        //return RecordToFile();
     }
 
     //struct for world params would be helpful so I don't need to pass in a billion variables
@@ -99,9 +110,9 @@ public class ProfilerManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Save the current data as a part of the given scenario.
+    /// Save the current data under the given scenario name
     /// </summary>
-    private void SaveData(string scenarioName)
+    public void CompleteScenario(string scenarioName)
     {
 
     }

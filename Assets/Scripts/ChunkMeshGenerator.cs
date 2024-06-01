@@ -21,8 +21,8 @@ public class ChunkMeshGenerator
     };
     public static void RequestNewMesh(Chunk c)
     {
-        int size = c.parent.chunkSize;
-        int height = c.parent.chunkHeight;
+        int size = c.world.parameters.ChunkSize;
+        int height = c.world.parameters.ChunkHeight;
         JobData jobData = new()
         {
             requester = c,
@@ -49,7 +49,7 @@ public class ChunkMeshGenerator
         {
             size = size,
             height = height,
-            resolution = c.parent.resolution,
+            resolution = c.world.parameters.Resolution,
             
             orig = orig,
             

@@ -1,28 +1,50 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class ProfileGameTask : WorldTask
 {
     private Queue<WorldTask> tasks;
-    private WorldTask currentTask;
+
+    WorldParameters worldParams = new WorldParameters
+    {
+        WaterHeight = 10,
+        WorldHeightInChunks = 4
+    };
+
     public ProfileGameTask(ProfilerAgent profilerAgent)
     {
         tasks = new();
+        
+        //Queue up the scenarios with different combinations of world parameters.
+        for (int res = 1; res < 4; res++)
+        {
+            for (int chunkSizeFactor = 1; chunkSizeFactor < 5; chunkSizeFactor++)
+            {
+                int chunkSize = 16 * (int)Mathf.Pow(2, chunkSizeFactor-1);
 
-        tasks.Enqueue(new WaitTask(1.5f));
+                //set up vertical-chunk worlds
+                int maxHeight = worldParams.WorldHeightInChunks * 16;
+                int originalWorldHeightInChunks = 4;
+                for (int chunkHeight = 16; chunkHeight <= maxHeight; chunkHeight *= originalWorldHeightInChunks)
+                {
+                    //height = 16, then * world height in chunks, then finish loop
+                    //only 2 settings.
+                    worldParams.Resolution = res;
+                    worldParams.ChunkSize = chunkSize;
+                    worldParams.ChunkHeight = chunkHeight;
+                    worldParams.WorldHeightInChunks = maxHeight / chunkHeight;
 
-        tasks.Enqueue(new SimpleMoveTask(new Vector3(30,-1,30), true));
-        tasks.Enqueue(new WaitTask(1f));
-
-        tasks.Enqueue(new SingleBreakTask(new Vector3(27,29,31)));
-        tasks.Enqueue(new WaitTask(0.2f));
-        tasks.Enqueue(new SingleBreakTask(new Vector3(27,29,30)));
-        tasks.Enqueue(new WaitTask(0.2f));
-        tasks.Enqueue(new SingleBreakTask(new Vector3(28,29,31)));
-
-        tasks.Enqueue(new ChunkSingleBreakTask(new Vector3Int(0,1,2)));
+                    worldParams.Name = $"Simple Actions: " +
+                        $"Resolution {res}, " +
+                        $"Chunk size {chunkSize}, " +
+                        $"Chunk Height {chunkHeight}";
+                    tasks.Enqueue(new SimpleActionsScenario(worldParams));
+                    //other scenarios down here...
+                }
+            }
+        }
+        
     }
 
     public override void Perform(Agent agent)
@@ -35,12 +57,9 @@ public class ProfileGameTask : WorldTask
         }
         else
         {
+            ProfilerManager.Manager.FinishProfiling();
             IsComplete = true;
         }
-    }
-    private void GiveNextTask(Agent agent)
-    {
-        
     }
 
     public override void Interrupt()

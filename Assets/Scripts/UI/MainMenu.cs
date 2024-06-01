@@ -14,11 +14,7 @@ public class MainMenu : MonoBehaviour
     public Button quitButton;
 
     // Class-level variables to store the slider values
-    private int seed;
-    private int height;
-    private int resolution;
-    private int chunkSize;
-    private int waterHeight;
+    private WorldParameters worldParameters;
 
     void Start()
     {
@@ -35,14 +31,23 @@ public class MainMenu : MonoBehaviour
 
     void GenerateWorld()
     {
-        seed = string.IsNullOrEmpty(seedInput.text) ? 0 : int.Parse(seedInput.text);
-        height = (int)heightSlider.value;
-        resolution = (int)resolutionSlider.value;
-        chunkSize = (int)chunkSizeSlider.value;
-        waterHeight = (int)waterHeightSlider.value;
+        worldParameters = new WorldParameters
+        {
+            Resolution = (int)resolutionSlider.value,
+            WorldHeightInChunks = (int)heightSlider.value,
+            ChunkSize = (int)chunkSizeSlider.value,
+            ChunkHeight = (int)chunkSizeSlider.value,
+            WaterHeight = (int)waterHeightSlider.value,
+            Seed = string.IsNullOrEmpty(seedInput.text) ? 0 : int.Parse(seedInput.text),
+            Name = "New World"
+        };
 
         // Debug to ensure values are captured correctly
-        Debug.Log($"Generating world with seed: {seed}, height: {height}, resolution: {resolution}, chunk size: {chunkSize}, water height: {waterHeight}");
+        Debug.Log($"Generating world with seed: {worldParameters.Seed}," +
+            $"height: {worldParameters.WorldHeightInChunks}," +
+            $"resolution: {worldParameters.Resolution}," +
+            $"chunk size: {worldParameters.ChunkSize}," +
+            $"water height: {worldParameters.WaterHeight}");
 
         
 
@@ -58,7 +63,7 @@ public class MainMenu : MonoBehaviour
     {
         // Build the world
         World w = new WorldBuilder()
-            .SetDimensions(resolution, height, chunkSize, chunkSize, waterHeight)
+            .SetParameters(worldParameters)
             .Build();
 
         //Spawn a new clone of the player prefab, and save a reference to its script

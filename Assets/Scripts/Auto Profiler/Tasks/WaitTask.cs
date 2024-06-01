@@ -19,16 +19,13 @@ public class WaitTask : WorldTask
         base.Perform(agent);
         if (!waiting)
         {
-            Debug.Log("Performing wait!");
             agent.StartCoroutine(PerformWait(agent));
             waiting = true;
         }
     }
     public IEnumerator PerformWait(Agent agent)
     {
-        Debug.Log("Start waiting");
         yield return new WaitForSeconds(duration);
-        Debug.Log("Finished waiting");
         IsComplete = true;
     }
     public override void Interrupt()

@@ -30,7 +30,7 @@ public class Player : AuthoritativeAgent
             this.currentWorld = value;
             Vector3 startPosition = new(
                 0.5f,
-                value.worldHeight * value.chunkHeight / value.resolution + 1.5f,
+                value.parameters.WorldHeightInChunks * value.parameters.ChunkHeight / value.parameters.Resolution + 1.5f,
                 0.5f
             );
             transform.position = startPosition;

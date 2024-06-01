@@ -63,9 +63,9 @@ public abstract class AuthoritativeAgent : Agent
         }
 
         Vector3Int chunkCoord = new(
-            Mathf.FloorToInt(transform.position.x / (CurrentWorld.chunkSize / CurrentWorld.resolution)),
-            Mathf.FloorToInt(transform.position.y / (CurrentWorld.chunkHeight / CurrentWorld.resolution)),
-            Mathf.FloorToInt(transform.position.z / (CurrentWorld.chunkSize / CurrentWorld.resolution))
+            Mathf.FloorToInt(transform.position.x / (CurrentWorld.parameters.ChunkSize / CurrentWorld.parameters.Resolution)),
+            Mathf.FloorToInt(transform.position.y / (CurrentWorld.parameters.ChunkHeight / CurrentWorld.parameters.Resolution)),
+            Mathf.FloorToInt(transform.position.z / (CurrentWorld.parameters.ChunkSize / CurrentWorld.parameters.Resolution))
         );
 
         if (base.chunkCoord != chunkCoord)

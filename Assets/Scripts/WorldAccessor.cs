@@ -60,7 +60,7 @@ public class WorldAccessor : MonoBehaviour
     /// </summary>
     /// <returns></returns>
     public static World Join(Agent player) {
-        World world = worldDictionary.Values.FirstOrDefault(world => !world.worldName.Equals("Menu")) ?? WorldBuilder.CreatePresetWorld();
+        World world = worldDictionary.Values.FirstOrDefault(world => !world.parameters.Name.Equals("Menu")) ?? WorldBuilder.CreatePresetWorld();
         world.AddPlayer(player);
 
         return world;
@@ -71,7 +71,7 @@ public class WorldAccessor : MonoBehaviour
     {
         foreach (KeyValuePair<string, World> entry in worldDictionary)
         {
-            if (!entry.Value.worldName.Equals("Menu") && entry.Value.Contains(player))
+            if (!entry.Value.parameters.Name.Equals("Menu") && entry.Value.Contains(player))
             {
                 return entry.Value;
             }
