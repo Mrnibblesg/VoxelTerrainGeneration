@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,7 +13,8 @@ using UnityEngine;
 public class ProfilerAgent : AuthoritativeAgent, ITaskable
 {
     private Stack<WorldTask> tasks;
-    private WorldTask currentTask;
+    private Action callback;
+    private bool complete = false;
     public override World CurrentWorld
     {
         set
@@ -28,32 +30,34 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
             UpdateChunkCoord();
         }
     }
-    private void Start()
+    public void Initialize(Action callback)
     {
         tasks = new();
+        this.callback = callback;
     }
 
     public override void Update()
     {
         base.Update();
-        if (currentTask == null || currentTask.IsComplete)
+        
+        if (tasks.Count > 0)
         {
-            if (tasks.Count > 0)
+            WorldTask task = tasks.Peek();
+            if (task.IsComplete)
             {
-                currentTask = tasks.Pop();
+                tasks.Pop();
             }
             else
             {
-                currentTask = null;
+                task.Perform(this);
             }
+            
         }
-
-        if (currentTask != null)
+        else if (!complete)
         {
-            currentTask.Perform(this);
-
+            callback();
+            complete = true;
         }
-        
     }
     public void PerformTask(WorldTask t)
     {

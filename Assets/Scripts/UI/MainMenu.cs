@@ -66,6 +66,7 @@ public class MainMenu : MonoBehaviour
             .GetComponent<Player>();
 
         p.CurrentWorld = w;
+        p.gameObject.SetActive(true);
         SceneManager.sceneLoaded -= PlayUsingPlayerAgent;
     }
 

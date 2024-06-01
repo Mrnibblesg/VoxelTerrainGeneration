@@ -91,13 +91,6 @@ public class Chunk : MonoBehaviour
             voxCoords.y * parent.chunkSize +
             voxCoords.z);
     }
-public Voxel GetVoxel(int x, int y, int z)
-    {
-        return VoxelRun.Get(voxels,
-            x * parent.chunkSize * parent.chunkHeight +
-            y * parent.chunkSize +
-            z);
-    }
 
     /// <summary>
     /// Sets the voxel at the local world-space position in this chunk.

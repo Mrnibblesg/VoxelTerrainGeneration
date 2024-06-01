@@ -6,20 +6,39 @@ public class SimpleMoveTask : WorldTask
 {
     int speed;
     Vector3 destination;
-    public SimpleMoveTask(Vector3 destination)
+    bool surface;
+    bool surfaceSet;
+
+    public SimpleMoveTask(Vector3 destination, bool surface = false)
     {
-        speed = 10;
+        speed = 4;
         this.destination = destination;
+        if (surface)
+        {
+            surfaceSet = false;
+            this.surface = true;
+        }
     }
     public override void Perform(Agent agent) {
-        Vector3 direction = Vector3.Normalize(destination - agent.transform.position);
-        float distance = speed;
-        if (direction.magnitude < speed)
+        if (surface && !surfaceSet)
         {
-            distance = direction.magnitude;
+            float x = this.destination.x;
+            float z = this.destination.z;
+            this.destination = new Vector3(
+                x,
+                agent.CurrentWorld.HeightAtLocation(x, z),
+                z
+            );
+            surfaceSet = true;
+        }
+        Vector3 difference = destination - agent.transform.position;
+        float distance = speed;
+        if (difference.magnitude < speed)
+        {
+            distance = difference.magnitude;
             this.IsComplete = true;
         }
-        agent.Move(Vector3.Normalize(direction) * distance);
+        agent.Move(Vector3.Normalize(difference) * distance * Time.fixedDeltaTime);
     }
     public override void Interrupt()
     {

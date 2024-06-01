@@ -413,6 +413,31 @@ public class World
             c.Key.SetVoxels(c.Value.Item1, c.Value.Item2);
         }
     }
+    /// <returns>The highest ground at the global x and z.
+    /// Min world height if there's no ground. </returns>
+    public float HeightAtLocation(float globalX, float globalZ)
+    {
+        float globalChunkWidth = chunkSize / resolution;
+        int chunkX = Mathf.FloorToInt(globalX / globalChunkWidth);
+        int chunkZ = Mathf.FloorToInt(globalZ / globalChunkWidth);
+        Vector3 pos = new Vector3(globalX % globalChunkWidth, 0, globalZ % globalChunkWidth);
+
+        for (int chunkY = worldHeight; chunkY >= 0; chunkY--){
+            Chunk c = GetChunk(new Vector3Int(chunkX, chunkY, chunkZ));
+            if (c == null) continue;
+
+            for (int y = chunkHeight - 1; y >= 0; y--)
+            {
+                pos.y = y;
+                VoxelType voxel = c.VoxelFromLocal(pos)?.type ?? VoxelType.AIR;
+                if (voxel != VoxelType.AIR)
+                {
+                    return c.transform.position.y + ((pos.y + 1) / resolution);
+                }
+            }
+        }
+        return 0;
+    }
 
     public bool Contains(Agent player)
     {

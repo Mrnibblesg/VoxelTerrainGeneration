@@ -68,6 +68,8 @@ public class ProfilerManager : MonoBehaviour
         SceneManager.sceneLoaded -= FinishSetup;
         Agent = SpawnAgent();
         Agent.CurrentWorld = new WorldBuilder().Build();
+        Agent.Initialize(FinishProfiling);
+        Agent.gameObject.SetActive(true);
         RunTestSuite();
     }
     private ProfilerAgent SpawnAgent()
@@ -84,9 +86,8 @@ public class ProfilerManager : MonoBehaviour
     /// <returns>If the suite was ran successfully.</returns
     public bool RunTestSuite()
     {
-        
+        Agent.AddTask(new ProfileGameTask(Agent));
         //Stress test scenario
-
         return RecordToFile();
     }
 
@@ -103,6 +104,12 @@ public class ProfilerManager : MonoBehaviour
     private void SaveData(string scenarioName)
     {
 
+    }
+
+    public void FinishProfiling()
+    {
+
+        RecordToFile();
     }
 
     /// <summary>
