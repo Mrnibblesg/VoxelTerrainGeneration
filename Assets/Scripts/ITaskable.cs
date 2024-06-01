@@ -11,9 +11,9 @@ using UnityEngine;
 /// 
 /// We only allow things that are an AbstractAgent to be tasked with things.
 /// </summary>
-public interface ITaskable<T> where T : AbstractAgent
+public interface ITaskable
 {
     //Task the object with a new task.
     //The object will complete it at its own discretion.
-    public void AddTask(ITask t);
+    public void AddTask(WorldTask t);
 }

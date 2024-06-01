@@ -5683,9 +5683,9 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 993623680}
   - {fileID: 1003712956}
   - {fileID: 1427692232}
-  - {fileID: 993623680}
   - {fileID: 1896193064}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -5726,9 +5726,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   menuPanels:
+  - {fileID: 993623679}
   - {fileID: 1003712955}
   - {fileID: 1427692231}
-  - {fileID: 993623679}
   - {fileID: 1896193063}
 --- !u!1 &1569975218
 GameObject:
@@ -7458,7 +7458,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fb1fb160d9cdac49b23fdb190f6faa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 4
+  chunkCoord: {x: 0, y: 0, z: 0}
+  speed: 0
 --- !u!1 &1942969234
 GameObject:
   m_ObjectHideFlags: 0

@@ -25,7 +25,7 @@ public class World
     public readonly float resolution;
     public readonly string worldName;
 
-    private List<AbstractAgent> players = new List<AbstractAgent>();
+    private List<Agent> players = new List<Agent>();
 
     //Use queues to dictate which order chunks are loaded and unloaded.
     private Dictionary<Vector3Int, Chunk> chunks;
@@ -414,12 +414,12 @@ public class World
         }
     }
 
-    public bool Contains(AbstractAgent player)
+    public bool Contains(Agent player)
     {
         return players.Contains(player);
     }
 
-    public void AddPlayer(AbstractAgent player)
+    public void AddPlayer(Agent player)
     {
         players.Add(player);
     }

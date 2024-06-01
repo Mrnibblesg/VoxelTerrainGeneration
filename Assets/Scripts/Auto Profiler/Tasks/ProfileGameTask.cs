@@ -2,23 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ProfileGameTask : ITask
+public class ProfileGameTask : WorldTask
 {
-    private Queue<ITask> tasks;
+    private Queue<WorldTask> tasks;
     public ProfileGameTask()
     {
         
     }
-    public void Perform(ITaskable<AbstractAgent> agent)
+
+    public override void Perform(Agent agent)
     {
         //agent.
     }
-    public void Interrupt()
+
+    public override void Interrupt()
     {
 
-    }
-    public bool IsComplete()
-    {
-        return false;
     }
 }

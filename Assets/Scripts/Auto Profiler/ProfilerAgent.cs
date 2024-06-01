@@ -9,10 +9,10 @@ using UnityEngine;
 
 //Task behavior: Does a task one at a time in a stack structure.
 
-public class ProfilerAgent : AuthoritativeAgent, ITaskable<ProfilerAgent>
+public class ProfilerAgent : AuthoritativeAgent, ITaskable
 {
-    private Stack<ITask> tasks;
-    private ITask currentTask;
+    private Stack<WorldTask> tasks;
+    private WorldTask currentTask;
     public override World CurrentWorld
     {
         set
@@ -36,7 +36,7 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable<ProfilerAgent>
     public override void Update()
     {
         base.Update();
-        if (currentTask == null || currentTask.IsComplete())
+        if (currentTask == null || currentTask.IsComplete)
         {
             if (tasks.Count > 0)
             {
@@ -55,12 +55,12 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable<ProfilerAgent>
         }
         
     }
-    public void PerformTask(ITask t)
+    public void PerformTask(WorldTask t)
     {
         t.Perform(this);
     }
 
-    public void AddTask(ITask task)
+    public void AddTask(WorldTask task)
     {
         tasks.Push(task);
     }

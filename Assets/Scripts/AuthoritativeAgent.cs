@@ -14,7 +14,7 @@ using UnityEngine;
 /// chunks in its current set world and do nothing else. If it doesn't have a
 /// world set, then it will do nothing, falling into the void.
 /// </summary>
-public abstract class AuthoritativeAgent : AbstractAgent
+public abstract class AuthoritativeAgent : Agent
 {
     private int renderDist = 7;
     private int unloadDist = 8;

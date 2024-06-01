@@ -2,18 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TeleportTask : ITask
+public class TeleportTask : WorldTask
 {
-    public void Perform(ITaskable<AbstractAgent> agent)
+    public override void Perform(Agent agent)
     {
 
+        this.IsComplete = true;
     }
-    public void Interrupt()
+    public override void Interrupt()
     {
 
-    }
-    public bool IsComplete()
-    {
-        return false;
     }
 }
