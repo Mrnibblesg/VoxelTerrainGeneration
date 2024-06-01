@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class MenuCameraController : AuthoritativeAgent
 {
-    public int speed;
+    [SerializeField]
+    private int speed = 4;
 
     //The camera has its world automatically set from the
     //WorldBuilder file

@@ -7459,7 +7459,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkCoord: {x: 0, y: 0, z: 0}
-  speed: 0
+  speed: 4
 --- !u!1 &1942969234
 GameObject:
   m_ObjectHideFlags: 0
