@@ -9,6 +9,7 @@ public class MainMenu : MonoBehaviour
     public Slider heightSlider;
     public Slider resolutionSlider;
     public Slider chunkSizeSlider;
+    public Slider chunkHeightSlider;
     public Slider waterHeightSlider;
     public Button generateWorldButton;
     public Button quitButton;
@@ -36,7 +37,7 @@ public class MainMenu : MonoBehaviour
             Resolution = (int)resolutionSlider.value,
             WorldHeightInChunks = (int)heightSlider.value,
             ChunkSize = (int)chunkSizeSlider.value,
-            ChunkHeight = (int)chunkSizeSlider.value,
+            ChunkHeight = (int)chunkHeightSlider.value,
             WaterHeight = (int)waterHeightSlider.value,
             Seed = string.IsNullOrEmpty(seedInput.text) ? 0 : int.Parse(seedInput.text),
             Name = "New World"

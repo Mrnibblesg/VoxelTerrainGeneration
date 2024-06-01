@@ -12,8 +12,7 @@ public class WaitTask : WorldTask
         IsComplete = false;
         this.duration = duration;
     }
-    //Expected behavior: This is called, control doesn't return to the flow of
-    //tasks until the wait is done.
+
     public override void Perform(Agent agent)
     {
         base.Perform(agent);
