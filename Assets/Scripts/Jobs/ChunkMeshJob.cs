@@ -125,7 +125,7 @@ public struct ChunkMeshJob : IJob
             for (int z = 0; z < size; z++)
             {
                 //Set the left of the input chunk as the right slice of the left chunk
-                voxels[(y + 1) * (height + 2) + (z + 1)] =
+                voxels[(y + 1) * (size + 2) + (z + 1)] =
                     leftArr[(size-1) * height * size + y * size + z];
                 //Set the right of the input as the left slice of the right chunk.
                 voxels[(size + 1) * (height + 2) * (size + 2) + (y + 1) * (size + 2) + (z + 1)] =

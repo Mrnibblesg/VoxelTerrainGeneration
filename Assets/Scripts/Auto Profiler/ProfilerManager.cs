@@ -56,7 +56,7 @@ public class ProfilerManager : MonoBehaviour
     public void StartProfiling()
     {
 #if !PROFILER_ENABLED
-        return false;
+        return;
 #endif
         //Load a scene for the profiler agent to play in :3
         SceneManager.LoadScene("Za Warudo", LoadSceneMode.Single);
@@ -70,6 +70,8 @@ public class ProfilerManager : MonoBehaviour
         //Agent.CurrentWorld = new WorldBuilder().Build();
         Agent.Initialize(FinishProfiling);
         Agent.gameObject.SetActive(true);
+
+        //Begin
         RunTestSuite();
     }
     private ProfilerAgent SpawnAgent()
@@ -99,7 +101,6 @@ public class ProfilerManager : MonoBehaviour
     {
         Agent.AddTask(new ProfileGameTask(Agent));
         return true;
-        //return RecordToFile();
     }
 
     //struct for world params would be helpful so I don't need to pass in a billion variables
