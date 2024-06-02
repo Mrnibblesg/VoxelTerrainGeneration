@@ -17,7 +17,7 @@ public class ProfileGameTask : WorldTask
         tasks = new();
         
         //Queue up the scenarios with different combinations of world parameters.
-        for (int res = 1; res < 4; res++)
+        for (int res = 1; res <= 3; res++)
         {
             for (int chunkSizeFactor = 1; chunkSizeFactor < 5; chunkSizeFactor++)
             {
@@ -38,7 +38,8 @@ public class ProfileGameTask : WorldTask
                     worldParams.Name = $"Simple Actions: " +
                         $"Resolution {res}, " +
                         $"Chunk size {chunkSize}, " +
-                        $"Chunk Height {chunkHeight}";
+                        $"Chunk Height {chunkHeight}, " +
+                        $"World Height (Chunks) {maxHeight / chunkHeight}";
                     tasks.Enqueue(new SimpleActionsScenario(worldParams));
                     //other scenarios down here...
                 }

@@ -5,7 +5,7 @@ using UnityEngine;
 //A simple struct to hold parameters of worlds.
 public struct WorldParameters
 {
-    public int Resolution { get; set; }
+    public float Resolution { get; set; }
     public int WorldHeightInChunks { get; set; }
     public int ChunkSize { get; set; }
     public int ChunkHeight { get; set; }

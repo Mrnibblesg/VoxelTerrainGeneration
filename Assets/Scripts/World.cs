@@ -155,12 +155,17 @@ public class World
     //  They get queued as well if they're in range.
     public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
-        
+        //Protect against loading chunks that aren't needed anymore
+        if (!chunksInProg.Contains(chunkCoords))
+        {
+            return;
+        }
+
         GameObject chunkObj = new GameObject($"Chunk{chunkCoords.x},{chunkCoords.y},{chunkCoords.z}");
         chunkObj.transform.position = new(
-            chunkCoords.x * parameters.ChunkSize / parameters.Resolution,
-            chunkCoords.y * parameters.ChunkHeight / parameters.Resolution,
-            chunkCoords.z * parameters.ChunkSize / parameters.Resolution
+            chunkCoords.x * parameters.ChunkSize / (float)parameters.Resolution,
+            chunkCoords.y * parameters.ChunkHeight / (float)parameters.Resolution,
+            chunkCoords.z * parameters.ChunkSize / (float)parameters.Resolution
         );
 
         Chunk newChunk = chunkObj.AddComponent<Chunk>();
@@ -423,6 +428,19 @@ public class World
             }
         }
         return 0;
+    }
+    public void UnloadAll()
+    {
+        Debug.Log("Unloading world");
+        loadQueue.Clear();
+        unloadQueue.Clear();
+        chunksInProg.Clear();
+        foreach (Vector3Int coord in chunks.Keys)
+        {
+            unloadQueue.Enqueue(coord);
+        }
+
+        UpdateNeighborQueues();
     }
 
     public bool Contains(Agent player)

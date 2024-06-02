@@ -27,6 +27,7 @@ public class Player : AuthoritativeAgent
         get => currentWorld;
         set
         {
+            this.currentWorld?.UnloadAll();
             this.currentWorld = value;
             Vector3 startPosition = new(
                 0.5f,
@@ -59,6 +60,11 @@ public class Player : AuthoritativeAgent
         if (Input.GetMouseButton(2))
         {
             UpdateLook();
+        }
+        if ((currentWorld.VoxelFromGlobal(transform.position)?.type ?? VoxelType.AIR) != VoxelType.AIR)
+        {
+            GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
+            transform.position += Vector3.up;
         }
     }
     

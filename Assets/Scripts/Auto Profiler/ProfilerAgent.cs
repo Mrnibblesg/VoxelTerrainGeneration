@@ -13,12 +13,12 @@ using UnityEngine;
 public class ProfilerAgent : AuthoritativeAgent, ITaskable
 {
     private Stack<WorldTask> tasks;
-    private Action callback;
     private bool complete = false;
     public override World CurrentWorld
     {
         set
         {
+            this.currentWorld?.UnloadAll();
             currentWorld = value;
             Vector3 startPosition = new(
                 0.5f,
@@ -30,10 +30,9 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
             UpdateChunkCoord();
         }
     }
-    public void Initialize(Action callback)
+    public void Initialize()
     {
         tasks = new();
-        this.callback = callback;
     }
 
     public override void Update()
@@ -45,6 +44,7 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
             WorldTask task = tasks.Peek();
             if (task.IsComplete)
             {
+                Debug.Log("Next task");
                 tasks.Pop();
             }
             else
@@ -53,11 +53,11 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
             }
             
         }
-        else if (!complete)
+
+        if ((currentWorld?.VoxelFromGlobal(transform.position)?.type ?? VoxelType.AIR) != VoxelType.AIR)
         {
-            callback();
-            ProfilerManager.Manager.FinishProfiling();
-            complete = true;
+            GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
+            transform.position += Vector3.up;
         }
     }
     public void PerformTask(WorldTask t)

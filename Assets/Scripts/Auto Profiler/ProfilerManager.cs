@@ -68,7 +68,7 @@ public class ProfilerManager : MonoBehaviour
         SceneManager.sceneLoaded -= FinishSetup;
         Agent = SpawnAgent();
         //Agent.CurrentWorld = new WorldBuilder().Build();
-        Agent.Initialize(FinishProfiling);
+        Agent.Initialize();
         Agent.gameObject.SetActive(true);
 
         //Begin
@@ -120,7 +120,7 @@ public class ProfilerManager : MonoBehaviour
 
     public void FinishProfiling()
     {
-
+        Debug.Log("Finished!!!");
         RecordToFile();
     }
 

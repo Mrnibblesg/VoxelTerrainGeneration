@@ -156,16 +156,6 @@ public class VoxelInteraction : MonoBehaviour
                 }
             }
         }
-
-        /*if (Input.GetMouseButtonDown(0))
-        {
-            voxelInfo = looking.ClickedVoxel(playerCamera);
-            if (voxelInfo != null)
-            {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
-                MassBreak(position);
-            }
-        }*/
     }
 
     private void BreakVoxel(Vector3 position)

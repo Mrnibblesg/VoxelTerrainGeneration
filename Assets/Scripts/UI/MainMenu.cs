@@ -34,7 +34,7 @@ public class MainMenu : MonoBehaviour
     {
         worldParameters = new WorldParameters
         {
-            Resolution = (int)resolutionSlider.value,
+            Resolution = Mathf.Pow(2,(float)resolutionSlider.value-1),
             WorldHeightInChunks = (int)heightSlider.value,
             ChunkSize = (int)chunkSizeSlider.value,
             ChunkHeight = (int)chunkHeightSlider.value,
