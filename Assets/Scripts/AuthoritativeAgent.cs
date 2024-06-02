@@ -21,11 +21,11 @@ public abstract class AuthoritativeAgent : Agent
 
     public int RenderDist {
         get { return renderDist; }
-        protected set { renderDist = value; }
+        set { renderDist = value; }
     }
     public int UnloadDist {
         get { return unloadDist; }
-        protected set { unloadDist = value; }
+        set { unloadDist = value; }
     }
 
     public override World CurrentWorld

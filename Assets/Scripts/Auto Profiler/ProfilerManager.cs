@@ -91,6 +91,12 @@ public class ProfilerManager : MonoBehaviour
             .Build();
         Agent.CurrentWorld = w;
     }
+    public void SetProfilerAgentRenderDist(int dist)
+    {
+        Agent.RenderDist = dist;
+        Agent.UnloadDist = dist + 1;
+        Agent.CurrentWorld.UpdateAuthAgentChunkPos(Agent);
+    }
 
     /// <summary>
     /// Runs the entire test suite. Performs player actions autonomously.

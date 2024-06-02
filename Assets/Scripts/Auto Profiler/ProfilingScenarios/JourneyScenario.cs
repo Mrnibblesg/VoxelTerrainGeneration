@@ -10,9 +10,9 @@ public class JourneyScenario : WorldTask
         tasks = new();
         tasks.Enqueue(new SwitchProfilerAgentWorld(world));
         tasks.Enqueue(new WaitConditionTask(WaitConditionTask.ChunkWaitCondition));
-        
+
         //Long journey
-        //tasks.Enqueue(new LongMoveTask())
+        tasks.Enqueue(new LongMoveTask(5, new Vector3(0, 0, 1000)));
     }
 
     public override void Perform(Agent agent)

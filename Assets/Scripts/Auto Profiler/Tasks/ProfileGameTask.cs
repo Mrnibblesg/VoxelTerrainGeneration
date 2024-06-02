@@ -17,7 +17,7 @@ public class ProfileGameTask : WorldTask
         tasks = new();
         
         //Queue up the scenarios with different combinations of world parameters.
-        for (int res = 1; res <= 3; res++)
+        for (int res = 1; res <= 1; res++)
         {
             for (int chunkSizeFactor = 1; chunkSizeFactor < 5; chunkSizeFactor++)
             {
@@ -27,11 +27,11 @@ public class ProfileGameTask : WorldTask
                 worldParams.Resolution = res;
                 worldParams.ChunkSize = chunkSize;
                 worldParams.ChunkHeight = 16;
-                worldParams.WorldHeightInChunks = 4;
+                worldParams.WorldHeightInChunks = 4 * (int)Mathf.Pow(2, res - 1);
 
                 QueueScenarios();
 
-                worldParams.ChunkHeight = 64;
+                worldParams.ChunkHeight = 16 * worldParams.WorldHeightInChunks;
                 worldParams.WorldHeightInChunks = 1;
 
                 QueueScenarios();
@@ -42,12 +42,23 @@ public class ProfileGameTask : WorldTask
     //Queue all scenarios with the currently set world params
     private void QueueScenarios()
     {
-        worldParams.Name = $"Simple Actions: " +
-                    $"Resolution {worldParams.Resolution}, " +
+        string worldNameEnding = $"Resolution {worldParams.Resolution}, " +
                     $"Chunk size {worldParams.ChunkSize}, " +
                     $"Chunk Height {worldParams.ChunkHeight}, " +
                     $"World Height (Chunks) {worldParams.WorldHeightInChunks}";
+
+
+        worldParams.Name = $"Simple Actions: " + worldNameEnding;
+        worldParams.Seed = 1;
         tasks.Enqueue(new SimpleActionsScenario(worldParams));
+
+        worldParams.Name = $"Journey: " + worldNameEnding;
+        worldParams.Seed = 2;
+        tasks.Enqueue(new JourneyScenario(worldParams));
+
+        worldParams.Name = $"World Gen Stress Test: " + worldNameEnding;
+        worldParams.Seed = 2;
+        tasks.Enqueue(new WorldGenStressTestScenario(worldParams));
 
         //other scenarios down here...
     }

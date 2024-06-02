@@ -1,17 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class SimpleMoveTask : WorldTask
 {
-    int speed;
+    float speed;
     Vector3 destination;
     bool surface;
     bool surfaceSet;
 
-    public SimpleMoveTask(Vector3 destination, bool surface = false)
+    public SimpleMoveTask(Vector3 destination, bool surface = false, float speed = 2)
     {
-        speed = 4;
+        this.speed = speed;
         this.destination = destination;
         if (surface)
         {
@@ -24,8 +25,17 @@ public class SimpleMoveTask : WorldTask
         {
             float x = this.destination.x;
             float z = this.destination.z;
-            this.destination.y = agent.CurrentWorld.HeightAtLocation(x, z)+1;
-            surfaceSet = true;
+            this.destination.y = agent.CurrentWorld.HeightAtLocation(x, z)+1.5f;
+            if (this.destination.y == 1.5f)
+            {
+                agent.Taskable.AddTask(new WaitTask(0.5f));
+                Debug.Log("Waiting on terrain!");
+                return;
+            }
+            else
+            {
+                surfaceSet = true;
+            }
         }
         Vector3 difference = destination - agent.transform.position;
         float distance = speed;
@@ -33,8 +43,10 @@ public class SimpleMoveTask : WorldTask
         {
             distance = difference.magnitude;
             this.IsComplete = true;
+            
         }
-        agent.Move(Vector3.Normalize(difference) * distance * Time.fixedDeltaTime);
+
+        agent.Move(distance * Time.fixedDeltaTime * Vector3.Normalize(difference));
     }
     public override void Interrupt()
     {

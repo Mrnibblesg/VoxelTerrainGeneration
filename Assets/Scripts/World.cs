@@ -5,6 +5,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using static UnityEditor.PlayerSettings;
 
 
 // TODO In the future, this should *probably* only contain world info, chunks, and get chunks.
@@ -409,21 +410,25 @@ public class World
     public float HeightAtLocation(float globalX, float globalZ)
     {
         float globalChunkWidth = parameters.ChunkSize / parameters.Resolution;
-        int chunkX = Mathf.FloorToInt(globalX / globalChunkWidth);
-        int chunkZ = Mathf.FloorToInt(globalZ / globalChunkWidth);
-        Vector3 pos = new Vector3(globalX % globalChunkWidth, 0, globalZ % globalChunkWidth);
+        int xIndex = (int)Math.Abs(Mathf.FloorToInt(globalX % globalChunkWidth) * parameters.Resolution);
+        int zIndex = (int)Math.Abs(Mathf.FloorToInt(globalZ % globalChunkWidth) * parameters.Resolution);
 
+        Vector3Int chunkCoords = new Vector3Int(
+            Mathf.FloorToInt(globalX / globalChunkWidth), 0,
+            Mathf.FloorToInt(globalZ / globalChunkWidth));
+
+        //Start from world height and loop downards to min world height
         for (int chunkY = parameters.WorldHeightInChunks; chunkY >= 0; chunkY--){
-            Chunk c = GetChunk(new Vector3Int(chunkX, chunkY, chunkZ));
+            chunkCoords.y = chunkY;
+            Chunk c = GetChunk(chunkCoords);
             if (c == null) continue;
 
             for (int y = parameters.ChunkHeight - 1; y >= 0; y--)
             {
-                pos.y = y;
-                VoxelType voxel = c.VoxelFromLocal(pos)?.type ?? VoxelType.AIR;
-                if (voxel != VoxelType.AIR)
+                Voxel voxel = c.GetVoxel(new Vector3Int(xIndex, y, zIndex));
+                if (voxel.type != VoxelType.AIR)
                 {
-                    return c.transform.position.y + (pos.y / parameters.Resolution);
+                    return c.transform.position.y + (y / parameters.Resolution);
                 }
             }
         }

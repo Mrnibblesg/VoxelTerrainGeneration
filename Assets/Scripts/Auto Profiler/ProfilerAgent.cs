@@ -53,10 +53,11 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
             
         }
 
-        if ((currentWorld?.VoxelFromGlobal(transform.position)?.type ?? VoxelType.AIR) != VoxelType.AIR)
+        //Keep the bot from getting stuck on the terrain while navigating
+        if ((currentWorld?.VoxelFromGlobal(transform.position-(Vector3.up*0.9f))?.type ?? VoxelType.AIR) != VoxelType.AIR)
         {
             GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
-            transform.position += Vector3.up;
+            transform.position += Vector3.up / currentWorld.parameters.Resolution;
         }
     }
     public void PerformTask(WorldTask t)
