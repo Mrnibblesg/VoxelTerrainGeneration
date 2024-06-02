@@ -404,7 +404,7 @@ public class World
             c.Key.SetVoxels(c.Value.Item1, c.Value.Item2);
         }
     }
-    /// <returns>The highest ground at the global x and z.
+    /// <returns>The y value of the highest solid terrain at the global x and z.
     /// Min world height if there's no ground. </returns>
     public float HeightAtLocation(float globalX, float globalZ)
     {
@@ -431,7 +431,6 @@ public class World
     }
     public void UnloadAll()
     {
-        Debug.Log("Unloading world");
         loadQueue.Clear();
         unloadQueue.Clear();
         chunksInProg.Clear();
@@ -441,6 +440,10 @@ public class World
         }
 
         UpdateNeighborQueues();
+    }
+    public bool IsLoadingInProgress()
+    {
+        return chunksInProg.Count > 0 || loadQueue.Count > 0;
     }
 
     public bool Contains(Agent player)

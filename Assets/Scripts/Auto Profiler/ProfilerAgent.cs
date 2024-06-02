@@ -44,7 +44,6 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
             WorldTask task = tasks.Peek();
             if (task.IsComplete)
             {
-                Debug.Log("Next task");
                 tasks.Pop();
             }
             else

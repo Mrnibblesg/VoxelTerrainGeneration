@@ -23,29 +23,33 @@ public class ProfileGameTask : WorldTask
             {
                 int chunkSize = 16 * (int)Mathf.Pow(2, chunkSizeFactor-1);
 
-                //set up vertical-chunk worlds
-                int maxHeight = worldParams.WorldHeightInChunks * 16;
-                int originalWorldHeightInChunks = 4;
-                for (int chunkHeight = 16; chunkHeight <= maxHeight; chunkHeight *= originalWorldHeightInChunks)
-                {
-                    //height = 16, then * world height in chunks, then finish loop
-                    //only 2 settings.
-                    worldParams.Resolution = res;
-                    worldParams.ChunkSize = chunkSize;
-                    worldParams.ChunkHeight = chunkHeight;
-                    worldParams.WorldHeightInChunks = maxHeight / chunkHeight;
+                //Vertically-segmented chunks, then single vertical chunks.
+                worldParams.Resolution = res;
+                worldParams.ChunkSize = chunkSize;
+                worldParams.ChunkHeight = 16;
+                worldParams.WorldHeightInChunks = 4;
 
-                    worldParams.Name = $"Simple Actions: " +
-                        $"Resolution {res}, " +
-                        $"Chunk size {chunkSize}, " +
-                        $"Chunk Height {chunkHeight}, " +
-                        $"World Height (Chunks) {maxHeight / chunkHeight}";
-                    tasks.Enqueue(new SimpleActionsScenario(worldParams));
-                    //other scenarios down here...
-                }
+                QueueScenarios();
+
+                worldParams.ChunkHeight = 64;
+                worldParams.WorldHeightInChunks = 1;
+
+                QueueScenarios();
+                
             }
         }
-        
+    }
+    //Queue all scenarios with the currently set world params
+    private void QueueScenarios()
+    {
+        worldParams.Name = $"Simple Actions: " +
+                    $"Resolution {worldParams.Resolution}, " +
+                    $"Chunk size {worldParams.ChunkSize}, " +
+                    $"Chunk Height {worldParams.ChunkHeight}, " +
+                    $"World Height (Chunks) {worldParams.WorldHeightInChunks}";
+        tasks.Enqueue(new SimpleActionsScenario(worldParams));
+
+        //other scenarios down here...
     }
 
     public override void Perform(Agent agent)

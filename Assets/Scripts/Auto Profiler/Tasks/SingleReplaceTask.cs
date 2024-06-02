@@ -2,29 +2,31 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SingleBreakTask : WorldTask
+public class SingleReplaceTask : WorldTask
 {
-    Vector3 VoxelToBreak;
+    Vector3 VoxelToReplace;
+    VoxelType type;
     bool surfaceSet;
     bool surface;
 
-    public SingleBreakTask(Vector3 position, bool surface=false)
+    public SingleReplaceTask(Vector3 position, VoxelType type, bool surface=false)
     {
-        VoxelToBreak = position;
+        VoxelToReplace = position;
         surfaceSet = false;
         this.surface = surface;
+        this.type = type;
     }
     public override void Perform(Agent agent)
     {
         base.Perform(agent);
         if (surface && !surfaceSet)
         {
-            float x = this.VoxelToBreak.x;
-            float z = this.VoxelToBreak.z;
-            this.VoxelToBreak.y = agent.CurrentWorld.HeightAtLocation(x, z);
+            float x = this.VoxelToReplace.x;
+            float z = this.VoxelToReplace.z;
+            this.VoxelToReplace.y = agent.CurrentWorld.HeightAtLocation(x, z);
             surfaceSet = true;
         }
-        agent.TryBreak(VoxelToBreak);
+        agent.TryPlace(VoxelToReplace, type);
         IsComplete = true;
     }
 

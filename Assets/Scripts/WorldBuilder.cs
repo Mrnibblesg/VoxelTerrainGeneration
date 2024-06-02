@@ -67,11 +67,11 @@ public class WorldBuilder
     {
         World defaultWorld = new WorldBuilder().SetWorldName("Menu").Build();
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        GameObject menuCamera = GameObject.FindGameObjectWithTag("Player");
+        if (menuCamera != null)
         {
-            player.GetComponent<MenuCameraController>().CurrentWorld = defaultWorld;
-            player.SetActive(true); // Disable player control in the main menu
+            menuCamera.GetComponent<MenuCameraController>().CurrentWorld = defaultWorld;
+            menuCamera.SetActive(true); // Disable player control in the main menu
         }
 
         return defaultWorld;
