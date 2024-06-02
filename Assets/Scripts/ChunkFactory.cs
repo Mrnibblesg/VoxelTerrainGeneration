@@ -21,6 +21,11 @@ public class ChunkFactory
     //to jobs.
     NativeArray<float> continentalnessSplinePoints;
     NativeArray<float> continentalnessTerrainHeight;
+    
+    NativeArray<float> erosionSplinePoints;
+    NativeArray<float> erosionTerrainHeight;
+
+
 
     //Special data that is used when generating the world.
     private struct JobData
@@ -41,17 +46,23 @@ public class ChunkFactory
         continentalnessSplinePoints = new(5,Allocator.Persistent);
         continentalnessTerrainHeight = new(5,Allocator.Persistent);
 
+        erosionSplinePoints = new(5,Allocator.Persistent);
+        erosionTerrainHeight = new(5,Allocator.Persistent);
+
         continentalnessSplinePoints[0] = 0;
-        continentalnessSplinePoints[1] = 0.3f;
-        continentalnessSplinePoints[2] = 0.7f;
+        continentalnessSplinePoints[1] = 0.2f;
+        continentalnessSplinePoints[2] = 0.4f;
         continentalnessSplinePoints[3] = 0.8f;
         continentalnessSplinePoints[4] = 1f;
 
-        continentalnessTerrainHeight[0] = 1;
+        continentalnessTerrainHeight[0] = 30;
         continentalnessTerrainHeight[1] = 50f;
         continentalnessTerrainHeight[2] = 70f;
         continentalnessTerrainHeight[3] = 75f;
         continentalnessTerrainHeight[4] = 101f;
+
+
+
     }
 
     /// <summary>
@@ -76,8 +87,11 @@ public class ChunkFactory
                 seed = seed,
                 resolution = world.resolution,
                 coords = new int3(chunkCoords.x, chunkCoords.y, chunkCoords.z),
+
                 continentalnessPoints = this.continentalnessSplinePoints,
                 continentalnessTerrainHeight = this.continentalnessTerrainHeight,
+
+
 
                 voxels = data.voxels
             };

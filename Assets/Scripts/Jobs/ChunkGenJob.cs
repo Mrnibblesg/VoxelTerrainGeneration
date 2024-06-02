@@ -26,6 +26,11 @@ public struct ChunkGenJob : IJob
     [ReadOnly]
     public NativeArray<float> continentalnessTerrainHeight;
 
+    [ReadOnly]
+    public NativeArray<float> erosionPoints;
+
+    [ReadOnly]
+    public NativeArray<float> erosionTerrainHeight;
 
     [WriteOnly]
     public NativeArray<Voxel> voxels;
@@ -66,7 +71,9 @@ public struct ChunkGenJob : IJob
             {
                 float xOff = x / resolution;
                 float zOff = z / resolution;
-                float targetHeight = GetContinentalnessHeight(chunkPos.x + xOff, chunkPos.z + zOff);
+                float continentalness = GetContinentalnessHeight(chunkPos.x + xOff, chunkPos.z + zOff);
+                float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff);
+                float targetHeight = continentalness - erosion;
 
                 for (int y = height - 1; y >= 0; y--)
                 {
@@ -89,59 +96,6 @@ public struct ChunkGenJob : IJob
         
     }
 
-/*    private void Perlin()
-    {
-        //Max amplitude in world-space
-        const int amplitude = 30;
-        Unity.Mathematics.Random r = new(seed);
-        int o1Offset = r.NextInt(-100000, 100000);
-        int o2Offset = r.NextInt(-100000, 100000);
-        int o3Offset = r.NextInt(-100000, 100000);
-
-        float3 chunkPos = new float3(
-            coords.x * size / resolution,
-            coords.y * height / resolution,
-            coords.z * size / resolution);
-
-        for (int x = 0; x < size; x++)
-        {
-            for (int z = 0; z < size; z++)
-            {
-
-                float2 voxelPos = new float2(x, z) / resolution;
-                voxelPos.x += chunkPos.x;
-                voxelPos.y += chunkPos.z;
-
-                //We might want to use a perlin noise function that is not from the Mathf library.
-                //Mathf isn't particularly suited for burst code. Maybe Unity.Mathematics? or some other library.
-                double octave1 = amplitude * Mathf.PerlinNoise((voxelPos.x + o1Offset) / 50, (voxelPos.y + o1Offset) / 50);
-
-                double octave2 = amplitude * Mathf.PerlinNoise((voxelPos.x + o2Offset) / 15, (voxelPos.y + o2Offset) / 15) / 2;
-
-                //I don't understand why the input values need to be small. Dividing by 2 is perfectly fine but not dividing breaks it.
-                double octave3 = amplitude * Mathf.PerlinNoise((voxelPos.x + o3Offset) / 5, (voxelPos.y + o3Offset) / 5) / 15;
-                double targetHeight = octave1 + octave2 + octave3;
-                for (int y = height - 1; y >= 0; y--)
-                {
-                    if (chunkPos.y + (y / resolution) <= targetHeight)
-                    {
-                        break;
-                    }
-
-                    if (chunkPos.y + (y / resolution) <= waterHeight)
-                    {
-                        voxels[height * size * x + size * y + z] = new Voxel(VoxelType.WATER_SOURCE);
-                    }
-                    else
-                    {
-                        voxels[height * size * x + size * y + z] = new Voxel(VoxelType.AIR);
-                    }
-                }
-
-            }
-        }
-    }*/
-
     /// <summary>
     /// Interpolate based on the supplied spline points
     /// </summary>
@@ -153,15 +107,32 @@ public struct ChunkGenJob : IJob
         int offset = r.NextInt(-100000, 100000);
         float noise = Mathf.Clamp(Mathf.PerlinNoise((x+offset)/50, (z+offset)/50),0,1);
 
-        //which spline point has the next value above our noise?
-        //should be at least 1
+        return GetSplineHeight(continentalnessPoints, continentalnessTerrainHeight, noise);
+    }
+    private float GetErosion(float x, float z)
+    {
+        Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
+        int offset = r.NextInt(-100000, 100000);
+        float noise = Mathf.Clamp(Mathf.PerlinNoise((x + offset) / 50, (z + offset) / 50), 0, 1);
+
+        return noise;
+    }
+    private int FindSplineUpperBound(NativeArray<float> splinePoints, float noiseValue)
+    {
         int point = 1;
-        while (point < continentalnessPoints.Length && noise > continentalnessPoints[point])
+        while (point < splinePoints.Length && noiseValue > splinePoints[point])
         {
             point++;
         }
-        float first = continentalnessPoints[point - 1];
-        float second = continentalnessPoints[point];
+        return point;
+    }
+    private float GetSplineHeight(NativeArray<float> points, NativeArray<float> heights, float noise)
+    {
+        //which spline point has the next value above our noise?
+        //should be at least 1
+        int splineUpperBound = FindSplineUpperBound(points, noise);
+        float first = points[splineUpperBound - 1];
+        float second = points[splineUpperBound];
 
         //find spline bounds
         //take the 2 bounds as min and max
@@ -170,8 +141,10 @@ public struct ChunkGenJob : IJob
         //value is the same % of the way between p1 and p2
         float percentage = (noise - first) / (second - first);
 
-        return math.lerp(continentalnessTerrainHeight[point-1], continentalnessTerrainHeight[point], percentage);
-        
-        //return 
+        return math.lerp(
+            heights[splineUpperBound - 1],
+            heights[splineUpperBound],
+            percentage
+        );
     }
 }
