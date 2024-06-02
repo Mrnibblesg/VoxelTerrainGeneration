@@ -26,26 +26,14 @@ public struct ChunkGenJob : IJob
 
     public void Execute()
     {
-        RandomVoxels();
+        Grass();
         Perlin();
     }
-    private void RandomVoxels()
+    private void Grass()
     {
-        int voxelAmt = 5;
-
-
-        Unity.Mathematics.Random r = new(seed);
-
-        for (int x = 0; x < size; x++)
+        for (int i = 0; i < size * height * size; i++)
         {
-            for (int y = 0; y < height; y++)
-            {
-                for (int z = 0; z < size; z++)
-                {
-                    VoxelType type = (VoxelType)r.NextInt(1, voxelAmt - 1);
-                    voxels[height*size * x + size*y + z] = new Voxel(type);
-                }
-            }
+            voxels[i] = new Voxel(VoxelType.GRASS);
         }
     }
     private void Perlin()
