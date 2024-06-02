@@ -20,14 +20,30 @@ public struct ChunkGenJob : IJob
     public float resolution;
     public int3 coords;
 
+    [ReadOnly]
+    public NativeArray<float> continentalnessPoints;
+
+    [ReadOnly]
+    public NativeArray<float> continentalnessTerrainHeight;
+
+
     [WriteOnly]
     public NativeArray<Voxel> voxels;
 
 
     public void Execute()
     {
+        //Terrain shaping,
         Grass();
-        Perlin();
+        CarveTerrain();
+
+
+        //Decorating terrain based on biome
+
+        
+
+
+        //Perlin(); // very basic terrain shaping
     }
     private void Grass()
     {
@@ -36,7 +52,44 @@ public struct ChunkGenJob : IJob
             voxels[i] = new Voxel(VoxelType.GRASS);
         }
     }
-    private void Perlin()
+
+    private void CarveTerrain()
+    {
+        float3 chunkPos = new float3(
+            coords.x * size / resolution,
+            coords.y * height / resolution,
+            coords.z * size / resolution);
+
+        for (int x = 0; x < size; x++)
+        {
+            for (int z = 0; z < size; z++)
+            {
+                float xOff = x / resolution;
+                float zOff = z / resolution;
+                float targetHeight = GetContinentalnessHeight(chunkPos.x + xOff, chunkPos.z + zOff);
+
+                for (int y = height - 1; y >= 0; y--)
+                {
+                    if (chunkPos.y + (y / resolution) <= targetHeight)
+                    {
+                        break;
+                    }
+
+                    if (chunkPos.y + (y / resolution) <= waterHeight)
+                    {
+                        voxels[height * size * x + size * y + z] = new Voxel(VoxelType.WATER_SOURCE);
+                    }
+                    else
+                    {
+                        voxels[height * size * x + size * y + z] = new Voxel(VoxelType.AIR);
+                    }
+                }
+            }
+        }
+        
+    }
+
+/*    private void Perlin()
     {
         //Max amplitude in world-space
         const int amplitude = 30;
@@ -87,5 +140,38 @@ public struct ChunkGenJob : IJob
 
             }
         }
+    }*/
+
+    /// <summary>
+    /// Interpolate based on the supplied spline points
+    /// </summary>
+    /// <returns>The height based on continentalness for this x and z</returns>
+    private float GetContinentalnessHeight(float x, float z)
+    {
+        //seed and find the noise for the coords
+        Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
+        int offset = r.NextInt(-100000, 100000);
+        float noise = Mathf.Clamp(Mathf.PerlinNoise((x+offset)/50, (z+offset)/50),0,1);
+
+        //which spline point has the next value above our noise?
+        //should be at least 1
+        int point = 1;
+        while (point < continentalnessPoints.Length && noise > continentalnessPoints[point])
+        {
+            point++;
+        }
+        float first = continentalnessPoints[point - 1];
+        float second = continentalnessPoints[point];
+
+        //find spline bounds
+        //take the 2 bounds as min and max
+        //the value is mapped to be within min and max
+        //noise is a % of the way between p1 and p2, so
+        //value is the same % of the way between p1 and p2
+        float percentage = (noise - first) / (second - first);
+
+        return math.lerp(continentalnessTerrainHeight[point-1], continentalnessTerrainHeight[point], percentage);
+        
+        //return 
     }
 }

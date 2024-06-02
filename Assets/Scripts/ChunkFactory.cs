@@ -15,6 +15,13 @@ public class ChunkFactory
     uint seed;
     World world;
 
+    //We use spline points to control how the terrain height value slopes 
+    //on different noise intervals via linear interpolation.
+    //We use two native arrays because these are the only arrays that can be given
+    //to jobs.
+    NativeArray<float> continentalnessSplinePoints;
+    NativeArray<float> continentalnessTerrainHeight;
+
     //Special data that is used when generating the world.
     private struct JobData
     {
@@ -26,6 +33,25 @@ public class ChunkFactory
     {
         seed = 1;
         this.world = world;
+        // (0, 1)
+        // (0.3, 50)
+        // (0.7, 70)
+        // (0.8, 150)
+        // (1, 150)
+        continentalnessSplinePoints = new(5,Allocator.Persistent);
+        continentalnessTerrainHeight = new(5,Allocator.Persistent);
+
+        continentalnessSplinePoints[0] = 0;
+        continentalnessSplinePoints[1] = 0.3f;
+        continentalnessSplinePoints[2] = 0.7f;
+        continentalnessSplinePoints[3] = 0.8f;
+        continentalnessSplinePoints[4] = 1f;
+
+        continentalnessTerrainHeight[0] = 1;
+        continentalnessTerrainHeight[1] = 50f;
+        continentalnessTerrainHeight[2] = 70f;
+        continentalnessTerrainHeight[3] = 75f;
+        continentalnessTerrainHeight[4] = 101f;
     }
 
     /// <summary>
@@ -38,7 +64,8 @@ public class ChunkFactory
             JobData data = new()
             {
                 chunkCoord = chunkCoords,
-                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.TempJob) //If this job takes more than 4 frames, switch to Allocator.Persistent
+                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.TempJob), //If this job takes more than 4 frames, switch to Allocator.Persistent
+                
             };
 
             ChunkGenJob chunkGenJob = new()
@@ -49,6 +76,8 @@ public class ChunkFactory
                 seed = seed,
                 resolution = world.resolution,
                 coords = new int3(chunkCoords.x, chunkCoords.y, chunkCoords.z),
+                continentalnessPoints = this.continentalnessSplinePoints,
+                continentalnessTerrainHeight = this.continentalnessTerrainHeight,
 
                 voxels = data.voxels
             };

@@ -10,7 +10,7 @@ public class WorldBuilder
     private static int DEFAULT_RESOLUTION = 1;
 
     public int WorldHeight { get; set; }
-    private static int DEFAULT_WORLD_HEIGHT = 4;
+    private static int DEFAULT_WORLD_HEIGHT = 16;
 
     //Dimensions of chunk in the amount of voxels
     public int ChunkSize { get; set; }
