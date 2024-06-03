@@ -34,14 +34,9 @@ public abstract class Agent : WorldObject
     {
         CurrentWorld?.SetVoxel(pos, VoxelType.AIR);
     }
-    public virtual void TryBreakList(List<Vector3> pos)
+    public virtual void TryTwoPointBreak(Vector3 p1, Vector3 p2)
     {
-        List<VoxelType> types = new List<VoxelType>();
-        for (int i = 0; i < pos.Count; i++)
-        {
-            types.Add(VoxelType.AIR);
-        }
-        CurrentWorld?.SetVoxels(pos, types);
+        TryTwoPointReplace(p1, p2, VoxelType.AIR);
     }
     /// <summary>
     /// Attempt to place a block in the current world, at world-space position.
@@ -50,9 +45,9 @@ public abstract class Agent : WorldObject
     {
         CurrentWorld?.SetVoxel(pos, type);
     }
-    public virtual void TryPlaceList(List<Vector3> pos, List<VoxelType> types)
+    public virtual void TryTwoPointReplace(Vector3 p1, Vector3 p2, VoxelType type)
     {
-        CurrentWorld?.SetVoxels(pos, types);
+        CurrentWorld?.SetVoxels(p1, p2, type);
     }
 
     /// <summary>

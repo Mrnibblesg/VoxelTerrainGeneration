@@ -67,6 +67,20 @@ public class Chunk : MonoBehaviour
     /// <returns></returns>
     public Voxel? VoxelFromLocal(Vector3 vec)
     {
+        
+        Vector3Int pos = LocalToVoxelCoord(vec);
+
+        bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
+
+        return outside ? null : GetVoxel(pos);
+    }
+
+    /// <summary>
+    /// Return the voxel coordinate given a localized position
+    /// </summary>
+    /// <returns></returns>
+    public Vector3Int LocalToVoxelCoord(Vector3 vec)
+    {
         //Get from some coordinate within the chunk to the appropriate voxel coords.
         vec *= world.parameters.Resolution;
         Vector3Int pos = new Vector3Int(
@@ -74,11 +88,9 @@ public class Chunk : MonoBehaviour
             Mathf.FloorToInt(vec.y),
             Mathf.FloorToInt(vec.z)
         );
-
-        bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
-
-        return outside ? null : GetVoxel(pos);
+        return pos;
     }
+
     /// <summary>
     /// Get the voxel
     /// </summary>
@@ -101,12 +113,7 @@ public class Chunk : MonoBehaviour
     public bool SetVoxelFromLocal(Vector3 vec, Voxel voxel)
     {
         //Scale the world-space coordinate to voxel-coordinate space
-        vec *= world.parameters.Resolution;
-        Vector3Int pos = new Vector3Int(
-            Mathf.FloorToInt(vec.x),
-            Mathf.FloorToInt(vec.y),
-            Mathf.FloorToInt(vec.z)
-        );
+        Vector3Int pos = LocalToVoxelCoord(vec);
 
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
         if (outside) { return false; }
@@ -126,47 +133,32 @@ public class Chunk : MonoBehaviour
             voxCoords.y * world.parameters.ChunkSize + 
             voxCoords.z);
     }
-    public bool SetVoxels(List<Vector3> vec, List<Voxel> voxel)
+    /// <summary>
+    /// Set the voxels between localized p1 and p2 to the given voxel
+    /// </summary>
+    /// <returns></returns>
+    public bool SetVoxels(Vector3 p1, Vector3 p2, Voxel voxel)
     {
-        if (vec.Count != voxel.Count)
+        Vector3Int p1Coords = LocalToVoxelCoord(p1);
+        Vector3Int p2Coords = LocalToVoxelCoord(p2);
+
+        bool changed = false;
+
+        //Only loop through the portion of the selection that intersects with this chunk
+        for (int x = Math.Max(0, p1Coords.x); x <= Math.Min(world.parameters.ChunkSize-1, p2Coords.x); x++)
         {
-            return false;
-        }
-
-        for (int i = 0; i < vec.Count; i++)
-        {
-            //Scale the world-space coordinate to voxel-coordinate space
-            vec[i] *= world.parameters.Resolution;
-            Vector3Int pos = new Vector3Int(
-                Mathf.FloorToInt(vec[i].x),
-                Mathf.FloorToInt(vec[i].y),
-                Mathf.FloorToInt(vec[i].z)
-            );
-
-            bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
-            if (outside) { continue; }
-
-            if (voxel[i].type == VoxelType.AIR)
+            for (int y = Math.Max(0, p1Coords.y); y <= Math.Min(world.parameters.ChunkHeight-1, p2Coords.y); y++)
             {
-                if (GetVoxel(pos).type != VoxelType.AIR)
+                for (int z = Math.Max(0, p1Coords.z); z <= Math.Min(world.parameters.ChunkSize-1, p2Coords.z); z++)
                 {
-                    SetVoxel(pos, Voxel.Clone(voxel[i]));
-                }
-            }
-            else
-            {
-                if (GetVoxel(pos).type == VoxelType.AIR)
-                {
-                    SetVoxel(pos, Voxel.Clone(voxel[i]));
+                    SetVoxel(new Vector3Int(x, y, z), voxel);
+                    changed = true;
                 }
             }
         }
-
-        // Update the mesh
-        // Brute force for now
-        RegenerateMesh();
-
-        return true;
+        if (changed) { RegenerateMesh(); }
+        
+        return changed;
     }
 
     /// <summary>

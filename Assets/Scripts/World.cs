@@ -314,12 +314,7 @@ public class World
     //Retrieve chunk from global coordinates
     public Chunk ChunkFromGlobal(Vector3 global)
     {
-        Vector3Int chunkCoordinates = new Vector3Int(
-            Mathf.FloorToInt(global.x / (parameters.ChunkSize / parameters.Resolution)),
-            Mathf.FloorToInt(global.y / (parameters.ChunkHeight / parameters.Resolution)),
-            Mathf.FloorToInt(global.z / (parameters.ChunkSize / parameters.Resolution)));
-
-        return GetChunk(chunkCoordinates);
+        return GetChunk(VectorToChunkCoord(global));
     }
 
     /// <summary>
@@ -337,6 +332,14 @@ public class World
         }
         return null;
     }
+    public Vector3Int VectorToChunkCoord(Vector3 global)
+    {
+        return new Vector3Int(
+            Mathf.FloorToInt(global.x / (parameters.ChunkSize / parameters.Resolution)),
+            Mathf.FloorToInt(global.y / (parameters.ChunkHeight / parameters.Resolution)),
+            Mathf.FloorToInt(global.z / (parameters.ChunkSize / parameters.Resolution))
+        );
+    }
 
     /// <summary>
     /// Set a voxel from the given world-space position
@@ -348,14 +351,9 @@ public class World
     {
         SetVoxel(vec, new Voxel(type));
     }
-    public void SetVoxels(List<Vector3> vec, List<VoxelType> type)
+    public void SetVoxels(Vector3 p1, Vector3 p2, VoxelType type)
     {
-        List<Voxel> voxel = new List<Voxel>();
-        for (int i = 0; i < type.Count; i++)
-        {
-            voxel.Add(new Voxel(type[i]));
-        }
-        SetVoxels(vec, voxel);
+        SetVoxels(p1, p2, new Voxel(type));
     }
     /// <summary>
     /// Set a voxel from the given world-space position
@@ -372,38 +370,45 @@ public class World
         }
     }
     /// <summary>
-    /// Set a list of voxels from the given world-space positions
+    /// Set a list of voxels from the given world-space positions.
+    /// It's expected that p1 is the corner with the smallest of each coordinate
+    /// for its x y and z in the selection
     /// </summary>
     /// <param name="vec"></param>
     /// <param name="voxel"></param>
-    /// <exception cref="Exception"></exception>
-    public void SetVoxels(List<Vector3> vec, List<Voxel> voxel)
+    public void SetVoxels(Vector3 p1, Vector3 p2, Voxel voxel)
     {
-        Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>> chunks = new Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>>();
-        for (int i = 0; i < vec.Count; i++)
+        //Expand the selection by one voxel to capture any chunks the selection borders with
+        Vector3 expandedP1 = p1 - Vector3.one / parameters.Resolution;
+        Vector3 expandedP2 = p2 + Vector3.one / parameters.Resolution;
+
+        //Loop through the range of chunks
+        Vector3Int chunkP1 = VectorToChunkCoord(expandedP1);
+        Vector3Int chunkP2 = VectorToChunkCoord(expandedP2);
+
+        //Set the voxels for each chunk affected
+        for (int x = chunkP1.x; x <= chunkP2.x; x++)
         {
-            Chunk c = ChunkFromGlobal(vec[i]);
-            if (c == null)
+            for (int y = chunkP1.y; y <= chunkP2.y; y++)
             {
-                continue;
+                for (int z = chunkP1.z; z <= chunkP2.z; z++)
+                {
+                    Chunk c = GetChunk(new Vector3Int(x, y, z));
+                    if (c != null)
+                    {
+                        if (!c.SetVoxels(
+                            c.transform.InverseTransformPoint(p1),
+                            c.transform.InverseTransformPoint(p2),
+                            voxel
+                        ))
+                        {
+                            c.RegenerateMesh();
+                        }
+                    }
+                }
             }
-            
-            if (!chunks.ContainsKey(c))
-            {
-                List<Vector3> vecList = new List<Vector3>();
-                List<Voxel> voxelList = new List<Voxel>();
-                Tuple<List<Vector3>, List<Voxel>> container = new Tuple<List<Vector3>, List<Voxel>>(vecList, voxelList);
-                chunks.Add(c, container);
-            }
-            
-            chunks[c].Item1.Add(c.transform.InverseTransformPoint(vec[i]));
-            chunks[c].Item2.Add(voxel[i]);
         }
 
-        foreach (var c in chunks)
-        {
-            c.Key.SetVoxels(c.Value.Item1, c.Value.Item2);
-        }
     }
     /// <returns>The y value of the highest solid terrain at the global x and z.
     /// Min world height if there's no ground. </returns>
