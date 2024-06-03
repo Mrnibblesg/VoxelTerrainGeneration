@@ -17,6 +17,7 @@ public class MassReplaceTask : WorldTask
     public override void Perform(Agent agent)
     {
         base.Perform(agent);
-        //agent.TryTwoPointReplace(VoxelType.AIR, type);
+        agent.TryTwoPointReplace(p1, p2, type);
+        IsComplete = true;
     }
 }

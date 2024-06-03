@@ -19,6 +19,9 @@ public struct ChunkGenJob : IJob
     public uint seed;
     public float resolution;
     public int3 coords;
+#if PROFILER_ENABLED 
+    public bool worstCase;
+#endif
 
     [WriteOnly]
     public NativeArray<Voxel> voxels;
@@ -26,6 +29,14 @@ public struct ChunkGenJob : IJob
 
     public void Execute()
     {
+#if PROFILER_ENABLED
+        if (worstCase)
+        {
+            WorstCase();
+            return;
+        }
+#endif
+
         Grass();
         Perlin();
     }
@@ -84,7 +95,24 @@ public struct ChunkGenJob : IJob
                         voxels[height * size * x + size * y + z] = new Voxel(VoxelType.AIR);
                     }
                 }
+            }
+        }
+    }
 
+    /// <summary>
+    /// Alternate voxels between some block and air
+    /// </summary>
+    private void WorstCase()
+    {
+        for (int x = 0; x < size; x++)
+        {
+            for (int z = 0; z < size; z++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    voxels[height * size * x + size * y + z] =
+                        (x + y + z) % 2 == 0 ? new Voxel(VoxelType.AIR) : new Voxel(VoxelType.DIRT);
+                }
             }
         }
     }

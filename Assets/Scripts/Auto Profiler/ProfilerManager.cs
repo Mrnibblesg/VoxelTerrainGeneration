@@ -15,6 +15,7 @@ public class ProfilerManager : MonoBehaviour
 {
     public static ProfilerManager Manager { get; private set; }
     ProfilerAgent agent;
+    private bool worstChunks = false;
     public ProfilerAgent Agent {
         get { return agent; }
         protected set
@@ -89,6 +90,7 @@ public class ProfilerManager : MonoBehaviour
         World w = new WorldBuilder()
             .SetParameters(parameters)
             .Build();
+        w.SetWorstChunks(worstChunks);
         Agent.CurrentWorld = w;
     }
     public void SetProfilerAgentRenderDist(int dist)
@@ -96,6 +98,10 @@ public class ProfilerManager : MonoBehaviour
         Agent.RenderDist = dist;
         Agent.UnloadDist = dist + 1;
         Agent.CurrentWorld.UpdateAuthAgentChunkPos(Agent);
+    }
+    public void SetProfilerAgentWorldWorstChunks(bool value)
+    {
+        worstChunks = value;
     }
 
     /// <summary>

@@ -48,19 +48,33 @@ public class ProfileGameTask : WorldTask
                     $"World Height (Chunks) {worldParams.WorldHeightInChunks}";
 
 
-        worldParams.Name = $"Simple Actions: " + worldNameEnding;
-        worldParams.Seed = 1;
-        tasks.Enqueue(new SimpleActionsScenario(worldParams));
+        /*        worldParams.Name = $"Simple Actions: " + worldNameEnding;
+                worldParams.Seed = 1;
+                tasks.Enqueue(new SimpleActionsScenario(worldParams));
 
-        worldParams.Name = $"Journey: " + worldNameEnding;
-        worldParams.Seed = 2;
-        tasks.Enqueue(new JourneyScenario(worldParams));
+                worldParams.Name = $"Journey: " + worldNameEnding;
+                worldParams.Seed = 2;
+                tasks.Enqueue(new JourneyScenario(worldParams));
 
-        worldParams.Name = $"World Gen Stress Test: " + worldNameEnding;
-        worldParams.Seed = 2;
-        tasks.Enqueue(new WorldGenStressTestScenario(worldParams));
+                worldParams.Name = $"World Gen Stress Test: " + worldNameEnding;
+                worldParams.Seed = 3;
+                tasks.Enqueue(new WorldGenStressTestScenario(worldParams, 10));*/
 
-        //other scenarios down here...
+        /*worldParams.Name = $"Mass Single Replace: " + worldNameEnding;
+        worldParams.Seed = 4;
+        tasks.Enqueue(new MassSingleReplaceScenario(worldParams, 2000));
+
+        worldParams.Name = $"Mass Mass Replace: " + worldNameEnding;
+        worldParams.Seed = 5;
+        tasks.Enqueue(new MassMassReplaceScenario(worldParams, 1000));*/
+
+        //This scenario consumes a TON of resources... It's more useful if we keep the params low.
+        if (worldParams.ChunkSize <= 32 && worldParams.Resolution == 1)
+        {
+            worldParams.Name = $"Worst Chunks: " + worldNameEnding;
+            worldParams.Seed = 6;
+            tasks.Enqueue(new WorstChunksPossibleScenario(worldParams, 10));
+        }
     }
 
     public override void Perform(Agent agent)

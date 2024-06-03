@@ -12,6 +12,10 @@ using UnityEngine;
 //determine what voxels are what.
 public class ChunkFactory
 {
+#if PROFILER_ENABLED
+    public bool worstChunks = false;
+#endif
+
     uint seed;
     World world;
 
@@ -54,6 +58,9 @@ public class ChunkFactory
                 seed = seed,
                 resolution = world.parameters.Resolution,
                 coords = new int3(chunkCoords.x, chunkCoords.y, chunkCoords.z),
+#if PROFILER_ENABLED
+                worstCase = worstChunks,
+#endif
 
                 voxels = data.voxels
             };

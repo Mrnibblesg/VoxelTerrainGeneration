@@ -5,7 +5,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
-using static UnityEditor.PlayerSettings;
 
 
 // TODO In the future, this should *probably* only contain world info, chunks, and get chunks.
@@ -34,7 +33,7 @@ public class World
     private int playerLoadDist;
     private int playerUnloadDist;
 
-    ChunkFactory chunkFactory;
+    private ChunkFactory chunkFactory;
 
     private static ProfilerMarker s_moveChunk = new ProfilerMarker(ProfilerCategory.Scripts, "Move Chunk");
 
@@ -464,5 +463,16 @@ public class World
     public void AddPlayer(Agent player)
     {
         players.Add(player);
+    }
+
+    /// <summary>
+    /// Only works if the symbol PROFILER_ENABLED is set.
+    /// </summary>
+    public void SetWorstChunks(bool value)
+    {
+#if !PROFILER_ENABLED
+        return;
+#endif
+        chunkFactory.worstChunks = value;
     }
 }
