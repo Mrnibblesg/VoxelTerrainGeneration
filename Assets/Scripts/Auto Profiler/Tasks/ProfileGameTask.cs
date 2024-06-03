@@ -52,7 +52,7 @@ public class ProfileGameTask : WorldTask
         worldParams.Seed = 1;
         tasks.Enqueue(new SimpleActionsScenario(worldParams));
 
-/*        worldParams.Name = $"Journey: " + worldNameEnding;
+        worldParams.Name = $"Journey: " + worldNameEnding;
         worldParams.Seed = 2;
         tasks.Enqueue(new JourneyScenario(worldParams));
 
@@ -74,7 +74,7 @@ public class ProfileGameTask : WorldTask
             worldParams.Name = $"Worst Chunks: " + worldNameEnding;
             worldParams.Seed = 6;
             tasks.Enqueue(new WorstChunksPossibleScenario(worldParams, 10));
-        }*/
+        }
     }
 
     public override void Perform(Agent agent)
