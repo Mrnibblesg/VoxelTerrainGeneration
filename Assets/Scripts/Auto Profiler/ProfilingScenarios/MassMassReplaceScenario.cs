@@ -5,12 +5,14 @@ using UnityEngine;
 public class MassMassReplaceScenario : WorldTask
 {
     private Queue<WorldTask> tasks;
+    WorldParameters world;
 
     private int progress;
     private int maxAmount;
 
     public MassMassReplaceScenario(WorldParameters world, int amount)
     {
+        this.world = world;
         tasks = new();
         progress = 0;
 
@@ -52,7 +54,7 @@ public class MassMassReplaceScenario : WorldTask
         }
         else
         {
-            ProfilerManager.Manager.CompleteScenario("Mass Mass Replace Scenario");
+            ProfilerManager.Manager.CompleteScenario("Mass Mass Replace Scenario", world);
             IsComplete = true;
         }
     }

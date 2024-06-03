@@ -5,8 +5,11 @@ using UnityEngine;
 public class WorldGenStressTestScenario : WorldTask
 {
     private Queue<WorldTask> tasks;
+    WorldParameters world;
+
     public WorldGenStressTestScenario(WorldParameters world, int renderDist)
     {
+        this.world = world;
         tasks = new();
         tasks.Enqueue(new SwitchProfilerAgentWorld(world));
         tasks.Enqueue(new SwitchProfilerAgentRenderDist(renderDist));
@@ -33,7 +36,7 @@ public class WorldGenStressTestScenario : WorldTask
         }
         else
         {
-            ProfilerManager.Manager.CompleteScenario("World Gen Stress Test Scenario");
+            ProfilerManager.Manager.CompleteScenario("World Gen Stress Test Scenario", world);
             IsComplete = true;
         }
     }

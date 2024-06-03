@@ -51,7 +51,6 @@ public class WorldBuilder
     public World Build()
     {
         World world = new World(worldParams);
-        Debug.Log("Creating world " + worldParams.Name);
         // Add the world to the world accessor
         WorldAccessor.AddWorld(worldParams.Name, world);
 

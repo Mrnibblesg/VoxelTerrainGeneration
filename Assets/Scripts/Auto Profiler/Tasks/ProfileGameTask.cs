@@ -19,6 +19,7 @@ public class ProfileGameTask : WorldTask
         //Queue up the scenarios with different combinations of world parameters.
         for (int res = 1; res <= 1; res++)
         {
+            //chunkSizeFactor is for chunk size. We try 16, 32, 64, 128.
             for (int chunkSizeFactor = 1; chunkSizeFactor < 5; chunkSizeFactor++)
             {
                 int chunkSize = 16 * (int)Mathf.Pow(2, chunkSizeFactor-1);
@@ -51,7 +52,7 @@ public class ProfileGameTask : WorldTask
         worldParams.Seed = 1;
         tasks.Enqueue(new SimpleActionsScenario(worldParams));
 
-        /*worldParams.Name = $"Journey: " + worldNameEnding;
+/*        worldParams.Name = $"Journey: " + worldNameEnding;
         worldParams.Seed = 2;
         tasks.Enqueue(new JourneyScenario(worldParams));
 

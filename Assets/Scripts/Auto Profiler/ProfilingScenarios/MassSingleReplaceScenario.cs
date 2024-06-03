@@ -5,6 +5,7 @@ using UnityEngine;
 public class MassSingleReplaceScenario : WorldTask
 {
     private Queue<WorldTask> tasks;
+    WorldParameters world;
 
     private int progressPlaced;
     private int progressBroken;
@@ -12,6 +13,7 @@ public class MassSingleReplaceScenario : WorldTask
 
     public MassSingleReplaceScenario(WorldParameters world, int amount)
     {
+        this.world = world;
         tasks = new();
         progressPlaced = 0;
         progressBroken = 0;
@@ -57,7 +59,7 @@ public class MassSingleReplaceScenario : WorldTask
         }
         else
         {
-            ProfilerManager.Manager.CompleteScenario("Mass Single Replace Scenario");
+            ProfilerManager.Manager.CompleteScenario("Mass Single Replace Scenario", world);
             IsComplete = true;
         }
     }

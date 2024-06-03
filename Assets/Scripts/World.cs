@@ -472,7 +472,8 @@ public class World
     {
 #if !PROFILER_ENABLED
         return;
-#endif
+#else
         chunkFactory.worstChunks = value;
+#endif
     }
 }

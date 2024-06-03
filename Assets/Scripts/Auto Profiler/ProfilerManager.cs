@@ -17,6 +17,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using UnityEngine.Profiling;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -37,11 +39,13 @@ public class ProfilerManager : MonoBehaviour
 
     private struct ScenarioData
     {
+        public WorldParameters _params;
         public string name;
         public double maxCPUFrameTime;
         public double maxGPUFrameTime;
         public double averageCPUFrameTime;
-        public long scenarioDuration;
+        public float scenarioDuration;
+        public long memUsed;
 
     }
     private List<ScenarioData> dataForScenarios;
@@ -118,11 +122,11 @@ public class ProfilerManager : MonoBehaviour
     {
 #if !PROFILER_ENABLED
         return;
-#endif
+#else
         //Load a scene for the profiler agent to play in :3
         SceneManager.LoadScene("Za Warudo", LoadSceneMode.Single);
         SceneManager.sceneLoaded += FinishSetup;
-
+#endif
     }
     public void FinishSetup(Scene scene,  LoadSceneMode mode)
     {
@@ -179,51 +183,89 @@ public class ProfilerManager : MonoBehaviour
     /// <summary>
     /// Save the current data under the given scenario name
     /// </summary>
-    public void CompleteScenario(string scenarioName)
+    public void CompleteScenario(string scenarioName, WorldParameters world)
     {
         long now = DateTime.Now.Ticks;
 
-        //Duration in ms
-        long duration = (now - scenarioStartTime) / TimeSpan.TicksPerMillisecond;
+        System.GC.Collect();
+        System.GC.WaitForPendingFinalizers();
+        long memUsed = Profiler.GetTotalAllocatedMemoryLong() + Profiler.GetMonoUsedSizeLong();
+        //Duration in seconds
+        float duration = (now - scenarioStartTime) / (float)TimeSpan.TicksPerSecond;
         double avg = CPUframeTimes.Sum() / CPUframeTimes.Count;
-
-        
 
         ScenarioData data = new ScenarioData()
         {
+            _params = world,
             name = scenarioName,
             maxCPUFrameTime = scenarioMaxFrameTime,
             maxGPUFrameTime = scenarioMaxGPUFrameTime,
             averageCPUFrameTime = avg,
             scenarioDuration = duration,
-
+            memUsed = memUsed
         };
 
         dataForScenarios.Add(data);
 
         //Set up for the next scenario
-        CPUframeTimes.Clear();
-
-        scenarioMaxFrameTime = -1;
-        scenarioMaxGPUFrameTime = -1;
-        scenarioStartTime = now;
-
+        Clear();
     }
 
     public void FinishProfiling()
     {
         recording = false;
+        Clear();
         RecordToFile();
+
+    }
+    private void Clear()
+    {
+        CPUframeTimes.Clear();
+
+        scenarioMaxFrameTime = -1;
+        scenarioMaxGPUFrameTime = -1;
+        scenarioStartTime = DateTime.Now.Ticks;
     }
 
     /// <summary>
-    ///     
+    /// Writes the profiling results to a file in /Assets/Scripts/Auto Profiler/Results/re_voxel_auto_profiler*.txt
     /// </summary>
-    /// <returns>whether it was successful or not</returns>
-    private bool RecordToFile()
+    private void RecordToFile()
     {
+        //open file, write data, finish
+        string path = "./Assets/Scripts/Auto Profiler/Results/re_voxel_auto_profiler_" +
+            DateTime.Now.Hour.ToString() + "_" + DateTime.Now.Minute.ToString() + ".txt";
+        StreamWriter writer = new StreamWriter(path, false);
+        
+        foreach (ScenarioData sd in dataForScenarios)
+        {
+            WriteScenario(writer, sd);
+        }
 
-        //Debug.Log("Success!");
-        return false;
+        writer.Close();
+    }
+    private void WriteScenario(StreamWriter sw, ScenarioData sd)
+    {
+        sw.WriteLine(sd.name + ":");
+        sw.WriteLine();
+        sw.WriteLine("World settings:");
+        sw.WriteLine("\tResolution: " + sd._params.Resolution);
+        sw.WriteLine("\tChunk size: " + sd._params.ChunkSize);
+        sw.WriteLine("\tChunk height: " + sd._params.ChunkHeight);
+        sw.WriteLine("\tVertical chunks: " + sd._params.WorldHeightInChunks);
+        sw.WriteLine("\tSeed: " + sd._params.Seed);
+        sw.WriteLine();
+        sw.WriteLine("Total Duration: " + sd.scenarioDuration + "s");
+        sw.WriteLine();
+        sw.WriteLine("CPU Frame stats:");
+        sw.WriteLine("\tMax time: " + sd.maxCPUFrameTime + "ms");
+        sw.WriteLine("\tAvg time: " + sd.averageCPUFrameTime + "ms");
+        sw.WriteLine();
+        sw.WriteLine("GPU Frame stats:");
+        sw.WriteLine("\tMax time: " + sd.maxGPUFrameTime + "ms");
+        sw.WriteLine();
+        sw.WriteLine("Memory stats:");
+        sw.WriteLine("\tFinal Memory: " + (sd.memUsed / (1024 * 1024)) + "MB"); //MB
+        sw.WriteLine("------------------------------");
     }
 }

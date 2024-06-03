@@ -483,7 +483,7 @@ MonoBehaviour:
     Before building the project, Add
     the scripting symbol "PROFILER_ENABLED" in Unity > Edit > Project Settings >
     Player > Other Settings > Script Compilation to enable profiling. Finished reports
-    will be placed in the project directory.'
+    will be placed in Assets/Scripts/Auto Profiler/Results in the project directory.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -5516,6 +5516,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25e266c4749c7494bbd4817f5ebbaa20, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  recording: 0
 --- !u!1 &1344819647
 GameObject:
   m_ObjectHideFlags: 0

@@ -5,8 +5,10 @@ using UnityEngine;
 public class WorstChunksPossibleScenario : WorldTask
 {
     private Queue<WorldTask> tasks;
+    WorldParameters world;
     public WorstChunksPossibleScenario(WorldParameters world, int renderDist)
     {
+        this.world = world;
         tasks = new();
         tasks.Enqueue(new NextWorldWorstCaseChunks(true));
         tasks.Enqueue(new SwitchProfilerAgentWorld(world));
@@ -29,7 +31,7 @@ public class WorstChunksPossibleScenario : WorldTask
         }
         else
         {
-            ProfilerManager.Manager.CompleteScenario("Worst Chunks Possible Scenario");
+            ProfilerManager.Manager.CompleteScenario("Worst Chunks Possible Scenario", world);
             agent.CurrentWorld.SetWorstChunks(false);
             IsComplete = true;
         }

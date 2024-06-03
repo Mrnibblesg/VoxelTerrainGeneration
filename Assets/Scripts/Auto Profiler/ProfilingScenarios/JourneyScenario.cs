@@ -5,8 +5,10 @@ using UnityEngine;
 public class JourneyScenario : WorldTask
 {
     private Queue<WorldTask> tasks;
+    WorldParameters world;
     public JourneyScenario(WorldParameters world)
     {
+        this.world = world;
         tasks = new();
         tasks.Enqueue(new SwitchProfilerAgentWorld(world));
         tasks.Enqueue(new WaitConditionTask(WaitConditionTask.ChunkWaitCondition));
@@ -25,7 +27,7 @@ public class JourneyScenario : WorldTask
         }
         else
         {
-            ProfilerManager.Manager.CompleteScenario("Journey Scenario");
+            ProfilerManager.Manager.CompleteScenario("Journey Scenario", world);
             IsComplete = true;
         }
     }

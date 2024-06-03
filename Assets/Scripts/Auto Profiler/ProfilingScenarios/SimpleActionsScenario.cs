@@ -6,10 +6,11 @@ using UnityEngine;
 public class SimpleActionsScenario : WorldTask
 {
     private Queue<WorldTask> tasks;
-
+    WorldParameters world;
 
     public SimpleActionsScenario(WorldParameters world)
     {
+        this.world = world;
         tasks = new();
         tasks.Enqueue(new SwitchProfilerAgentWorld(world));
         tasks.Enqueue(new WaitTask(1f));
@@ -35,7 +36,7 @@ public class SimpleActionsScenario : WorldTask
         }
         else
         {
-            ProfilerManager.Manager.CompleteScenario("Simple actions");
+            ProfilerManager.Manager.CompleteScenario("Simple actions", world);
             IsComplete = true;
         }
     }
