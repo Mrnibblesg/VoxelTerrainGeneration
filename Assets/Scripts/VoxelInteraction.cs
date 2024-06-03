@@ -10,7 +10,7 @@ public class VoxelInteraction : MonoBehaviour
     private Vector3[] voxelInfo;
     private Vector3 position;
     Vector3? alt_position;
-    private int breakCoefficient;
+    private int breakRange;
 
     // Start is called before the first frame update
     void Start()
@@ -19,7 +19,7 @@ public class VoxelInteraction : MonoBehaviour
         player = GetComponent<Player>();
         currType = VoxelType.GRASS;
         voxelInfo = null;
-        breakCoefficient = 2;
+        breakRange = 2;
         alt_position = null;
     }
 
@@ -59,11 +59,11 @@ public class VoxelInteraction : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Period))
         {
-            breakCoefficient++;
+            breakRange++;
         }
         if (Input.GetKeyDown(KeyCode.Comma))
         {
-            breakCoefficient--;
+            breakRange--;
         }
     }
 
@@ -74,7 +74,7 @@ public class VoxelInteraction : MonoBehaviour
             voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
                 BreakVoxel(position);
             }
         }
@@ -84,7 +84,7 @@ public class VoxelInteraction : MonoBehaviour
             voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
                 PlaceVoxel(position);
             }
         }
@@ -97,7 +97,7 @@ public class VoxelInteraction : MonoBehaviour
             voxelInfo = looking.ClickedVoxel(playerCamera);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
@@ -108,7 +108,7 @@ public class VoxelInteraction : MonoBehaviour
                         }
                         else
                         {
-                            TwoPointBreak((Vector3)alt_position, position);
+                            TwoPointReplace((Vector3)alt_position, position, VoxelType.AIR);
                             alt_position = null;
                         }
                     }
@@ -129,7 +129,7 @@ public class VoxelInteraction : MonoBehaviour
             voxelInfo = looking.ClickedVoxel(playerCamera);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
+                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
 
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
@@ -147,7 +147,7 @@ public class VoxelInteraction : MonoBehaviour
                     }
                     else
                     {
-                        MassPlace(position);
+                        MassPlace(position, currType);
                     }
                 }
                 else
@@ -156,16 +156,6 @@ public class VoxelInteraction : MonoBehaviour
                 }
             }
         }
-
-        /*if (Input.GetMouseButtonDown(0))
-        {
-            voxelInfo = looking.ClickedVoxel(playerCamera);
-            if (voxelInfo != null)
-            {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.resolution / 2);
-                MassBreak(position);
-            }
-        }*/
     }
 
     private void BreakVoxel(Vector3 position)
@@ -180,126 +170,73 @@ public class VoxelInteraction : MonoBehaviour
 
     private void MassBreak(Vector3 position)
     {
-        List<Vector3> positions = new List<Vector3>();
 
-        float voxelSize = 1 / player.CurrentWorld.resolution;
-
-        for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
-        {
-            for (float j = 0; j <= voxelSize * breakCoefficient; j += voxelSize)
-            {
-                for (float k = 0; k <= voxelSize * breakCoefficient; k += voxelSize)
-                {
-                    positions.Add(position + new Vector3(i, j, k));
-                    positions.Add(position + new Vector3(-i, j, k));
-                    positions.Add(position + new Vector3(i, j, -k));
-                    positions.Add(position + new Vector3(-i, j, -k));
-                    positions.Add(position + new Vector3(i, -j, k));
-                    positions.Add(position + new Vector3(-i, -j, k));
-                    positions.Add(position + new Vector3(i, -j, -k));
-                    positions.Add(position + new Vector3(-i, -j, -k));
-                }
-            }
-        }
-
-        player.TryBreakList(positions);
+        MassPlace(position, VoxelType.AIR);
     }
 
-    private void MassPlace(Vector3 position)
-    {
-        List<Vector3> positions = new List<Vector3>();
-        List<VoxelType> types = new List<VoxelType>();
-
-        float voxelSize = 1 / player.CurrentWorld.resolution;
-
-        for (float i = 0; i <= voxelSize * breakCoefficient; i += voxelSize)
-        {
-            for (float j = 0; j <= voxelSize * breakCoefficient; j += voxelSize)
-            {
-                for (float k = 0; k <= voxelSize * breakCoefficient; k += voxelSize)
-                {
-                    positions.Add(position + new Vector3(i, j, k));
-                    positions.Add(position + new Vector3(-i, j, k));
-                    positions.Add(position + new Vector3(i, j, -k));
-                    positions.Add(position + new Vector3(-i, j, -k));
-                    positions.Add(position + new Vector3(i, -j, k));
-                    positions.Add(position + new Vector3(-i, -j, k));
-                    positions.Add(position + new Vector3(i, -j, -k));
-                    positions.Add(position + new Vector3(-i, -j, -k));
-                    
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                    types.Add(currType);
-                }
-            }
-        }
-
-        player.TryPlaceList(positions, types);
-    }
-
-    private void TwoPointBreak(Vector3 alt_pos, Vector3 pos)
+    private void MassPlace(Vector3 position, VoxelType type)
     {
         List<Vector3> positions = new List<Vector3>();
 
-        float voxelSize = 1 / player.CurrentWorld.resolution;
+        float voxelSize = 1 / player.CurrentWorld.parameters.Resolution;
+        Vector3 offset = new Vector3(-voxelSize * breakRange, -voxelSize * breakRange, -voxelSize * breakRange);
+        Vector3 p1 = position - offset;
+        Vector3 p2 = position + offset;
 
-        float start_x;
-        float start_y;
-        float start_z;
-        float end_x;
-        float end_y;
-        float end_z;
+        TwoPointReplace(p1, p2, type);
+    }
 
-        if (pos.x <= alt_pos.x)
+    /// <summary>
+    /// Corrects the given positions before attempting the replacement
+    /// </summary>
+    private void TwoPointReplace(Vector3 altPos, Vector3 pos, VoxelType type)
+    {
+
+        float startX;
+        float startY;
+        float startZ;
+        float endX;
+        float endY;
+        float endZ;
+
+        if (pos.x <= altPos.x)
         {
-            start_x = pos.x;
-            end_x = alt_pos.x;
+            startX = pos.x;
+            endX = altPos.x;
         }
         else
         {
-            start_x = alt_pos.x;
-            end_x = pos.x;
+            startX = altPos.x;
+            endX = pos.x;
         }
 
-        if (pos.y <= alt_pos.y)
+        if (pos.y <= altPos.y)
         {
-            start_y = pos.y;
-            end_y = alt_pos.y;
+            startY = pos.y;
+            endY = altPos.y;
         }
         else
         {
-            start_y = alt_pos.y;
-            end_y = pos.y;
+            startY = altPos.y;
+            endY = pos.y;
         }
 
-        if (pos.z <= alt_pos.z)
+        if (pos.z <= altPos.z)
         {
-            start_z = pos.z;
-            end_z = alt_pos.z;
+            startZ = pos.z;
+            endZ = altPos.z;
         }
         else
         {
-            start_z = alt_pos.z;
-            end_z = pos.z;
+            startZ = altPos.z;
+            endZ = pos.z;
         }
 
-        for (float i = start_x; i <= end_x; i += voxelSize)
-        {
-            for (float j = start_y; j <= end_y; j += voxelSize)
-            {
-                for (float k = start_z; k <= end_z; k += voxelSize)
-                {
-                    positions.Add(new Vector3(i, j, k));
-                }
-            }
-        }
 
-        player.TryBreakList(positions);
+        player.TryTwoPointReplace(
+            new Vector3(startX, startY, startZ),
+            new Vector3(endX, endY, endZ),
+            type);
 
     }
 }

@@ -7,7 +7,7 @@ public class Chunk : MonoBehaviour
 {
     public VoxelRun voxels;
 
-    public World parent;
+    public World world;
 
     //Store refs to neighbors used when you request a new mesh
     public Chunk[] neighbors;
@@ -22,18 +22,18 @@ public class Chunk : MonoBehaviour
     //Use to avoid race conditions related to mesh requests & job completion time
     private long lastMeshUpdateTime = -1;
 
-    public void Initialize(World parent)
+    public void Initialize(World world)
     {
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshCollider = gameObject.AddComponent<MeshCollider>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        meshRenderer.material = parent.vertexColorMaterial;
+        meshRenderer.material = world.vertexColorMaterial;
 
         neighbors = new Chunk[6];
 
-        this.parent = parent;
+        this.world = world;
 
-        voxels = new VoxelRun(parent.chunkSize, parent.chunkHeight);
+        voxels = new VoxelRun(world.parameters.ChunkSize, world.parameters.ChunkHeight);
     }
 
     /// <summary>
@@ -67,18 +67,30 @@ public class Chunk : MonoBehaviour
     /// <returns></returns>
     public Voxel? VoxelFromLocal(Vector3 vec)
     {
-        //Get from some coordinate within the chunk to the appropriate voxel coords.
-        vec *= parent.resolution;
-        Vector3Int pos = new Vector3Int(
-            Mathf.FloorToInt(vec.x),
-            Mathf.FloorToInt(vec.y),
-            Mathf.FloorToInt(vec.z)
-        );
+        
+        Vector3Int pos = LocalToVoxelCoord(vec);
 
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
 
         return outside ? null : GetVoxel(pos);
     }
+
+    /// <summary>
+    /// Return the voxel coordinate given a localized position
+    /// </summary>
+    /// <returns></returns>
+    public Vector3Int LocalToVoxelCoord(Vector3 vec)
+    {
+        //Get from some coordinate within the chunk to the appropriate voxel coords.
+        vec *= world.parameters.Resolution;
+        Vector3Int pos = new Vector3Int(
+            Mathf.FloorToInt(vec.x),
+            Mathf.FloorToInt(vec.y),
+            Mathf.FloorToInt(vec.z)
+        );
+        return pos;
+    }
+
     /// <summary>
     /// Get the voxel
     /// </summary>
@@ -87,16 +99,9 @@ public class Chunk : MonoBehaviour
     public Voxel GetVoxel(Vector3Int voxCoords)
     {
         return VoxelRun.Get(voxels,
-            voxCoords.x * parent.chunkSize * parent.chunkHeight +
-            voxCoords.y * parent.chunkSize +
+            voxCoords.x * world.parameters.ChunkSize * world.parameters.ChunkHeight +
+            voxCoords.y * world.parameters.ChunkSize +
             voxCoords.z);
-    }
-public Voxel GetVoxel(int x, int y, int z)
-    {
-        return VoxelRun.Get(voxels,
-            x * parent.chunkSize * parent.chunkHeight +
-            y * parent.chunkSize +
-            z);
     }
 
     /// <summary>
@@ -108,12 +113,7 @@ public Voxel GetVoxel(int x, int y, int z)
     public bool SetVoxelFromLocal(Vector3 vec, Voxel voxel)
     {
         //Scale the world-space coordinate to voxel-coordinate space
-        vec *= parent.resolution;
-        Vector3Int pos = new Vector3Int(
-            Mathf.FloorToInt(vec.x),
-            Mathf.FloorToInt(vec.y),
-            Mathf.FloorToInt(vec.z)
-        );
+        Vector3Int pos = LocalToVoxelCoord(vec);
 
         bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
         if (outside) { return false; }
@@ -129,51 +129,36 @@ public Voxel GetVoxel(int x, int y, int z)
     private bool SetVoxel(Vector3Int voxCoords, Voxel voxel)
     {
         return VoxelRun.Set(voxels, voxel,
-            voxCoords.x * parent.chunkSize * parent.chunkHeight + 
-            voxCoords.y * parent.chunkSize + 
+            voxCoords.x * world.parameters.ChunkSize * world.parameters.ChunkHeight + 
+            voxCoords.y * world.parameters.ChunkSize + 
             voxCoords.z);
     }
-    public bool SetVoxels(List<Vector3> vec, List<Voxel> voxel)
+    /// <summary>
+    /// Set the voxels between localized p1 and p2 to the given voxel
+    /// </summary>
+    /// <returns></returns>
+    public bool SetVoxels(Vector3 p1, Vector3 p2, Voxel voxel)
     {
-        if (vec.Count != voxel.Count)
+        Vector3Int p1Coords = LocalToVoxelCoord(p1);
+        Vector3Int p2Coords = LocalToVoxelCoord(p2);
+
+        bool changed = false;
+
+        //Only loop through the portion of the selection that intersects with this chunk
+        for (int x = Math.Max(0, p1Coords.x); x <= Math.Min(world.parameters.ChunkSize-1, p2Coords.x); x++)
         {
-            return false;
-        }
-
-        for (int i = 0; i < vec.Count; i++)
-        {
-            //Scale the world-space coordinate to voxel-coordinate space
-            vec[i] *= parent.resolution;
-            Vector3Int pos = new Vector3Int(
-                Mathf.FloorToInt(vec[i].x),
-                Mathf.FloorToInt(vec[i].y),
-                Mathf.FloorToInt(vec[i].z)
-            );
-
-            bool outside = VoxelOutOfBounds(pos.x, pos.y, pos.z);
-            if (outside) { continue; }
-
-            if (voxel[i].type == VoxelType.AIR)
+            for (int y = Math.Max(0, p1Coords.y); y <= Math.Min(world.parameters.ChunkHeight-1, p2Coords.y); y++)
             {
-                if (GetVoxel(pos).type != VoxelType.AIR)
+                for (int z = Math.Max(0, p1Coords.z); z <= Math.Min(world.parameters.ChunkSize-1, p2Coords.z); z++)
                 {
-                    SetVoxel(pos, Voxel.Clone(voxel[i]));
-                }
-            }
-            else
-            {
-                if (GetVoxel(pos).type == VoxelType.AIR)
-                {
-                    SetVoxel(pos, Voxel.Clone(voxel[i]));
+                    SetVoxel(new Vector3Int(x, y, z), voxel);
+                    changed = true;
                 }
             }
         }
-
-        // Update the mesh
-        // Brute force for now
-        RegenerateMesh();
-
-        return true;
+        if (changed) { RegenerateMesh(); }
+        
+        return changed;
     }
 
     /// <summary>
@@ -206,7 +191,7 @@ public Voxel GetVoxel(int x, int y, int z)
                 updateList(this, x, y, z);
             }
 
-            Chunk c = parent.ChunkFromGlobal(VoxelCoordToGlobal(new Vector3Int(x,y,z)));
+            Chunk c = world.ChunkFromGlobal(VoxelCoordToGlobal(new Vector3Int(x,y,z)));
             if (c != null)
             {
                 Vector3 neighborPos = c.transform.InverseTransformPoint(
@@ -235,9 +220,9 @@ public Voxel GetVoxel(int x, int y, int z)
     /// <returns></returns>
     private bool VoxelOutOfBounds(int x, int y, int z)
     {
-        return x < 0 || x >= parent.chunkSize ||
-               y < 0 || y >= parent.chunkHeight ||
-               z < 0 || z >= parent.chunkSize;
+        return x < 0 || x >= world.parameters.ChunkSize ||
+               y < 0 || y >= world.parameters.ChunkHeight ||
+               z < 0 || z >= world.parameters.ChunkSize;
     }
     /// <summary>
     /// Converts a voxel coordinate to its world-space position.
@@ -246,18 +231,21 @@ public Voxel GetVoxel(int x, int y, int z)
     /// <returns></returns>
     private Vector3 VoxelCoordToGlobal(Vector3 coord)
     {
-        return transform.position + (coord / parent.resolution);
+        return transform.position + (coord / world.parameters.Resolution);
     }
     private void updateNeighborChunks()
     {
         Vector3 chunkPos = new(transform.position.x, transform.position.y, transform.position.z);
 
-        neighbors[0] = parent.ChunkFromGlobal(chunkPos + (Vector3.up * parent.chunkHeight / parent.resolution));
-        neighbors[1] = parent.ChunkFromGlobal(chunkPos + (Vector3.down * parent.chunkHeight / parent.resolution));
-        neighbors[2] = parent.ChunkFromGlobal(chunkPos + (Vector3.left * parent.chunkSize / parent.resolution));
-        neighbors[3] = parent.ChunkFromGlobal(chunkPos + (Vector3.right * parent.chunkSize / parent.resolution));
-        neighbors[4] = parent.ChunkFromGlobal(chunkPos + (Vector3.forward * parent.chunkSize / parent.resolution));
-        neighbors[5] = parent.ChunkFromGlobal(chunkPos + (Vector3.back * parent.chunkSize / parent.resolution));
+        float globalChunkHeight = world.parameters.ChunkHeight / world.parameters.Resolution;
+        float globalChunkSize = world.parameters.ChunkSize / world.parameters.Resolution;
+
+        neighbors[0] = world.ChunkFromGlobal(chunkPos + (Vector3.up * globalChunkHeight));
+        neighbors[1] = world.ChunkFromGlobal(chunkPos + (Vector3.down * globalChunkHeight));
+        neighbors[2] = world.ChunkFromGlobal(chunkPos + (Vector3.left * globalChunkSize));
+        neighbors[3] = world.ChunkFromGlobal(chunkPos + (Vector3.right * globalChunkSize));
+        neighbors[4] = world.ChunkFromGlobal(chunkPos + (Vector3.forward * globalChunkSize));
+        neighbors[5] = world.ChunkFromGlobal(chunkPos + (Vector3.back * globalChunkSize));
     }
 
     //Debug only

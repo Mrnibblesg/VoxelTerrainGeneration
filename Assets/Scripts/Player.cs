@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.UIElements;
 using System.Collections.Generic;
 
-public class Player : MonoBehaviour
+public class Player : AuthoritativeAgent
 {
     public float speed = 10f;
 
@@ -24,28 +23,15 @@ public class Player : MonoBehaviour
 
     private Camera playerCamera;
 
-    private Vector3Int currentChunkCoord;
-
-    //Render distance in chunks
-    private int renderDist = 15;
-    private int unloadDist = 16;
-
-    //TODO more sophisticated get and set for potential world switching.
-
-    //Until we can ensure that the player's world is set before the player
-    //becomes active, we must always use the null-conditional operator ?. with it.
-    private World currentWorld;
-    public World CurrentWorld {
-        get
-        {
-            return currentWorld;
-        }
+    public override World CurrentWorld {
+        get => currentWorld;
         set
         {
+            this.currentWorld?.UnloadAll();
             this.currentWorld = value;
             Vector3 startPosition = new(
                 0.5f,
-                value.worldHeight * value.chunkHeight / value.resolution + 1.5f,
+                value.parameters.WorldHeightInChunks * value.parameters.ChunkHeight / value.parameters.Resolution + 1.5f,
                 0.5f
             );
             transform.position = startPosition;
@@ -54,22 +40,13 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void Start()
+    public void Start()
     {
         this.playerCamera = GetComponentInChildren<Camera>();
 
         this.mouseX = transform.eulerAngles.y;
         this.mouseY = playerCamera.transform.eulerAngles.x;
         
-        // Check in WorldAccessor for a world
-        World world = WorldAccessor.Identify(this);
-
-        if (world is null)
-        {
-            world = WorldAccessor.Join(this);
-        }
-
-        CurrentWorld = world;
     }
 
     private void FixedUpdate()
@@ -77,15 +54,18 @@ public class Player : MonoBehaviour
         UpdateMove();
     }
 
-    void Update()
+    public override void Update()
     {
+        base.Update();
         if (Input.GetMouseButton(2))
         {
             UpdateLook();
         }
-
-        if (this.CurrentWorld is not null)
-            UpdateChunkCoord();
+        if ((currentWorld.VoxelFromGlobal(transform.position)?.type ?? VoxelType.AIR) != VoxelType.AIR)
+        {
+            GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
+            transform.position += Vector3.up;
+        }
     }
     
     /// <summary>
@@ -114,64 +94,24 @@ public class Player : MonoBehaviour
         Vector3 forward = Input.GetAxis("Vertical") * transform.forward;
         Vector3 right = Input.GetAxis("Horizontal") * transform.right;
 
-        transform.position += (forward + right).normalized * combinedMultiplier;
-
+        Vector3 up = new();
         if (Input.GetAxis("Jump") != 0)
         {
-            GetComponent<Rigidbody>().AddForce(Vector3.up * 45);
-        }
-    }
-
-    /// <summary>
-    /// Calculates the player's current chunk coordinate. If it changes,
-    /// then we notify the player's current world that it happened.
-    /// </summary>
-    private void UpdateChunkCoord()
-    {
-        // Ensure JobManager is initialized before taking any actions
-        if (JobManager.Manager is null)
-        {
-            return;
+            up = Vector3.up * 45;
         }
 
-        Vector3Int chunkCoord = new(
-            Mathf.FloorToInt(transform.position.x / (currentWorld.chunkSize / currentWorld.resolution)),
-            Mathf.FloorToInt(transform.position.y / (currentWorld.chunkHeight / currentWorld.resolution)),
-            Mathf.FloorToInt(transform.position.z / (currentWorld.chunkSize / currentWorld.resolution))
-        );
+        Move((forward + right).normalized * combinedMultiplier, up);
 
-        if (currentChunkCoord != chunkCoord)
-        {
-            currentChunkCoord = chunkCoord;
-            currentWorld?.UpdatePlayerChunkPos(currentChunkCoord, renderDist, unloadDist);
-        }
-    }
-
-    /// <summary>
-    /// Attempt to break a block in the current world, at world-space position.
-    /// </summary>
-    public void TryBreak(Vector3 pos)
-    {
-        currentWorld?.SetVoxel(pos, VoxelType.AIR);
-    }
-    public void TryBreakList(List<Vector3> pos)
-    {
-        List<VoxelType> types = new List<VoxelType>();
-        for (int i = 0; i < pos.Count; i++)
-        {
-            types.Add(VoxelType.AIR);
-        }
-        currentWorld?.SetVoxels(pos, types);
+        
     }
     /// <summary>
-    /// Attempt to place a block in the current world, at world-space position.
+    /// Move the player. The player has a rigidbody, so we override it and use
+    /// the rigidbody.
     /// </summary>
-    public void TryPlace(Vector3 pos, VoxelType type)
+    public override void Move(Vector3 offset, Vector3 force = new())
     {
-        currentWorld?.SetVoxel(pos, type);
-    }
-    public void TryPlaceList(List<Vector3> pos, List<VoxelType> types)
-    {
-        currentWorld?.SetVoxels(pos, types);
+        Rigidbody rb = GetComponent<Rigidbody>();
+        rb.MovePosition(transform.position + offset);
+        rb.AddForce(force);
     }
 }

@@ -12,6 +12,10 @@ using UnityEngine;
 //determine what voxels are what.
 public class ChunkFactory
 {
+#if PROFILER_ENABLED
+    public bool worstChunks = false;
+#endif
+
     uint seed;
     World world;
 
@@ -22,8 +26,8 @@ public class ChunkFactory
     NativeArray<float> continentalnessSplinePoints;
     NativeArray<float> continentalnessTerrainHeight;
     
-    NativeArray<float> erosionSplinePoints;
-    NativeArray<float> erosionTerrainHeight;
+    //NativeArray<float> erosionSplinePoints;
+    //NativeArray<float> erosionTerrainHeight;
 
 
 
@@ -36,7 +40,11 @@ public class ChunkFactory
 
     public ChunkFactory(World world)
     {
-        seed = 1;
+        seed = (uint)world.parameters.Seed;
+        if (seed == 0)
+        {
+            seed = 1;
+        }
         this.world = world;
         // (0, 1)
         // (0.3, 50)
@@ -46,8 +54,8 @@ public class ChunkFactory
         continentalnessSplinePoints = new(5,Allocator.Persistent);
         continentalnessTerrainHeight = new(5,Allocator.Persistent);
 
-        erosionSplinePoints = new(5,Allocator.Persistent);
-        erosionTerrainHeight = new(5,Allocator.Persistent);
+        //erosionSplinePoints = new(5,Allocator.Persistent);
+        //erosionTerrainHeight = new(5,Allocator.Persistent);
 
         continentalnessSplinePoints[0] = 0;
         continentalnessSplinePoints[1] = 0.2f;
@@ -75,18 +83,21 @@ public class ChunkFactory
             JobData data = new()
             {
                 chunkCoord = chunkCoords,
-                voxels = new NativeArray<Voxel>(world.chunkSize * world.chunkHeight * world.chunkSize, Allocator.TempJob), //If this job takes more than 4 frames, switch to Allocator.Persistent
-                
+                //If this job takes more than 4 frames, switch to Allocator.Persistent
+                voxels = new NativeArray<Voxel>(world.parameters.ChunkSize * world.parameters.ChunkHeight * world.parameters.ChunkSize, Allocator.TempJob)
             };
 
             ChunkGenJob chunkGenJob = new()
             {
-                size = world.chunkSize,
-                height = world.chunkHeight,
-                waterHeight = world.waterHeight,
+                size = world.parameters.ChunkSize,
+                height = world.parameters.ChunkHeight,
+                waterHeight = world.parameters.WaterHeight,
                 seed = seed,
-                resolution = world.resolution,
+                resolution = world.parameters.Resolution,
                 coords = new int3(chunkCoords.x, chunkCoords.y, chunkCoords.z),
+#if PROFILER_ENABLED
+                worstCase = worstChunks,
+#endif
 
                 continentalnessPoints = this.continentalnessSplinePoints,
                 continentalnessTerrainHeight = this.continentalnessTerrainHeight,

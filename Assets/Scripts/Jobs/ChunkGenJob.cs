@@ -19,6 +19,9 @@ public struct ChunkGenJob : IJob
     public uint seed;
     public float resolution;
     public int3 coords;
+#if PROFILER_ENABLED 
+    public bool worstCase;
+#endif
 
     [ReadOnly]
     public NativeArray<float> continentalnessPoints;
@@ -26,11 +29,11 @@ public struct ChunkGenJob : IJob
     [ReadOnly]
     public NativeArray<float> continentalnessTerrainHeight;
 
-    [ReadOnly]
-    public NativeArray<float> erosionPoints;
+    //[ReadOnly]
+    //public NativeArray<float> erosionPoints;
 
-    [ReadOnly]
-    public NativeArray<float> erosionTerrainHeight;
+    //[ReadOnly]
+    //public NativeArray<float> erosionTerrainHeight;
 
     [WriteOnly]
     public NativeArray<Voxel> voxels;
@@ -38,7 +41,14 @@ public struct ChunkGenJob : IJob
 
     public void Execute()
     {
-        //Terrain shaping,
+#if PROFILER_ENABLED
+        if (worstCase)
+        {
+            WorstCase();
+            return;
+        }
+#endif
+
         Grass();
         CarveTerrain();
 
@@ -72,8 +82,8 @@ public struct ChunkGenJob : IJob
                 float xOff = x / resolution;
                 float zOff = z / resolution;
                 float continentalness = GetContinentalnessHeight(chunkPos.x + xOff, chunkPos.z + zOff);
-                float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff);
-                float targetHeight = continentalness - erosion;
+                //float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff);
+                float targetHeight = continentalness;// - erosion;
 
                 for (int y = height - 1; y >= 0; y--)
                 {
@@ -106,16 +116,7 @@ public struct ChunkGenJob : IJob
         Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
         int offset = r.NextInt(-100000, 100000);
         float noise = Mathf.Clamp(Mathf.PerlinNoise((x+offset)/50, (z+offset)/50),0,1);
-
         return GetSplineHeight(continentalnessPoints, continentalnessTerrainHeight, noise);
-    }
-    private float GetErosion(float x, float z)
-    {
-        Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
-        int offset = r.NextInt(-100000, 100000);
-        float noise = Mathf.Clamp(Mathf.PerlinNoise((x + offset) / 50, (z + offset) / 50), 0, 1);
-
-        return noise;
     }
     private int FindSplineUpperBound(NativeArray<float> splinePoints, float noiseValue)
     {
@@ -146,5 +147,23 @@ public struct ChunkGenJob : IJob
             heights[splineUpperBound],
             percentage
         );
+    }
+
+    /// <summary>
+    /// Alternate voxels between some block and air
+    /// </summary>
+    private void WorstCase()
+    {
+        for (int x = 0; x < size; x++)
+        {
+            for (int z = 0; z < size; z++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    voxels[height * size * x + size * y + z] =
+                        (x + y + z) % 2 == 0 ? new Voxel(VoxelType.AIR) : new Voxel(VoxelType.DIRT);
+                }
+            }
+        }
     }
 }
