@@ -13,7 +13,6 @@ using UnityEngine;
 public class ProfilerAgent : AuthoritativeAgent, ITaskable
 {
     private Stack<WorldTask> tasks;
-    private bool complete = false;
     public override World CurrentWorld
     {
         set
@@ -67,7 +66,6 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
 
     public void AddTask(WorldTask task)
     {
-        complete = false;
         tasks.Push(task);
     }
 }

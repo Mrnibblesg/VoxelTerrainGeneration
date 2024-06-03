@@ -6,13 +6,46 @@
 //The profiler will be a hook that things in the app can hook in to to tell it to measure a task.
 //Important functions that perform the work of tasks will use preprocessor directives
 //so that profiler code gets cut out of the actual build.
-//I need the profiler to accept data from 
+
+//This ProfilerManager uses the FrameTimingManager, which is always active for Development Player builds.
+//It must be explicitly set in the unity editor if you want it active in the editor or a release build.
+//See https://docs.unity3d.com/Manual/frame-timing-manager.html for more details.
+
+//Due to the nature of profiling, it's impossible to get a 100% accurate reading on how well
+//something actually works, you can only get a general sense. Keep this in mind as you
+//parse the profiler data.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class ProfilerManager : MonoBehaviour
 {
+    public bool recording = false;
+    private FrameTiming[] frameTiming;
+    //For each scenario, measure: 
+
+    private long scenarioStartTime;
+    
+    private double scenarioMaxFrameTime;
+    private double scenarioMaxGPUFrameTime;
+
+    private List<double> CPUframeTimes;
+
+    private struct ScenarioData
+    {
+        public string name;
+        public double maxCPUFrameTime;
+        public double maxGPUFrameTime;
+        public double averageCPUFrameTime;
+        public long scenarioDuration;
+
+    }
+    private List<ScenarioData> dataForScenarios;
+
     public static ProfilerManager Manager { get; private set; }
     ProfilerAgent agent;
     private bool worstChunks = false;
@@ -30,26 +63,53 @@ public class ProfilerManager : MonoBehaviour
 
     /// <summary>
     /// Create this to start a profiling session. It doesn't begin until
-    /// Start() is called.
+    /// Start() is called. If PROFILER_ENABLED is false, it is not possible to use this class.
     /// </summary>
     void Awake()
     {
+#if !PROFILER_ENABLED
+        Destroy(this);
+#endif
         if (Manager is not null)
         {
             Destroy(this);
+            return;
         }
 
-        else
+        DontDestroyOnLoad(this.gameObject);
+        Manager = this;
+
+        dataForScenarios = new();
+        scenarioStartTime = DateTime.Now.Ticks;
+
+        scenarioMaxFrameTime = -1;
+        scenarioMaxGPUFrameTime = -1;
+
+        CPUframeTimes = new();
+        frameTiming = new FrameTiming[1];
+    }
+
+    /// <summary>
+    /// Used to measure stats for the currently running scenario.
+    /// </summary>
+    private void Update()
+    {
+        if (!recording)
         {
-            DontDestroyOnLoad(this.gameObject);
-            Manager = this;
+            return;
+        }
+        FrameTimingManager.CaptureFrameTimings();
+        uint amt = FrameTimingManager.GetLatestTimings(1, frameTiming);
+        if (amt > 0)
+        {
+            double CPUFrameTime = frameTiming[0].cpuFrameTime;
+            CPUframeTimes.Add(CPUFrameTime);
+            scenarioMaxFrameTime = Math.Max(scenarioMaxFrameTime, CPUFrameTime);
+            scenarioMaxGPUFrameTime = Math.Max(scenarioMaxGPUFrameTime, frameTiming[0].gpuFrameTime);
+
         }
     }
 
-    //Create the agent.
-    //Load the scene.
-    //Spawn the agent.
-    //Start performing actions.
     /// <summary>
     /// Creates everything needed to profile, and starts the profiling process.
     /// If profiling is disabled then it does nothing.
@@ -111,14 +171,8 @@ public class ProfilerManager : MonoBehaviour
     /// <returns>If the suite was ran successfully.</returns
     public bool RunTestSuite()
     {
-        Agent.AddTask(new ProfileGameTask(Agent));
-        return true;
-    }
-
-    //struct for world params would be helpful so I don't need to pass in a billion variables
-    private bool RunScenario(int runs, int resolution, int renderDistance, int worldHeight, int chunkSize)
-    {
-
+        Agent.AddTask(new ProfileGameTask());
+        recording = true;
         return true;
     }
 
@@ -127,12 +181,38 @@ public class ProfilerManager : MonoBehaviour
     /// </summary>
     public void CompleteScenario(string scenarioName)
     {
+        long now = DateTime.Now.Ticks;
+
+        //Duration in ms
+        long duration = (now - scenarioStartTime) / TimeSpan.TicksPerMillisecond;
+        double avg = CPUframeTimes.Sum() / CPUframeTimes.Count;
+
+        
+
+        ScenarioData data = new ScenarioData()
+        {
+            name = scenarioName,
+            maxCPUFrameTime = scenarioMaxFrameTime,
+            maxGPUFrameTime = scenarioMaxGPUFrameTime,
+            averageCPUFrameTime = avg,
+            scenarioDuration = duration,
+
+        };
+
+        dataForScenarios.Add(data);
+
+        //Set up for the next scenario
+        CPUframeTimes.Clear();
+
+        scenarioMaxFrameTime = -1;
+        scenarioMaxGPUFrameTime = -1;
+        scenarioStartTime = now;
 
     }
 
     public void FinishProfiling()
     {
-        Debug.Log("Finished!!!");
+        recording = false;
         RecordToFile();
     }
 
@@ -142,6 +222,7 @@ public class ProfilerManager : MonoBehaviour
     /// <returns>whether it was successful or not</returns>
     private bool RecordToFile()
     {
+
         //Debug.Log("Success!");
         return false;
     }
