@@ -46,6 +46,9 @@ public class Player : AuthoritativeAgent
 
         this.mouseX = transform.eulerAngles.y;
         this.mouseY = playerCamera.transform.eulerAngles.x;
+        this.mouseY = playerCamera.transform.eulerAngles.x;
+        this.RenderDist = 7;
+        this.UnloadDist = 8;
         
     }
 

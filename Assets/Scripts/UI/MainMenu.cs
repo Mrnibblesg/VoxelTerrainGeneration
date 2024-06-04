@@ -32,10 +32,11 @@ public class MainMenu : MonoBehaviour
 
     void GenerateWorld()
     {
+        float resolution = Mathf.Pow(2, (float)resolutionSlider.value - 1);
         worldParameters = new WorldParameters
         {
-            Resolution = Mathf.Pow(2,(float)resolutionSlider.value-1),
-            WorldHeightInChunks = (int)heightSlider.value,
+            Resolution = resolution,
+            WorldHeightInChunks = (int)heightSlider.value * (int)resolution,
             ChunkSize = (int)chunkSizeSlider.value,
             ChunkHeight = (int)chunkHeightSlider.value,
             WaterHeight = (int)waterHeightSlider.value,

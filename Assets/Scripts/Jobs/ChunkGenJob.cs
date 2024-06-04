@@ -115,13 +115,32 @@ public struct ChunkGenJob : IJob
         //seed and find the noise for the coords
         Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
         int offset = r.NextInt(-100000, 100000);
-        float noise = Mathf.Clamp(Mathf.PerlinNoise((x+offset)/50, (z+offset)/50),0,1);
+        float noise = 0;
+        //how much the frequency increases per octave
+        int lacunarity = 2;// = Mathf.Clamp(Mathf.PerlinNoise((x + offset) / 50, (z + offset) / 50), 0, 1);
+
+        //how much the amplitude decreases per octave
+        float gain = 0.5f;
+
+        //our initial loop values
+        float frequency = 50;
+        float amplitude = 1;
+        //1 = 50 + 25 + 12?
+        //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)
+        for (int i = 0; i < 3; i++)
+        {
+            noise += Mathf.PerlinNoise((x + offset) / frequency, (z + offset) / frequency) * amplitude;
+            frequency *= lacunarity;
+            amplitude *= gain;
+        }
+        
+        //float noise = Mathf.Clamp(Mathf.PerlinNoise((x+offset)/50, (z+offset)/50),0,1);
         return GetSplineHeight(continentalnessPoints, continentalnessTerrainHeight, noise);
     }
     private int FindSplineUpperBound(NativeArray<float> splinePoints, float noiseValue)
     {
         int point = 1;
-        while (point < splinePoints.Length && noiseValue > splinePoints[point])
+        while (point < splinePoints.Length-1 && noiseValue > splinePoints[point])
         {
             point++;
         }
@@ -141,11 +160,18 @@ public struct ChunkGenJob : IJob
         //noise is a % of the way between p1 and p2, so
         //value is the same % of the way between p1 and p2
         float percentage = (noise - first) / (second - first);
+        //percentage is for math.lerp-ing only.
+        //for smoothstep just use noise and then use the smoothed value
+
+        float smoothed = math.smoothstep(
+            points[splineUpperBound - 1],
+            points[splineUpperBound],
+            noise);
 
         return math.lerp(
             heights[splineUpperBound - 1],
             heights[splineUpperBound],
-            percentage
+            smoothed
         );
     }
 

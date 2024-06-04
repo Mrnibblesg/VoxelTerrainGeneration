@@ -57,20 +57,26 @@ public class ChunkFactory
         //erosionSplinePoints = new(5,Allocator.Persistent);
         //erosionTerrainHeight = new(5,Allocator.Persistent);
 
+        //Manually define the spline points, which map raw noise to a terrain height.
         continentalnessSplinePoints[0] = 0;
         continentalnessSplinePoints[1] = 0.2f;
         continentalnessSplinePoints[2] = 0.4f;
-        continentalnessSplinePoints[3] = 0.8f;
+        continentalnessSplinePoints[3] = 0.7f;
         continentalnessSplinePoints[4] = 1f;
 
-        continentalnessTerrainHeight[0] = 30;
+        continentalnessTerrainHeight[0] = 40f;
         continentalnessTerrainHeight[1] = 50f;
-        continentalnessTerrainHeight[2] = 70f;
-        continentalnessTerrainHeight[3] = 75f;
-        continentalnessTerrainHeight[4] = 101f;
+        continentalnessTerrainHeight[2] = 66f;
+        continentalnessTerrainHeight[3] = 70f;
+        continentalnessTerrainHeight[4] = 85f;
 
 
 
+    }
+    ~ChunkFactory()
+    {
+        continentalnessSplinePoints.Dispose();
+        continentalnessTerrainHeight.Dispose();
     }
 
     /// <summary>
