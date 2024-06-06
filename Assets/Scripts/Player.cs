@@ -69,8 +69,32 @@ public class Player : AuthoritativeAgent
             GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
             transform.position += Vector3.up;
         }
+        UpdateTeleport();
     }
-    
+    /// <summary>
+    /// Teleport the player when shift and left mouse button are pressed.
+    /// </summary>
+    void UpdateTeleport()
+    {
+        if (Input.GetKey(KeyCode.LeftControl) && Input.GetMouseButtonDown(0))
+        {
+            Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit))
+            {
+                Teleport(hit.point);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Teleport the player to the specified position.
+    /// </summary>
+    void Teleport(Vector3 position)
+    {
+        transform.position = position + Vector3.up; // Add a little offset to avoid sinking into the ground
+        GetComponent<Rigidbody>().velocity = Vector3.zero; // Reset velocity to prevent carrying over momentum
+    }
+
     /// <summary>
     /// Camera look update. Called in Update().
     /// </summary>

@@ -35,6 +35,12 @@ public struct ChunkGenJob : IJob
     [ReadOnly]
     public NativeArray<float> erosionFactor;
 
+    [ReadOnly]
+    public NativeArray<float> peaksAndValleysPoints;
+
+    [ReadOnly]
+    public NativeArray<float> peaksAndValleysFactor;
+
     [WriteOnly]
     public NativeArray<Voxel> voxels;
 
@@ -83,7 +89,8 @@ public struct ChunkGenJob : IJob
                 float zOff = z / resolution;
                 float continentalness = GetContinentalness(chunkPos.x + xOff, chunkPos.z + zOff);
                 float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff);
-                float targetHeight = continentalness * erosion;
+                float peaksValleys = GetPV(chunkPos.x + xOff, chunkPos.z + zOff);
+                float targetHeight = continentalness * erosion + peaksValleys;
 
                 for (int y = height - 1; y >= 0; y--)
                 {
@@ -141,7 +148,7 @@ public struct ChunkGenJob : IJob
     {
         //seed and find the noise for the coords
         Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
-        int offset = r.NextInt(100000, 200000);
+        int offset = r.NextInt(100000, 300000);
         float noise = 0;
         //how much the frequency changes per octave
         int lacunarity = 2;
@@ -163,6 +170,35 @@ public struct ChunkGenJob : IJob
 
         return GetSplineHeight(erosionPoints, erosionFactor, noise);
     }
+
+    // PV = peaks & valleys
+    private float GetPV(float x, float z)
+    {
+        //seed and find the noise for the coords
+        Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
+        int offset = r.NextInt(-300000, -100000);
+        float noise = 0;
+        //how much the frequency changes per octave
+        int lacunarity = 2;
+
+        //how much the amplitude changes per octave
+        float gain = 0.5f;
+
+        //our initial loop values
+        float frequency = 100;
+        float amplitude = 4 / 7f;
+
+        //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)
+        for (int i = 0; i < 3; i++)
+        {
+            noise += Mathf.PerlinNoise((x + offset) / frequency, (z + offset) / frequency) * amplitude;
+            frequency *= lacunarity;
+            amplitude *= gain;
+        }
+
+        return GetSplineHeight(peaksAndValleysPoints, peaksAndValleysFactor, noise);
+    }
+
     private int FindSplineUpperBound(NativeArray<float> splinePoints, float noiseValue)
     {
         int point = 1;

@@ -29,7 +29,8 @@ public class ChunkFactory
     NativeArray<float> erosionSplinePoints;
     NativeArray<float> erosionFactor;
 
-
+    NativeArray<float> peaksAndValleysPoints;
+    NativeArray<float> peaksAndValleysFactor;
 
     //Special data that is used when generating the world.
     private struct JobData
@@ -57,6 +58,9 @@ public class ChunkFactory
         erosionSplinePoints = new(5, Allocator.Persistent);
         erosionFactor = new(5, Allocator.Persistent);
 
+        peaksAndValleysPoints = new(5, Allocator.Persistent);
+        peaksAndValleysFactor = new(5, Allocator.Persistent);
+
         //Manually define the spline points, which map raw noise to a terrain height.
         //Continentalness defines how far inland we are. A value closer to 0 indicates we are
         //further away from land, and closer (or in) the ocean.
@@ -81,11 +85,25 @@ public class ChunkFactory
         erosionSplinePoints[3] = 0.5f;
         erosionSplinePoints[4] = 1f;
 
-        erosionFactor[0] = 1.4f;
+        erosionFactor[0] = 1.6f;
         erosionFactor[1] = 1.2f;
         erosionFactor[2] = 1f;
-        erosionFactor[3] = 0.9f;
+        erosionFactor[3] = 0.7f;
         erosionFactor[4] = 0.3f;
+
+        //Peaks and valleys are small-scale variations in terrain.
+        peaksAndValleysPoints[0] = 0;
+        peaksAndValleysPoints[1] = 0.3f;
+        peaksAndValleysPoints[2] = 0.4f;
+        peaksAndValleysPoints[3] = 0.5f;
+        peaksAndValleysPoints[4] = 1f;
+
+        peaksAndValleysFactor[0] = -10f;
+        peaksAndValleysFactor[1] = -5f;
+        peaksAndValleysFactor[2] = 0f;
+        peaksAndValleysFactor[3] = 5f;
+        peaksAndValleysFactor[4] = 10f;
+
 
     }
     ~ChunkFactory()
@@ -128,6 +146,9 @@ public class ChunkFactory
 
                 erosionPoints = this.erosionSplinePoints,
                 erosionFactor = this.erosionFactor,
+
+                peaksAndValleysPoints = this.peaksAndValleysPoints,
+                peaksAndValleysFactor = this.peaksAndValleysFactor,
 
                 voxels = data.voxels
             };
