@@ -29,6 +29,8 @@ public class Chunk : MonoBehaviour
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
         meshRenderer.material = world.vertexColorMaterial;
 
+        meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+
         neighbors = new Chunk[6];
 
         this.world = world;

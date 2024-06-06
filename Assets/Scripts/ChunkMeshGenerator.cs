@@ -23,6 +23,15 @@ public class ChunkMeshGenerator
     {
         int size = c.world.parameters.ChunkSize;
         int height = c.world.parameters.ChunkHeight;
+
+        //Check if this whole chunk is air. If so, don't bother creating a job
+        if (c.voxels.type.type == VoxelType.AIR &&
+            c.voxels.runLength == size * height * size)
+        {
+            c.ApplyNewMesh(new Mesh(), DateTime.Now.Ticks);
+            return;
+        }
+
         JobData jobData = new()
         {
             requester = c,
