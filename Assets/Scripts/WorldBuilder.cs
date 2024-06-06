@@ -9,10 +9,10 @@ public class WorldBuilder
     private static WorldParameters DEFAULT_PARAMS = new WorldParameters
     {
         Resolution = 1,
-        WorldHeightInChunks=4,
+        WorldHeightInChunks=8,
         ChunkSize=16,
         ChunkHeight=16,
-        WaterHeight=4,
+        WaterHeight=30,
         Seed=1,
         Name="Default",
 

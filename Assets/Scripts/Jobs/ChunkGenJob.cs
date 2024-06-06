@@ -27,13 +27,13 @@ public struct ChunkGenJob : IJob
     public NativeArray<float> continentalnessPoints;
 
     [ReadOnly]
-    public NativeArray<float> continentalnessTerrainHeight;
+    public NativeArray<float> continentalnessFactor;
 
-    //[ReadOnly]
-    //public NativeArray<float> erosionPoints;
+    [ReadOnly]
+    public NativeArray<float> erosionPoints;
 
-    //[ReadOnly]
-    //public NativeArray<float> erosionTerrainHeight;
+    [ReadOnly]
+    public NativeArray<float> erosionFactor;
 
     [WriteOnly]
     public NativeArray<Voxel> voxels;
@@ -81,9 +81,9 @@ public struct ChunkGenJob : IJob
             {
                 float xOff = x / resolution;
                 float zOff = z / resolution;
-                float continentalness = GetContinentalnessHeight(chunkPos.x + xOff, chunkPos.z + zOff);
-                //float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff);
-                float targetHeight = continentalness;// - erosion;
+                float continentalness = GetContinentalness(chunkPos.x + xOff, chunkPos.z + zOff);
+                float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff);
+                float targetHeight = continentalness * erosion;
 
                 for (int y = height - 1; y >= 0; y--)
                 {
@@ -110,22 +110,22 @@ public struct ChunkGenJob : IJob
     /// Interpolate based on the supplied spline points
     /// </summary>
     /// <returns>The height based on continentalness for this x and z</returns>
-    private float GetContinentalnessHeight(float x, float z)
+    private float GetContinentalness(float x, float z)
     {
         //seed and find the noise for the coords
         Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
         int offset = r.NextInt(-100000, 100000);
         float noise = 0;
-        //how much the frequency increases per octave
-        int lacunarity = 2;// = Mathf.Clamp(Mathf.PerlinNoise((x + offset) / 50, (z + offset) / 50), 0, 1);
+        //how much the frequency changes per octave
+        int lacunarity = 2;
 
-        //how much the amplitude decreases per octave
+        //how much the amplitude changes per octave
         float gain = 0.5f;
 
         //our initial loop values
-        float frequency = 50;
-        float amplitude = 1;
-        //1 = 50 + 25 + 12?
+        float frequency = 500;
+        float amplitude = 4/7f;
+
         //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)
         for (int i = 0; i < 3; i++)
         {
@@ -134,8 +134,34 @@ public struct ChunkGenJob : IJob
             amplitude *= gain;
         }
         
-        //float noise = Mathf.Clamp(Mathf.PerlinNoise((x+offset)/50, (z+offset)/50),0,1);
-        return GetSplineHeight(continentalnessPoints, continentalnessTerrainHeight, noise);
+        
+        return GetSplineHeight(continentalnessPoints, continentalnessFactor, noise);
+    }
+    private float GetErosion(float x, float z)
+    {
+        //seed and find the noise for the coords
+        Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
+        int offset = r.NextInt(100000, 200000);
+        float noise = 0;
+        //how much the frequency changes per octave
+        int lacunarity = 2;
+
+        //how much the amplitude changes per octave
+        float gain = 0.5f;
+
+        //our initial loop values
+        float frequency = 300;
+        float amplitude = 4 / 7f;
+
+        //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)
+        for (int i = 0; i < 3; i++)
+        {
+            noise += Mathf.PerlinNoise((x + offset) / frequency, (z + offset) / frequency) * amplitude;
+            frequency *= lacunarity;
+            amplitude *= gain;
+        }
+
+        return GetSplineHeight(erosionPoints, erosionFactor, noise);
     }
     private int FindSplineUpperBound(NativeArray<float> splinePoints, float noiseValue)
     {

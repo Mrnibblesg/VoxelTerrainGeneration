@@ -16,8 +16,8 @@ using UnityEngine;
 /// </summary>
 public abstract class AuthoritativeAgent : Agent
 {
-    private int renderDist = 7;
-    private int unloadDist = 8;
+    private int renderDist = 10;
+    private int unloadDist = 11;
 
     public int RenderDist {
         get { return renderDist; }

@@ -24,10 +24,10 @@ public class ChunkFactory
     //We use two native arrays because these are the only arrays that can be given
     //to jobs.
     NativeArray<float> continentalnessSplinePoints;
-    NativeArray<float> continentalnessTerrainHeight;
-    
-    //NativeArray<float> erosionSplinePoints;
-    //NativeArray<float> erosionTerrainHeight;
+    NativeArray<float> continentalnessFactor;
+
+    NativeArray<float> erosionSplinePoints;
+    NativeArray<float> erosionFactor;
 
 
 
@@ -52,31 +52,49 @@ public class ChunkFactory
         // (0.8, 150)
         // (1, 150)
         continentalnessSplinePoints = new(5,Allocator.Persistent);
-        continentalnessTerrainHeight = new(5,Allocator.Persistent);
+        continentalnessFactor = new(5,Allocator.Persistent);
 
-        //erosionSplinePoints = new(5,Allocator.Persistent);
-        //erosionTerrainHeight = new(5,Allocator.Persistent);
+        erosionSplinePoints = new(5, Allocator.Persistent);
+        erosionFactor = new(5, Allocator.Persistent);
 
         //Manually define the spline points, which map raw noise to a terrain height.
+        //Continentalness defines how far inland we are. A value closer to 0 indicates we are
+        //further away from land, and closer (or in) the ocean.
         continentalnessSplinePoints[0] = 0;
-        continentalnessSplinePoints[1] = 0.2f;
-        continentalnessSplinePoints[2] = 0.4f;
+        continentalnessSplinePoints[1] = 0.5f;
+        continentalnessSplinePoints[2] = 0.6f;
         continentalnessSplinePoints[3] = 0.7f;
         continentalnessSplinePoints[4] = 1f;
 
-        continentalnessTerrainHeight[0] = 40f;
-        continentalnessTerrainHeight[1] = 50f;
-        continentalnessTerrainHeight[2] = 66f;
-        continentalnessTerrainHeight[3] = 70f;
-        continentalnessTerrainHeight[4] = 85f;
+        continentalnessFactor[0] = 5f;
+        continentalnessFactor[1] = 40f;
+        continentalnessFactor[2] = 90f;
+        continentalnessFactor[3] = 140f;
+        continentalnessFactor[4] = 300f;
 
 
+        //Erosion limits how high the terrain can go at this spot, due to erosion.
+        //A higher value of erosion means the terrain is generally lower and flatter.
+        erosionSplinePoints[0] = 0;
+        erosionSplinePoints[1] = 0.3f;
+        erosionSplinePoints[2] = 0.4f;
+        erosionSplinePoints[3] = 0.5f;
+        erosionSplinePoints[4] = 1f;
+
+        erosionFactor[0] = 1.4f;
+        erosionFactor[1] = 1.2f;
+        erosionFactor[2] = 1f;
+        erosionFactor[3] = 0.9f;
+        erosionFactor[4] = 0.3f;
 
     }
     ~ChunkFactory()
     {
         continentalnessSplinePoints.Dispose();
-        continentalnessTerrainHeight.Dispose();
+        continentalnessFactor.Dispose();
+
+        erosionSplinePoints.Dispose();
+        erosionFactor.Dispose();
     }
 
     /// <summary>
@@ -106,9 +124,10 @@ public class ChunkFactory
 #endif
 
                 continentalnessPoints = this.continentalnessSplinePoints,
-                continentalnessTerrainHeight = this.continentalnessTerrainHeight,
+                continentalnessFactor = this.continentalnessFactor,
 
-
+                erosionPoints = this.erosionSplinePoints,
+                erosionFactor = this.erosionFactor,
 
                 voxels = data.voxels
             };
