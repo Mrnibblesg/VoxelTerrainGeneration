@@ -28,7 +28,8 @@ public class VoxelInteraction : MonoBehaviour
     {
         TypeSelection();
 
-        FirstPerson();
+        //We don't have a first person view yet
+        //FirstPerson();
 
         ThirdPerson();
     }
@@ -46,10 +47,6 @@ public class VoxelInteraction : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
             currType = VoxelType.STONE;
-        }
-        if (Input.GetKeyDown(KeyCode.Alpha4))
-        {
-            currType = VoxelType.GLASS;
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha5))

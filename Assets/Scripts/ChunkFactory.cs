@@ -32,6 +32,12 @@ public class ChunkFactory
     NativeArray<float> peaksAndValleysPoints;
     NativeArray<float> peaksAndValleysFactor;
 
+    NativeArray<float> tempPoints;
+    NativeArray<float> tempFactor;
+
+    NativeArray<float> humidityPoints;
+    NativeArray<float> humidityFactor;
+
     //Special data that is used when generating the world.
     private struct JobData
     {
@@ -52,7 +58,7 @@ public class ChunkFactory
         // (0.7, 70)
         // (0.8, 150)
         // (1, 150)
-        continentalnessSplinePoints = new(5,Allocator.Persistent);
+        continentalnessSplinePoints = new(5, Allocator.Persistent);
         continentalnessFactor = new(5,Allocator.Persistent);
 
         erosionSplinePoints = new(5, Allocator.Persistent);
@@ -60,6 +66,12 @@ public class ChunkFactory
 
         peaksAndValleysPoints = new(5, Allocator.Persistent);
         peaksAndValleysFactor = new(5, Allocator.Persistent);
+
+        tempPoints = new(4, Allocator.Persistent);
+        tempFactor = new(4, Allocator.Persistent);
+
+        humidityPoints = new(5, Allocator.Persistent);
+        humidityFactor = new(5, Allocator.Persistent);
 
         //Manually define the spline points, which map raw noise to a terrain height.
         //Continentalness defines how far inland we are. A value closer to 0 indicates we are
@@ -104,6 +116,29 @@ public class ChunkFactory
         peaksAndValleysFactor[3] = 5f;
         peaksAndValleysFactor[4] = 10f;
 
+        //Spline points for temperature.
+        tempPoints[0] = 0;
+        tempPoints[1] = 0.2f;
+        tempPoints[2] = 0.8f;
+        tempPoints[3] = 1f;
+
+        tempFactor[0] = 0;
+        tempFactor[1] = 0.5f;
+        tempFactor[2] = 0.5f;
+        tempFactor[3] = 1f;
+
+        //Spline points for humidity.
+        humidityPoints[0] = 0;
+        humidityPoints[1] = 0.3f;
+        humidityPoints[2] = 0.4f;
+        humidityPoints[3] = 0.5f;
+        humidityPoints[4] = 1f;
+
+        humidityFactor[0] = -10f;
+        humidityFactor[1] = -5f;
+        humidityFactor[2] = 0f;
+        humidityFactor[3] = 5f;
+        humidityFactor[4] = 10f;
 
     }
     ~ChunkFactory()
@@ -113,6 +148,15 @@ public class ChunkFactory
 
         erosionSplinePoints.Dispose();
         erosionFactor.Dispose();
+
+        peaksAndValleysPoints.Dispose();
+        peaksAndValleysFactor.Dispose();
+
+        tempPoints.Dispose();
+        tempFactor.Dispose();
+
+        humidityPoints.Dispose();
+        humidityFactor.Dispose();
     }
 
     /// <summary>

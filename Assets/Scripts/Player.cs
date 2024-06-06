@@ -76,7 +76,7 @@ public class Player : AuthoritativeAgent
     /// </summary>
     void UpdateTeleport()
     {
-        if (Input.GetKey(KeyCode.LeftControl) && Input.GetMouseButtonDown(0))
+        if (Input.GetKey(KeyCode.T))
         {
             Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))

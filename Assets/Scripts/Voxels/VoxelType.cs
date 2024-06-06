@@ -7,9 +7,14 @@ public enum VoxelType
 {
     AIR,
     GRASS,
+    COLD_GRASS,
+    HOT_GRASS,
     DIRT,
+    SAND,
     STONE,
-    GLASS,
+    SANDSTONE,
+    SNOW,
+    ICE,
     WATER_SOURCE
 }
 
@@ -31,9 +36,12 @@ public static class VoxelExtensions
         {
             VoxelType.AIR => new VoxelAttributes(new Color(0, 0, 0, 1)),
             VoxelType.GRASS => new VoxelAttributes(new Color(0, 0.5f, 0)),
+            VoxelType.COLD_GRASS => new VoxelAttributes(new Color(0, 0.449f, 0.2301f)),
+            VoxelType.HOT_GRASS => new VoxelAttributes(new Color(0, 0.5f, 0)),
             VoxelType.DIRT => new VoxelAttributes(new Color(0.46f, 0.333f, 0.169f)),
+            VoxelType.SAND => new VoxelAttributes(new Color(0.46f, 0.333f, 0.169f)),
             VoxelType.STONE => new VoxelAttributes(new Color(0.3f, 0.3f, 0.3f)),
-            VoxelType.GLASS => new VoxelAttributes(new Color(0.99f, 0.99f, 0.99f, 0.1f)),
+            VoxelType.SANDSTONE => new VoxelAttributes(new Color(0.3f, 0.3f, 0.3f)),
             VoxelType.WATER_SOURCE => new VoxelAttributes(new Color(0, 0, 0.5f, 0.5f)),
 
             _ => throw new System.NotImplementedException()
