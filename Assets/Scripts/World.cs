@@ -33,6 +33,8 @@ public class World
     private int playerLoadDist;
     private int playerUnloadDist;
 
+    private int maxChunksLoadingAtOnce = 10;
+
     private ChunkFactory chunkFactory;
 
     private static ProfilerMarker s_moveChunk = new ProfilerMarker(ProfilerCategory.Scripts, "Move Chunk");
@@ -113,7 +115,8 @@ public class World
             }
         }
 
-        while (loadQueue.Count != 0)
+        //Set an upper bound on chunks loading at once to limit lag
+        while (loadQueue.Count != 0 && chunksInProg.Count <= maxChunksLoadingAtOnce)
         {
             LoadChunk(loadQueue.Dequeue());
         }
