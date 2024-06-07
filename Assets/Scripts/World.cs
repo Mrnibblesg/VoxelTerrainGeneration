@@ -158,8 +158,8 @@ public class World
     //  They get queued as well if they're in range.
     public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
-        //Protect against loading chunks that aren't needed anymore
-        if (!chunksInProg.Contains(chunkCoords))
+        //Protect against loading chunks that aren't needed anymore or are somehow already loaded
+        if (!chunksInProg.Contains(chunkCoords) || chunks.ContainsKey(chunkCoords))
         {
             return;
         }

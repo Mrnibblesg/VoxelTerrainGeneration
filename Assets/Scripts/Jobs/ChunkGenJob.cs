@@ -54,6 +54,15 @@ public struct ChunkGenJob : IJob
     [WriteOnly]
     public NativeArray<Voxel> voxels;
 
+    private enum Biome
+    {
+        OCEAN,
+        MOUNTAINS,
+        PLAINS,
+        FOREST,
+        DESERT,
+    }
+
 
     public void Execute()
     {
@@ -71,9 +80,6 @@ public struct ChunkGenJob : IJob
 
         Stone();
         CarveTerrain(continentalness, erosion, PV);
-
-        //Decorating terrain based on biome
-        Decorate(continentalness, erosion, PV);
         
 
     }
@@ -99,59 +105,95 @@ public struct ChunkGenJob : IJob
                 float xOff = x / resolution;
                 float zOff = z / resolution;
 
-                //Save the remapped terrain parameters for use in assigning biomes
-                float continentalness = GetContinentalness(chunkPos.x + xOff, chunkPos.z + zOff, out float raw);
-                continentalnessArr[x * size + z] = raw;
+                //Save the remapped terrain parameters for use in assigning biomes.
+                //For each of these "get X" functions we create a new Unity Math random.
+                //There's probably a better way to do this so that doesn't need to happen.
+                float continentalness = GetContinentalness(chunkPos.x + xOff, chunkPos.z + zOff, out float rawContinentalness);
 
-                float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff, out raw);
-                erosionArr[x * size + z] = raw;
+                float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff, out float rawErosion);
 
-                float PV = GetPV(chunkPos.x + xOff, chunkPos.z + zOff, out raw);
-                PVArr[x * size + z] = raw;
+                float PV = GetPV(chunkPos.x + xOff, chunkPos.z + zOff, out float rawPV);
 
                 float targetHeight = continentalness * erosion + PV;
 
+                float temp = GetTemp(xOff, zOff, out _);
+                float humidity = GetHumidity(xOff, zOff, out _);
+
+                bool surface = false;
+                int subsurfaceDepth = 3;
+                VoxelType surfaceType;
+                VoxelType subSurfaceType;
+
+                switch(DecideBiome(continentalness, erosion, PV, temp, humidity))
+                {
+                    case Biome.OCEAN:
+                        surfaceType = VoxelType.SAND;
+                        subSurfaceType = VoxelType.STONE;
+                        break;
+                    case Biome.PLAINS:
+                        surfaceType = VoxelType.GRASS;
+                        subSurfaceType = VoxelType.DIRT;
+                        break;
+                    case Biome.DESERT:
+                        surfaceType = VoxelType.SAND;
+                        subSurfaceType = VoxelType.SAND;
+                        break;
+                    default:
+                        surfaceType = VoxelType.STONE;
+                        subSurfaceType = VoxelType.STONE;
+                        break;
+
+                }
+
+                //Finally set the blocks according to if we've reached where the surface
+                //should be, and what type of biome we're in.
                 for (int y = height - 1; y >= 0; y--)
                 {
-                    if (chunkPos.y + (y / resolution) <= targetHeight)
+                    
+                    if (!surface) //carve terrain
                     {
-                        break;
+                        if (chunkPos.y + (y / resolution) <= targetHeight)
+                        {
+                            surface = true;
+                            voxels[height * size * x + size * y + z] = new Voxel(surfaceType);
+                        }
+                        else if (chunkPos.y + (y / resolution) <= waterHeight)
+                        {
+                            voxels[height * size * x + size * y + z] = new Voxel(VoxelType.WATER_SOURCE);
+                        }
+                        else
+                        {
+                            voxels[height * size * x + size * y + z] = new Voxel(VoxelType.AIR);
+                        }
                     }
+                    else //we've hit the surface; decorate the next few terrain blocks
+                    {
+                        if (subsurfaceDepth <= 0)
+                        {
+                            break;
+                        }
+                        subsurfaceDepth--;
 
-                    if (chunkPos.y + (y / resolution) <= waterHeight)
-                    {
-                        voxels[height * size * x + size * y + z] = new Voxel(VoxelType.WATER_SOURCE);
-                    }
-                    else
-                    {
-                        voxels[height * size * x + size * y + z] = new Voxel(VoxelType.AIR);
+                        voxels[height * size * x + size * y + z] = new Voxel(subSurfaceType);
                     }
                 }
             }
         }
-        
     }
     /// <summary>
     /// Use previously generated values of continentalness, erosion, and peaks & valleys
-    /// as well as new values of temperaure and humidity to decide what biome goes here, as well as
-    /// decorating this spot.
+    /// as well as new values of temperaure and humidity to decide what biome we're in
     /// </summary>
     /// <param name="continentalnessArr"></param>
     /// <param name="erosionArr"></param>
     /// <param name="PVArr"></param>
-    private void Decorate(NativeArray<float> continentalnessArr, NativeArray<float> erosionArr, NativeArray<float> PVArr)
+    private Biome DecideBiome(float cont, float erosion, float PV, float temp, float humidity)
     {
-        for (int x = 0; x < size; x++)
+        if (temp > 0.5)
         {
-            for (int z = 0; z < size; z++)
-            {
-                float xOff = x / resolution;
-                float zOff = z / resolution;
-
-                
-                
-            }
+            return Biome.DESERT;
         }
+        return Biome.PLAINS;
     }
 
     /// <summary>
@@ -245,7 +287,7 @@ public struct ChunkGenJob : IJob
         float gain = 0.5f;
 
         //our initial loop values
-        float frequency = 100;
+        float frequency = 300;
         float amplitude = 4 / 7f;
 
         //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)
@@ -322,8 +364,6 @@ public struct ChunkGenJob : IJob
             heights[splineUpperBound],
             smoothed
         );
-
-
     }
 
     /// <summary>

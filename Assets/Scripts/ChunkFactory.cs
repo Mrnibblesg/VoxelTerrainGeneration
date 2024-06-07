@@ -124,9 +124,9 @@ public class ChunkFactory
         }, Allocator.Persistent);
         tempFactor = new(new float[]
         {
-            0,
             0.5f,
             0.5f,
+            0.6f,
             1f,
         }, Allocator.Persistent);
 

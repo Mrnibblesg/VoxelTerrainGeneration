@@ -39,7 +39,7 @@ public static class VoxelExtensions
             VoxelType.COLD_GRASS => new VoxelAttributes(new Color(0, 0.449f, 0.2301f)),
             VoxelType.HOT_GRASS => new VoxelAttributes(new Color(0, 0.5f, 0)),
             VoxelType.DIRT => new VoxelAttributes(new Color(0.46f, 0.333f, 0.169f)),
-            VoxelType.SAND => new VoxelAttributes(new Color(0.46f, 0.333f, 0.169f)),
+            VoxelType.SAND => new VoxelAttributes(new Color(0.922f, 0.851f, 0.580f)),
             VoxelType.STONE => new VoxelAttributes(new Color(0.3f, 0.3f, 0.3f)),
             VoxelType.SANDSTONE => new VoxelAttributes(new Color(0.3f, 0.3f, 0.3f)),
             VoxelType.WATER_SOURCE => new VoxelAttributes(new Color(0, 0, 0.5f, 0.5f)),
