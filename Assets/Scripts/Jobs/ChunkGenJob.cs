@@ -23,24 +23,34 @@ public struct ChunkGenJob : IJob
     public bool worstCase;
 #endif
 
+    //These are all for passing in world gen parameters.
+    //Pairs of points & factors define spline graphs.
     [ReadOnly]
     public NativeArray<float> continentalnessPoints;
-
     [ReadOnly]
     public NativeArray<float> continentalnessFactor;
 
     [ReadOnly]
     public NativeArray<float> erosionPoints;
-
     [ReadOnly]
     public NativeArray<float> erosionFactor;
 
     [ReadOnly]
     public NativeArray<float> peaksAndValleysPoints;
-
     [ReadOnly]
     public NativeArray<float> peaksAndValleysFactor;
 
+    [ReadOnly]
+    public NativeArray<float> tempPoints;
+    [ReadOnly]
+    public NativeArray<float> tempFactor;
+
+    [ReadOnly]
+    public NativeArray<float> humidPoints;
+    [ReadOnly]
+    public NativeArray<float> humidFactor;
+
+    //The finished array of voxels
     [WriteOnly]
     public NativeArray<Voxel> voxels;
 
@@ -89,9 +99,15 @@ public struct ChunkGenJob : IJob
                 float xOff = x / resolution;
                 float zOff = z / resolution;
 
-                float continentalness = continentalnessArr[x * size + z] = GetContinentalness(chunkPos.x + xOff, chunkPos.z + zOff);
-                float erosion = erosionArr[x * size + z] = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff);
-                float PV = PVArr[x * size + z] = GetPV(chunkPos.x + xOff, chunkPos.z + zOff);
+                //Save the remapped terrain parameters for use in assigning biomes
+                float continentalness = GetContinentalness(chunkPos.x + xOff, chunkPos.z + zOff, out float raw);
+                continentalnessArr[x * size + z] = raw;
+
+                float erosion = GetErosion(chunkPos.x + xOff, chunkPos.z + zOff, out raw);
+                erosionArr[x * size + z] = raw;
+
+                float PV = GetPV(chunkPos.x + xOff, chunkPos.z + zOff, out raw);
+                PVArr[x * size + z] = raw;
 
                 float targetHeight = continentalness * erosion + PV;
 
@@ -115,6 +131,14 @@ public struct ChunkGenJob : IJob
         }
         
     }
+    /// <summary>
+    /// Use previously generated values of continentalness, erosion, and peaks & valleys
+    /// as well as new values of temperaure and humidity to decide what biome goes here, as well as
+    /// decorating this spot.
+    /// </summary>
+    /// <param name="continentalnessArr"></param>
+    /// <param name="erosionArr"></param>
+    /// <param name="PVArr"></param>
     private void Decorate(NativeArray<float> continentalnessArr, NativeArray<float> erosionArr, NativeArray<float> PVArr)
     {
         for (int x = 0; x < size; x++)
@@ -124,8 +148,7 @@ public struct ChunkGenJob : IJob
                 float xOff = x / resolution;
                 float zOff = z / resolution;
 
-                float temp;
-                float humidity;
+                
                 
             }
         }
@@ -135,7 +158,7 @@ public struct ChunkGenJob : IJob
     /// Interpolate based on the supplied spline points
     /// </summary>
     /// <returns>The height based on continentalness for this x and z</returns>
-    private float GetContinentalness(float x, float z)
+    private float GetContinentalness(float x, float z, out float rawRemapped)
     {
         //seed and find the noise for the coords
         Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
@@ -150,10 +173,10 @@ public struct ChunkGenJob : IJob
         float frequency = 500;
         float amplitude = 4/7f;
 
-        return OctaveNoise(continentalnessPoints, continentalnessFactor,
-            lacunarity, gain, frequency, amplitude, x, z, offset);
+        float noise = OctaveNoise(lacunarity, gain, frequency, amplitude, x, z, offset);
+        return ReMapNoise(continentalnessPoints, continentalnessFactor, noise, out rawRemapped);
     }
-    private float GetErosion(float x, float z)
+    private float GetErosion(float x, float z, out float rawRemapped)
     {
         //seed and find the noise for the coords
         Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
@@ -168,12 +191,12 @@ public struct ChunkGenJob : IJob
         float frequency = 300;
         float amplitude = 4 / 7f;
 
-        return OctaveNoise(erosionPoints, erosionFactor,
-            lacunarity, gain, frequency, amplitude, x, z, offset);
+        float noise = OctaveNoise(lacunarity, gain, frequency, amplitude, x, z, offset);
+        return ReMapNoise(erosionPoints, erosionFactor, noise, out rawRemapped);
     }
 
     // PV = peaks & valleys
-    private float GetPV(float x, float z)
+    private float GetPV(float x, float z, out float rawRemapped)
     {
         //seed and find the noise for the coords
         Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
@@ -189,20 +212,59 @@ public struct ChunkGenJob : IJob
         float amplitude = 4 / 7f;
 
         //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)
-        return OctaveNoise(peaksAndValleysPoints, peaksAndValleysFactor, 
-            lacunarity, gain, frequency, amplitude, x, z, offset);
+        float noise = OctaveNoise(lacunarity, gain, frequency, amplitude, x, z, offset);
+        return ReMapNoise(peaksAndValleysPoints, peaksAndValleysFactor, noise, out rawRemapped);
 
     }
-    private float GetTemp(float x, float y)
+    private float GetTemp(float x, float z, out float rawRemapped)
     {
-        return 0f;
+        Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
+        int offset = r.NextInt(-500000, -300000);
+        //how much the frequency changes per octave
+        int lacunarity = 2;
+
+        //how much the amplitude changes per octave
+        float gain = 0.5f;
+
+        //our initial loop values
+        float frequency = 100;
+        float amplitude = 4 / 7f;
+
+        //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)
+        float noise = OctaveNoise(lacunarity, gain, frequency, amplitude, x, z, offset);
+        return ReMapNoise(tempPoints, tempFactor, noise, out rawRemapped);
     }
-    private float GetHumidity(float x, float y)
+    private float GetHumidity(float x, float z, out float rawRemapped)
     {
-        return 0f;
+        Unity.Mathematics.Random r = new Unity.Mathematics.Random(seed);
+        int offset = r.NextInt(300000, 500000);
+        //how much the frequency changes per octave
+        int lacunarity = 2;
+
+        //how much the amplitude changes per octave
+        float gain = 0.5f;
+
+        //our initial loop values
+        float frequency = 100;
+        float amplitude = 4 / 7f;
+
+        //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)
+        float noise = OctaveNoise(lacunarity, gain, frequency, amplitude, x, z, offset);
+        return ReMapNoise(humidPoints, humidFactor, noise, out rawRemapped);
     }
-    private float OctaveNoise(NativeArray<float> points, NativeArray<float> remapped,
-        float lacunarity, float gain, float frequency, float amplitude, float x, float z, float offset)
+
+    /// <summary>
+    /// Add three octaves of perlin noise to produce a better noise than simply perlin noise.
+    /// </summary>
+    /// <param name="lacunarity"></param>
+    /// <param name="gain"></param>
+    /// <param name="frequency"></param>
+    /// <param name="amplitude"></param>
+    /// <param name="x"></param>
+    /// <param name="z"></param>
+    /// <param name="offset"></param>
+    /// <returns></returns>
+    private float OctaveNoise(float lacunarity, float gain, float frequency, float amplitude, float x, float z, float offset)
     {
         float noise = 0;
         //By adding noise in 3 octaves, we achieve octave noise
@@ -212,11 +274,13 @@ public struct ChunkGenJob : IJob
             frequency *= lacunarity;
             amplitude *= gain;
         }
-
-        return GetSplineHeight(points, remapped, noise);
+        return noise;
     }
 
-
+    /// <summary>
+    /// Locate the index of the spline point that serves as the upper bound of the given noise.
+    /// </summary>
+    /// <returns></returns>
     private int FindSplineUpperBound(NativeArray<float> splinePoints, float noiseValue)
     {
         int point = 1;
@@ -226,7 +290,11 @@ public struct ChunkGenJob : IJob
         }
         return point;
     }
-    private float GetSplineHeight(NativeArray<float> points, NativeArray<float> heights, float noise)
+    /// <summary>
+    /// Given a noise, return the height value associated based on the given points and heights.
+    /// rawRemapped is the smoothed value.
+    /// </summary>
+    private float ReMapNoise(NativeArray<float> points, NativeArray<float> heights, float noise, out float rawRemapped)
     {
         //which spline point has the next value above our noise?
         //should be at least 1
@@ -238,7 +306,7 @@ public struct ChunkGenJob : IJob
         //take the 2 bounds as min and max
         //the value is mapped to be within min and max
         //noise is a % of the way between p1 and p2, so
-        //value is the same % of the way between p1 and p2
+        //value is the same % of the way between p1 value and p2 value
         float percentage = (noise - first) / (second - first);
         //percentage is for math.lerp-ing only.
         //for smoothstep just use noise and then use the smoothed value
@@ -247,12 +315,15 @@ public struct ChunkGenJob : IJob
             points[splineUpperBound - 1],
             points[splineUpperBound],
             noise);
+        rawRemapped = smoothed;
 
         return math.lerp(
             heights[splineUpperBound - 1],
             heights[splineUpperBound],
             smoothed
         );
+
+
     }
 
     /// <summary>

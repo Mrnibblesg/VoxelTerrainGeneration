@@ -201,6 +201,12 @@ public class ChunkFactory
                 peaksAndValleysPoints = this.peaksAndValleysPoints,
                 peaksAndValleysFactor = this.peaksAndValleysFactor,
 
+                tempPoints = this.tempPoints,
+                tempFactor = this.tempFactor,
+
+                humidPoints = this.humidityPoints,
+                humidFactor = this.humidityFactor,
+
                 voxels = data.voxels
             };
 
