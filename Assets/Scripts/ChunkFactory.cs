@@ -53,92 +53,99 @@ public class ChunkFactory
             seed = 1;
         }
         this.world = world;
-        // (0, 1)
-        // (0.3, 50)
-        // (0.7, 70)
-        // (0.8, 150)
-        // (1, 150)
-        continentalnessSplinePoints = new(5, Allocator.Persistent);
-        continentalnessFactor = new(5,Allocator.Persistent);
-
-        erosionSplinePoints = new(5, Allocator.Persistent);
-        erosionFactor = new(5, Allocator.Persistent);
-
-        peaksAndValleysPoints = new(5, Allocator.Persistent);
-        peaksAndValleysFactor = new(5, Allocator.Persistent);
-
-        tempPoints = new(4, Allocator.Persistent);
-        tempFactor = new(4, Allocator.Persistent);
-
-        humidityPoints = new(5, Allocator.Persistent);
-        humidityFactor = new(5, Allocator.Persistent);
 
         //Manually define the spline points, which map raw noise to a terrain height.
+
         //Continentalness defines how far inland we are. A value closer to 0 indicates we are
         //further away from land, and closer (or in) the ocean.
-        continentalnessSplinePoints[0] = 0;
-        continentalnessSplinePoints[1] = 0.5f;
-        continentalnessSplinePoints[2] = 0.6f;
-        continentalnessSplinePoints[3] = 0.7f;
-        continentalnessSplinePoints[4] = 1f;
-
-        continentalnessFactor[0] = 5f;
-        continentalnessFactor[1] = 40f;
-        continentalnessFactor[2] = 90f;
-        continentalnessFactor[3] = 140f;
-        continentalnessFactor[4] = 300f;
+        continentalnessSplinePoints = new(new float[]
+        { 
+            0,
+            0.5f,
+            0.6f,
+            0.7f,
+            1f
+        }, Allocator.Persistent);
+        continentalnessFactor = new(new float[]
+        {
+            5,
+            40f,
+            90f,
+            140f,
+            300f
+        }, Allocator.Persistent);
 
 
         //Erosion limits how high the terrain can go at this spot, due to erosion.
         //A higher value of erosion means the terrain is generally lower and flatter.
-        erosionSplinePoints[0] = 0;
-        erosionSplinePoints[1] = 0.3f;
-        erosionSplinePoints[2] = 0.4f;
-        erosionSplinePoints[3] = 0.5f;
-        erosionSplinePoints[4] = 1f;
+        erosionSplinePoints = new(new float[]
+        {
+            0,
+            0.3f,
+            0.4f,
+            0.5f,
+            1f
+        }, Allocator.Persistent);
+        erosionFactor = new(new float[]
+        {
+            1.6f,
+            1.2f,
+            1f,
+            0.7f,
+            0.3f
+        }, Allocator.Persistent);
 
-        erosionFactor[0] = 1.6f;
-        erosionFactor[1] = 1.2f;
-        erosionFactor[2] = 1f;
-        erosionFactor[3] = 0.7f;
-        erosionFactor[4] = 0.3f;
 
         //Peaks and valleys are small-scale variations in terrain.
-        peaksAndValleysPoints[0] = 0;
-        peaksAndValleysPoints[1] = 0.3f;
-        peaksAndValleysPoints[2] = 0.4f;
-        peaksAndValleysPoints[3] = 0.5f;
-        peaksAndValleysPoints[4] = 1f;
+        peaksAndValleysPoints = new(new float[]
+        {
+            0,
+            0.3f,
+            0.4f,
+            0.5f,
+            1f
+        }, Allocator.Persistent);
+        peaksAndValleysFactor = new(new float[]
+        {
+            -10f,
+            -5f,
+            0f,
+            5f,
+            10f
+        }, Allocator.Persistent);
 
-        peaksAndValleysFactor[0] = -10f;
-        peaksAndValleysFactor[1] = -5f;
-        peaksAndValleysFactor[2] = 0f;
-        peaksAndValleysFactor[3] = 5f;
-        peaksAndValleysFactor[4] = 10f;
+        //Temperature is only useful for deciding which biomes go where.
+        tempPoints = new(new float[]
+        {
+            0,
+            0.2f,
+            0.8f,
+            1f,
+        }, Allocator.Persistent);
+        tempFactor = new(new float[]
+        {
+            0,
+            0.5f,
+            0.5f,
+            1f,
+        }, Allocator.Persistent);
 
-        //Spline points for temperature.
-        tempPoints[0] = 0;
-        tempPoints[1] = 0.2f;
-        tempPoints[2] = 0.8f;
-        tempPoints[3] = 1f;
+        //Humidity is only useful for deciding which biomes go where.
+        humidityPoints = new(new float[]
+        {
+            0,
+            0.3f,
+            0.7f,
+            1f
+        }, Allocator.Persistent);
 
-        tempFactor[0] = 0;
-        tempFactor[1] = 0.5f;
-        tempFactor[2] = 0.5f;
-        tempFactor[3] = 1f;
-
-        //Spline points for humidity.
-        humidityPoints[0] = 0;
-        humidityPoints[1] = 0.3f;
-        humidityPoints[2] = 0.4f;
-        humidityPoints[3] = 0.5f;
-        humidityPoints[4] = 1f;
-
-        humidityFactor[0] = -10f;
-        humidityFactor[1] = -5f;
-        humidityFactor[2] = 0f;
-        humidityFactor[3] = 5f;
-        humidityFactor[4] = 10f;
+        humidityFactor = new(new float[]
+        {
+            0,
+            0.5f,
+            0.5f,
+            1f,
+        }, Allocator.Persistent);
 
     }
     ~ChunkFactory()
