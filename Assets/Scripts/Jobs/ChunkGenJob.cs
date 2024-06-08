@@ -119,8 +119,8 @@ public struct ChunkGenJob : IJob
                 float temp = GetTemp(xOff, zOff, out _);
                 float humidity = GetHumidity(xOff, zOff, out _);
 
-                bool surface = false;
-                int subsurfaceDepth = 3;
+                int surfaceDepth = 3;
+                int surfacePlaced = 0;
                 VoxelType surfaceType;
                 VoxelType subSurfaceType;
 
@@ -147,35 +147,38 @@ public struct ChunkGenJob : IJob
 
                 //Finally set the blocks according to if we've reached where the surface
                 //should be, and what type of biome we're in.
-                for (int y = height - 1; y >= 0; y--)
+
+                //Loop from the index of the target height - subsurface depth upwards
+                int startYIndex = (int)Math.Floor((targetHeight - chunkPos.y) / resolution) - surfaceDepth;
+                surfacePlaced = math.abs(math.min(0, startYIndex));
+                for (int y = Math.Max(0, startYIndex); y < height; y++)
                 {
-                    
-                    if (!surface) //carve terrain
+                    VoxelType t;
+                    if (surfacePlaced < surfaceDepth)
                     {
-                        if (chunkPos.y + (y / resolution) <= targetHeight)
+                        surfacePlaced++;
+                        if (surfacePlaced == surfaceDepth)
                         {
-                            surface = true;
-                            voxels[height * size * x + size * y + z] = new Voxel(surfaceType);
-                        }
-                        else if (chunkPos.y + (y / resolution) <= waterHeight)
-                        {
-                            voxels[height * size * x + size * y + z] = new Voxel(VoxelType.WATER_SOURCE);
+                            t = surfaceType;
                         }
                         else
                         {
-                            voxels[height * size * x + size * y + z] = new Voxel(VoxelType.AIR);
+                            t = subSurfaceType;
                         }
                     }
-                    else //we've hit the surface; decorate the next few terrain blocks
+                    else
                     {
-                        if (subsurfaceDepth <= 0)
+                        if (chunkPos.y + (y / resolution) <= waterHeight)
                         {
-                            break;
+                            t = VoxelType.WATER_SOURCE;
                         }
-                        subsurfaceDepth--;
-
-                        voxels[height * size * x + size * y + z] = new Voxel(subSurfaceType);
+                        else
+                        {
+                            t = VoxelType.AIR;
+                        }
                     }
+                    
+                    voxels[height * size * x + size * y + z] = new Voxel(t);
                 }
             }
         }
@@ -189,10 +192,10 @@ public struct ChunkGenJob : IJob
     /// <param name="PVArr"></param>
     private Biome DecideBiome(float cont, float erosion, float PV, float temp, float humidity)
     {
-        if (temp > 0.5)
+        /*if (temp > 0.5)
         {
             return Biome.DESERT;
-        }
+        }*/
         return Biome.PLAINS;
     }
 
