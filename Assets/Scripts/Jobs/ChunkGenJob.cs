@@ -116,15 +116,15 @@ public struct ChunkGenJob : IJob
 
                 float targetHeight = continentalness * erosion + PV;
 
-                float temp = GetTemp(xOff, zOff, out _);
-                float humidity = GetHumidity(xOff, zOff, out _);
+                float temp = GetTemp(chunkPos.x + xOff, chunkPos.z + zOff, out _);
+                float humidity = GetHumidity(chunkPos.x + xOff, chunkPos.z + zOff, out _);
 
                 int surfaceDepth = 3;
                 int surfacePlaced = 0;
                 VoxelType surfaceType;
                 VoxelType subSurfaceType;
 
-                switch(DecideBiome(continentalness, erosion, PV, temp, humidity))
+                switch(DecideBiome(rawContinentalness, rawErosion, rawPV, temp, humidity))
                 {
                     case Biome.OCEAN:
                         surfaceType = VoxelType.SAND;
@@ -192,10 +192,10 @@ public struct ChunkGenJob : IJob
     /// <param name="PVArr"></param>
     private Biome DecideBiome(float cont, float erosion, float PV, float temp, float humidity)
     {
-        /*if (temp > 0.5)
+        if (temp > 0.6 && erosion > 0.6)
         {
             return Biome.DESERT;
-        }*/
+        }
         return Biome.PLAINS;
     }
 
@@ -272,7 +272,7 @@ public struct ChunkGenJob : IJob
         float gain = 0.5f;
 
         //our initial loop values
-        float frequency = 100;
+        float frequency = 700;
         float amplitude = 4 / 7f;
 
         //By adding noise in 3 octaves, we achieve fractal brownian motion (fBM)

@@ -116,7 +116,7 @@ public class World
         }
 
         //Set an upper bound on chunks loading at once to limit lag
-        while (loadQueue.Count != 0 && chunksInProg.Count <= maxChunksLoadingAtOnce)
+        while (loadQueue.Count != 0/* && chunksInProg.Count <= maxChunksLoadingAtOnce*/)
         {
             LoadChunk(loadQueue.Dequeue());
         }
