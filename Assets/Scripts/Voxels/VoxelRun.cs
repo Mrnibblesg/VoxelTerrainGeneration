@@ -5,8 +5,8 @@ using Unity.Collections;
 public class VoxelRun
 {
     private VoxelRun next;
-    private int runLength; //Always at least 1.
-    private Voxel type;
+    public int runLength { get; private set; } //Always at least 1.
+    public Voxel type { get; private set; }
 
     public VoxelRun(int size, int height)
     {

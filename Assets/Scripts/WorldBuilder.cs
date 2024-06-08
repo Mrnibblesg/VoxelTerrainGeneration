@@ -6,52 +6,42 @@ using UnityEngine;
 public class WorldBuilder
 {
     //Defined as voxels per world unit
-    public int Resolution { get; set; }
-    private static int DEFAULT_RESOLUTION = 1;
+    private static WorldParameters DEFAULT_PARAMS = new WorldParameters
+    {
+        Resolution = 1,
+        WorldHeightInChunks=8,
+        ChunkSize=16,
+        ChunkHeight=16,
+        WaterHeight=30,
+        Seed=1,
+        Name="Default",
 
-    public int WorldHeight { get; set; }
-    private static int DEFAULT_WORLD_HEIGHT = 4;
-
-    //Dimensions of chunk in the amount of voxels
-    public int ChunkSize { get; set; }
-    private static int DEFAULT_CHUNK_SIZE = 16;
-
-    public int ChunkHeight { get; set; }
-    private static int DEFAULT_CHUNK_HEIGHT = 16;
-
-    public int WaterHeight { get; set; }
-    private static int DEFAULT_WATER_HEIGHT = 4;
-
-    public string WorldName { get; set; }
-    private static string DEFAULT_WORLD_NAME = "Default";
+    };
+    private WorldParameters worldParams = DEFAULT_PARAMS;
 
     /// <summary>
     /// Default constructor initializes the world builder with default values.
     /// </summary>
     public WorldBuilder()
     {
-        this.Resolution = DEFAULT_RESOLUTION;
-        this.WorldHeight = DEFAULT_WORLD_HEIGHT;
-        this.ChunkSize = DEFAULT_CHUNK_SIZE;
-        this.ChunkHeight = DEFAULT_CHUNK_HEIGHT;
-        this.WaterHeight = DEFAULT_WATER_HEIGHT;
-        this.WorldName = DEFAULT_WORLD_NAME;
+        worldParams = DEFAULT_PARAMS;
     }
 
-    public WorldBuilder SetDimensions(int resolution, int height, int chunkSize, int chunkHeight, int waterHeight)
+    public WorldBuilder SetParameters(WorldParameters wp)
     {
-        this.Resolution = (int) Mathf.Pow(2, resolution - 1); //Resolution in powers of 2 to avoid odd numbers which make rendering annoying due to rounding errors
-        this.WorldHeight = height * this.Resolution;
-        this.ChunkSize = chunkSize;
-        this.ChunkHeight = chunkSize; //chunkHt;
-        this.WaterHeight = waterHeight;
+        worldParams = wp;
+        return this;
+    }
 
+    public WorldBuilder SetSeed(int seed)
+    {
+        worldParams.Seed = seed;
         return this;
     }
 
     public WorldBuilder SetWorldName(string name)
     {
-        this.WorldName = name;
+        worldParams.Name = name;
         return this;
     }
 
@@ -60,10 +50,9 @@ public class WorldBuilder
     /// </summary>
     public World Build()
     {
-        World world = new World(WorldHeight, ChunkSize, ChunkHeight, WaterHeight, Resolution, WorldName);
-
+        World world = new World(worldParams);
         // Add the world to the world accessor
-        WorldAccessor.AddWorld(WorldName, world);
+        WorldAccessor.AddWorld(worldParams.Name, world);
 
         return world;
     }
@@ -77,11 +66,11 @@ public class WorldBuilder
     {
         World defaultWorld = new WorldBuilder().SetWorldName("Menu").Build();
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        GameObject menuCamera = GameObject.FindGameObjectWithTag("Player");
+        if (menuCamera != null)
         {
-            player.GetComponent<MenuCameraController>().CurrentWorld = defaultWorld;
-            player.SetActive(true); // Disable player control in the main menu
+            menuCamera.GetComponent<MenuCameraController>().CurrentWorld = defaultWorld;
+            menuCamera.SetActive(true); // Disable player control in the main menu
         }
 
         return defaultWorld;

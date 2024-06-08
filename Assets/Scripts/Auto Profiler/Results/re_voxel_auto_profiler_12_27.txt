@@ -1,0 +1,168 @@
+Simple actions:
+
+World settings:
+	Resolution: 1
+	Chunk size: 16
+	Chunk height: 16
+	Vertical chunks: 4
+	Seed: 1
+
+Total Duration: 11.73733s
+
+CPU Frame stats:
+	Max time: 314.7154ms
+	Avg time: 6.50488472762645ms
+
+GPU Frame stats:
+	Max time: 6.452396ms
+
+Memory stats:
+	Final Memory: 829MB
+------------------------------
+Simple actions:
+
+World settings:
+	Resolution: 1
+	Chunk size: 16
+	Chunk height: 64
+	Vertical chunks: 1
+	Seed: 1
+
+Total Duration: 5.975204s
+
+CPU Frame stats:
+	Max time: 329.1185ms
+	Avg time: 6.19642755905512ms
+
+GPU Frame stats:
+	Max time: 5.521511ms
+
+Memory stats:
+	Final Memory: 835MB
+------------------------------
+Simple actions:
+
+World settings:
+	Resolution: 1
+	Chunk size: 32
+	Chunk height: 16
+	Vertical chunks: 4
+	Seed: 1
+
+Total Duration: 6.56633s
+
+CPU Frame stats:
+	Max time: 311.4242ms
+	Avg time: 7.85513211428572ms
+
+GPU Frame stats:
+	Max time: 7.85224ms
+
+Memory stats:
+	Final Memory: 867MB
+------------------------------
+Simple actions:
+
+World settings:
+	Resolution: 1
+	Chunk size: 32
+	Chunk height: 64
+	Vertical chunks: 1
+	Seed: 1
+
+Total Duration: 6.239171s
+
+CPU Frame stats:
+	Max time: 313.7336ms
+	Avg time: 7.10045314533622ms
+
+GPU Frame stats:
+	Max time: 18.151823ms
+
+Memory stats:
+	Final Memory: 894MB
+------------------------------
+Simple actions:
+
+World settings:
+	Resolution: 1
+	Chunk size: 64
+	Chunk height: 16
+	Vertical chunks: 4
+	Seed: 1
+
+Total Duration: 8.532143s
+
+CPU Frame stats:
+	Max time: 305.733ms
+	Avg time: 10.7672196341463ms
+
+GPU Frame stats:
+	Max time: 13.359843ms
+
+Memory stats:
+	Final Memory: 1001MB
+------------------------------
+Simple actions:
+
+World settings:
+	Resolution: 1
+	Chunk size: 64
+	Chunk height: 64
+	Vertical chunks: 1
+	Seed: 1
+
+Total Duration: 7.540194s
+
+CPU Frame stats:
+	Max time: 338.695ms
+	Avg time: 9.66301889570551ms
+
+GPU Frame stats:
+	Max time: 6.46ms
+
+Memory stats:
+	Final Memory: 1115MB
+------------------------------
+Simple actions:
+
+World settings:
+	Resolution: 1
+	Chunk size: 128
+	Chunk height: 16
+	Vertical chunks: 4
+	Seed: 1
+
+Total Duration: 18.86812s
+
+CPU Frame stats:
+	Max time: 1161.3205ms
+	Avg time: 22.7128263033175ms
+
+GPU Frame stats:
+	Max time: 14.835833ms
+
+Memory stats:
+	Final Memory: 1545MB
+------------------------------
+Simple actions:
+
+World settings:
+	Resolution: 1
+	Chunk size: 128
+	Chunk height: 64
+	Vertical chunks: 1
+	Seed: 1
+
+Total Duration: 18.13962s
+
+CPU Frame stats:
+	Max time: 1273.8771ms
+	Avg time: 22.5085969586375ms
+
+GPU Frame stats:
+	Max time: 14.466093ms
+
+Memory stats:
+	Final Memory: 2041MB
+------------------------------

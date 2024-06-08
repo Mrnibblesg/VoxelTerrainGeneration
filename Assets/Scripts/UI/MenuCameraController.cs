@@ -1,39 +1,16 @@
 using UnityEngine;
 
-public class MenuCameraController : MonoBehaviour
+public class MenuCameraController : AuthoritativeAgent
 {
-    public float speed = 2.0f;
+    [SerializeField]
+    private int speed = 4;
 
-    private World currentWorld;
-    public World CurrentWorld {
-        get { return this.currentWorld; }
-        set
-        {
-            this.currentWorld = value;
-            UpdateChunkCoord();
-        }
-    }
-    private Vector3Int currentChunkCoord;
-    private int renderDist = 7;
-    private int unloadDist = 8;
+    //The camera has its world automatically set from the
+    //WorldBuilder file
 
-    void Update()
+    public override void Update()
     {
-        transform.Translate(Vector3.right * speed * Time.deltaTime);
-        UpdateChunkCoord();
-    }
-
-    private void UpdateChunkCoord()
-    {
-        Vector3Int chunkCoord = new(
-            Mathf.FloorToInt(transform.position.x / (currentWorld.chunkSize / currentWorld.resolution)),
-            Mathf.FloorToInt(transform.position.y / (currentWorld.chunkHeight / currentWorld.resolution)),
-            Mathf.FloorToInt(transform.position.z / (currentWorld.chunkSize / currentWorld.resolution))
-        );
-        if (currentChunkCoord != chunkCoord)
-        {
-            currentChunkCoord = chunkCoord;
-            currentWorld?.UpdatePlayerChunkPos(currentChunkCoord, renderDist, unloadDist);
-        }
+        base.Update();
+        Move(speed * Time.deltaTime * Vector3.right);
     }
 }

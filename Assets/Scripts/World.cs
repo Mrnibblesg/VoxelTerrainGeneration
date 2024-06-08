@@ -14,18 +14,9 @@ public class World
 {
     public readonly Material vertexColorMaterial = (Material) Resources.Load("Textures/Vertex Colors");
 
-    //Height of world in chunks
-    public int worldHeight;
-    public int waterHeight;
+    public WorldParameters parameters;
 
-    //Dimensions of chunk in the amount of voxels
-    public readonly int chunkSize;
-    public readonly int chunkHeight;
-
-    public readonly float resolution;
-    public readonly string worldName;
-
-    private List<Player> players = new List<Player>();
+    private List<Agent> players = new List<Agent>();
 
     //Use queues to dictate which order chunks are loaded and unloaded.
     private Dictionary<Vector3Int, Chunk> chunks;
@@ -42,18 +33,15 @@ public class World
     private int playerLoadDist;
     private int playerUnloadDist;
 
-    ChunkFactory chunkFactory;
+    private int maxChunksLoadingAtOnce = 10;
+
+    private ChunkFactory chunkFactory;
 
     private static ProfilerMarker s_moveChunk = new ProfilerMarker(ProfilerCategory.Scripts, "Move Chunk");
 
-    public World(int worldHeight, int chunkSize, int chunkHeight, int waterHeight, float resolution, string worldName)
+    public World(WorldParameters worldParams)
     {
-        this.worldHeight = worldHeight;
-        this.chunkSize = chunkSize;
-        this.chunkHeight = chunkHeight;
-        this.waterHeight = waterHeight;
-        this.resolution = resolution;
-        this.worldName = worldName;
+        this.parameters = worldParams;
 
         chunks = new();
         unloadedNeighbors = new();
@@ -66,16 +54,20 @@ public class World
     }
 
     /// <summary>
-    /// Updates the loaded and unloaded area surrounding the player.
+    /// Updates the loaded and unloaded area surrounding the supplied agent.
     /// Chunks that come in range or go out of range are added to the
-    /// load/unload queue.
+    /// load/unload queue. TODO this shouldn't really be in World. It should be in something that interacts with World, as well as the loaded chunks.
     /// </summary>
     /// <param name="chunkCoord"></param>
-    public void UpdatePlayerChunkPos(Vector3Int chunkCoord, int renderDist, int unloadDist)
+    public void UpdateAuthAgentChunkPos(AuthoritativeAgent agent)
     {
+        int renderDist = agent.RenderDist;
+        int unloadDist = agent.UnloadDist;
+        Vector3Int chunkCoord = agent.chunkCoord;
+
         //Add 1 to compensate for the current chunk mesh method
-        renderDist *= (int)resolution;
-        unloadDist *= (int)resolution;
+        renderDist *= (int)parameters.Resolution;
+        unloadDist *= (int)parameters.Resolution;
 
         renderDist += 1;
         unloadDist += 1;
@@ -123,7 +115,8 @@ public class World
             }
         }
 
-        while (loadQueue.Count != 0)
+        //Set an upper bound on chunks loading at once to limit lag
+        while (loadQueue.Count != 0/* && chunksInProg.Count <= maxChunksLoadingAtOnce*/)
         {
             LoadChunk(loadQueue.Dequeue());
         }
@@ -152,7 +145,7 @@ public class World
     private bool ChunkWithinWorld(Vector3Int chunkCoords)
     {
         return
-            chunkCoords.y < worldHeight &&
+            chunkCoords.y < parameters.WorldHeightInChunks &&
             chunkCoords.y >= 0;
     }
 
@@ -165,12 +158,17 @@ public class World
     //  They get queued as well if they're in range.
     public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
-        //if no chunk, configure and generate new one
+        //Protect against loading chunks that aren't needed anymore or are somehow already loaded
+        if (!chunksInProg.Contains(chunkCoords) || chunks.ContainsKey(chunkCoords))
+        {
+            return;
+        }
+
         GameObject chunkObj = new GameObject($"Chunk{chunkCoords.x},{chunkCoords.y},{chunkCoords.z}");
         chunkObj.transform.position = new(
-            chunkCoords.x * chunkSize / resolution,
-            chunkCoords.y * chunkHeight / resolution,
-            chunkCoords.z * chunkSize / resolution
+            chunkCoords.x * parameters.ChunkSize / (float)parameters.Resolution,
+            chunkCoords.y * parameters.ChunkHeight / (float)parameters.Resolution,
+            chunkCoords.z * parameters.ChunkSize / (float)parameters.Resolution
         );
 
         Chunk newChunk = chunkObj.AddComponent<Chunk>();
@@ -318,12 +316,7 @@ public class World
     //Retrieve chunk from global coordinates
     public Chunk ChunkFromGlobal(Vector3 global)
     {
-        Vector3Int chunkCoordinates = new Vector3Int(
-            Mathf.FloorToInt(global.x / (chunkSize / resolution)),
-            Mathf.FloorToInt(global.y / (chunkHeight / resolution)),
-            Mathf.FloorToInt(global.z / (chunkSize / resolution)));
-
-        return GetChunk(chunkCoordinates);
+        return GetChunk(VectorToChunkCoord(global));
     }
 
     /// <summary>
@@ -341,6 +334,14 @@ public class World
         }
         return null;
     }
+    public Vector3Int VectorToChunkCoord(Vector3 global)
+    {
+        return new Vector3Int(
+            Mathf.FloorToInt(global.x / (parameters.ChunkSize / parameters.Resolution)),
+            Mathf.FloorToInt(global.y / (parameters.ChunkHeight / parameters.Resolution)),
+            Mathf.FloorToInt(global.z / (parameters.ChunkSize / parameters.Resolution))
+        );
+    }
 
     /// <summary>
     /// Set a voxel from the given world-space position
@@ -352,14 +353,9 @@ public class World
     {
         SetVoxel(vec, new Voxel(type));
     }
-    public void SetVoxels(List<Vector3> vec, List<VoxelType> type)
+    public void SetVoxels(Vector3 p1, Vector3 p2, VoxelType type)
     {
-        List<Voxel> voxel = new List<Voxel>();
-        for (int i = 0; i < type.Count; i++)
-        {
-            voxel.Add(new Voxel(type[i]));
-        }
-        SetVoxels(vec, voxel);
+        SetVoxels(p1, p2, new Voxel(type));
     }
     /// <summary>
     /// Set a voxel from the given world-space position
@@ -376,47 +372,111 @@ public class World
         }
     }
     /// <summary>
-    /// Set a list of voxels from the given world-space positions
+    /// Set a list of voxels from the given world-space positions.
+    /// It's expected that p1 is the corner with the smallest of each coordinate
+    /// for its x y and z in the selection
     /// </summary>
     /// <param name="vec"></param>
     /// <param name="voxel"></param>
-    /// <exception cref="Exception"></exception>
-    public void SetVoxels(List<Vector3> vec, List<Voxel> voxel)
+    public void SetVoxels(Vector3 p1, Vector3 p2, Voxel voxel)
     {
-        Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>> chunks = new Dictionary<Chunk, Tuple<List<Vector3>, List<Voxel>>>();
-        for (int i = 0; i < vec.Count; i++)
+        //Expand the selection by one voxel to capture any chunks the selection borders with
+        Vector3 expandedP1 = p1 - Vector3.one / parameters.Resolution;
+        Vector3 expandedP2 = p2 + Vector3.one / parameters.Resolution;
+
+        //Loop through the range of chunks
+        Vector3Int chunkP1 = VectorToChunkCoord(expandedP1);
+        Vector3Int chunkP2 = VectorToChunkCoord(expandedP2);
+
+        //Set the voxels for each chunk affected
+        for (int x = chunkP1.x; x <= chunkP2.x; x++)
         {
-            Chunk c = ChunkFromGlobal(vec[i]);
-            if (c == null)
+            for (int y = chunkP1.y; y <= chunkP2.y; y++)
             {
-                continue;
+                for (int z = chunkP1.z; z <= chunkP2.z; z++)
+                {
+                    Chunk c = GetChunk(new Vector3Int(x, y, z));
+                    if (c != null)
+                    {
+                        if (!c.SetVoxels(
+                            c.transform.InverseTransformPoint(p1),
+                            c.transform.InverseTransformPoint(p2),
+                            voxel
+                        ))
+                        {
+                            c.RegenerateMesh();
+                        }
+                    }
+                }
             }
-            
-            if (!chunks.ContainsKey(c))
-            {
-                List<Vector3> vecList = new List<Vector3>();
-                List<Voxel> voxelList = new List<Voxel>();
-                Tuple<List<Vector3>, List<Voxel>> container = new Tuple<List<Vector3>, List<Voxel>>(vecList, voxelList);
-                chunks.Add(c, container);
-            }
-            
-            chunks[c].Item1.Add(c.transform.InverseTransformPoint(vec[i]));
-            chunks[c].Item2.Add(voxel[i]);
         }
 
-        foreach (var c in chunks)
-        {
-            c.Key.SetVoxels(c.Value.Item1, c.Value.Item2);
+    }
+    /// <returns>The y value of the highest solid terrain at the global x and z.
+    /// Min world height if there's no ground. </returns>
+    public float HeightAtLocation(float globalX, float globalZ)
+    {
+        float globalChunkWidth = parameters.ChunkSize / parameters.Resolution;
+        int xIndex = (int)Math.Abs(Mathf.FloorToInt(globalX % globalChunkWidth) * parameters.Resolution);
+        int zIndex = (int)Math.Abs(Mathf.FloorToInt(globalZ % globalChunkWidth) * parameters.Resolution);
+
+        Vector3Int chunkCoords = new Vector3Int(
+            Mathf.FloorToInt(globalX / globalChunkWidth), 0,
+            Mathf.FloorToInt(globalZ / globalChunkWidth));
+
+        //Start from world height and loop downards to min world height
+        for (int chunkY = parameters.WorldHeightInChunks; chunkY >= 0; chunkY--){
+            chunkCoords.y = chunkY;
+            Chunk c = GetChunk(chunkCoords);
+            if (c == null) continue;
+
+            for (int y = parameters.ChunkHeight - 1; y >= 0; y--)
+            {
+                Voxel voxel = c.GetVoxel(new Vector3Int(xIndex, y, zIndex));
+                if (voxel.type != VoxelType.AIR)
+                {
+                    return c.transform.position.y + (y / parameters.Resolution);
+                }
+            }
         }
+        return 0;
+    }
+    public void UnloadAll()
+    {
+        loadQueue.Clear();
+        unloadQueue.Clear();
+        chunksInProg.Clear();
+        foreach (Vector3Int coord in chunks.Keys)
+        {
+            unloadQueue.Enqueue(coord);
+        }
+
+        UpdateNeighborQueues();
+    }
+    public bool IsLoadingInProgress()
+    {
+        return chunksInProg.Count > 0 || loadQueue.Count > 0;
     }
 
-    public bool Contains(Player player)
+    public bool Contains(Agent player)
     {
         return players.Contains(player);
     }
 
-    public void AddPlayer(Player player)
+    public void AddPlayer(Agent player)
     {
         players.Add(player);
+    }
+
+    /// <summary>
+    /// Only works if the symbol PROFILER_ENABLED is set.
+    /// </summary>
+    public void SetWorstChunks(bool value)
+    {
+#if !PROFILER_ENABLED
+        return;
+#else
+        chunkFactory.worstChunks = value;
+#endif
     }
 }
