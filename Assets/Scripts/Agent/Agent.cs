@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -8,6 +7,19 @@ using UnityEngine;
 /// </summary>
 public abstract class Agent : WorldObject
 {
+    private NetworkedAgent networkedAgent;
+    protected NetworkedAgent NetworkedAgent {
+        get
+        {
+            return networkedAgent;
+        }
+        set
+        {
+            this.networkedAgent = value;
+            value.Agent = this;
+        }
+    }
+    
     public virtual bool IsTaskable {
         get {
             return this is ITaskable;
@@ -30,26 +42,46 @@ public abstract class Agent : WorldObject
     /// <summary>
     /// Attempt to break a block in the current world, at world-space position.
     /// </summary>
-    public virtual void TryBreak(Vector3 pos)
+    public void TryBreak(Vector3 pos)
     {
-        CurrentWorld?.SetVoxel(pos, VoxelType.AIR);
+        VerifyNetworked();
+
+        NetworkedAgent.TryBreak(pos);
     }
-    public virtual void TryTwoPointBreak(Vector3 p1, Vector3 p2)
+
+    public void TryTwoPointBreak(Vector3 p1, Vector3 p2)
     {
-        TryTwoPointReplace(p1, p2, VoxelType.AIR);
+        VerifyNetworked();
+
+        NetworkedAgent.TryTwoPointBreak(p1, p2);
     }
+
     /// <summary>
     /// Attempt to place a block in the current world, at world-space position.
     /// </summary>
-    public virtual void TryPlace(Vector3 pos, VoxelType type)
+    public void TryPlace(Vector3 pos, VoxelType type)
     {
-        CurrentWorld?.SetVoxel(pos, type);
-    }
-    public virtual void TryTwoPointReplace(Vector3 p1, Vector3 p2, VoxelType type)
-    {
-        CurrentWorld?.SetVoxels(p1, p2, type);
+        VerifyNetworked();
+
+        NetworkedAgent.TryPlace(pos, type);
     }
 
+    public void TryTwoPointReplace(Vector3 p1, Vector3 p2, VoxelType type)
+    {
+        VerifyNetworked();
+
+        NetworkedAgent.TryTwoPointReplace(p1, p2, type);
+    }
+
+    private bool VerifyNetworked()
+    {
+        if (NetworkedAgent.IsUnityNull())
+        {
+            Debug.LogError("WARNING: Agent attempted a networked action without a NetworkedAgent attached!");
+        }
+
+        return !NetworkedAgent.IsUnityNull();
+    }
     /// <summary>
     /// A way to move this agent. There's position offset & there's force to be
     /// added to the object. By default, force isn't used, because AbstractAgent

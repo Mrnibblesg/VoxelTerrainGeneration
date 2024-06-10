@@ -1,3 +1,4 @@
+using Mirror;
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -33,7 +34,9 @@ public class World
     private int playerLoadDist;
     private int playerUnloadDist;
 
+#pragma warning disable CS0414
     private int maxChunksLoadingAtOnce = 10;
+#pragma warning restore CS0414
 
     private ChunkFactory chunkFactory;
 
@@ -353,10 +356,12 @@ public class World
     {
         SetVoxel(vec, new Voxel(type));
     }
+
     public void SetVoxels(Vector3 p1, Vector3 p2, VoxelType type)
     {
         SetVoxels(p1, p2, new Voxel(type));
     }
+
     /// <summary>
     /// Set a voxel from the given world-space position
     /// </summary>

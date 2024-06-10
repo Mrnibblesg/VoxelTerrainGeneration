@@ -13,5 +13,28 @@ public struct WorldParameters
     public int Seed { get; set; }
     public string Name { get; set; }
 
-
+    public void Deconstruct(out float resolution, out int worldHeightInChunks,
+        out int chunkSize, out int chunkHeight,
+        out int waterHeight, out int seed, out string name)
+    {
+        (
+            resolution,
+            worldHeightInChunks,
+            chunkSize,
+            chunkHeight,
+            waterHeight,
+            seed,
+            name
+        )
+        
+        = (
+            this.Resolution,
+            this.WorldHeightInChunks,
+            this.ChunkSize,
+            this.ChunkHeight,
+            this.WaterHeight,
+            this.Seed,
+            this.Name
+        );
+    }
 }

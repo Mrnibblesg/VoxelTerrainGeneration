@@ -1,16 +1,17 @@
+using Mirror;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class VoxelInteraction : MonoBehaviour
+public class VoxelInteraction : NetworkBehaviour
 {
     public Camera playerCamera;
     private LookingAtVoxel looking;
-    private VoxelType currType;
+    private VoxelType currentType;
     private Player player;
     private NetworkedPlayer networkedPlayer;
     private Vector3[] voxelInfo;
     private Vector3 position;
-    Vector3? alt_position;
+    Vector3? altPosition;
     private int breakRange;
 
     // Start is called before the first frame update
@@ -19,10 +20,10 @@ public class VoxelInteraction : MonoBehaviour
         looking = gameObject.AddComponent<LookingAtVoxel>();
         player = GetComponent<Player>();
         networkedPlayer = GetComponent<NetworkedPlayer>();
-        currType = VoxelType.GRASS;
+        currentType = VoxelType.GRASS;
         voxelInfo = null;
         breakRange = 2;
-        alt_position = null;
+        altPosition = null;
     }
 
     // Update is called once per frame
@@ -43,20 +44,20 @@ public class VoxelInteraction : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
-            currType = VoxelType.GRASS;
+            currentType = VoxelType.GRASS;
         }
         if (Input.GetKeyDown(KeyCode.Alpha2))
         {
-            currType = VoxelType.DIRT;
+            currentType = VoxelType.DIRT;
         }
         if (Input.GetKeyDown(KeyCode.Alpha3))
         {
-            currType = VoxelType.STONE;
+            currentType = VoxelType.STONE;
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha5))
         {
-            currType = VoxelType.WATER_SOURCE;
+            currentType = VoxelType.WATER_SOURCE;
         }
 
         if (Input.GetKeyDown(KeyCode.Period))
@@ -104,14 +105,14 @@ public class VoxelInteraction : MonoBehaviour
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
                     {
-                        if (alt_position == null)
+                        if (altPosition == null)
                         {
-                            alt_position = position;
+                            altPosition = position;
                         }
                         else
                         {
-                            TwoPointReplace((Vector3)alt_position, position, VoxelType.AIR);
-                            alt_position = null;
+                            TwoPointReplace((Vector3)altPosition, position, VoxelType.AIR);
+                            altPosition = null;
                         }
                     }
                     else
@@ -137,19 +138,19 @@ public class VoxelInteraction : MonoBehaviour
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
                     {
-                        if (alt_position == null)
+                        if (altPosition == null)
                         {
-                            alt_position = position;
+                            altPosition = position;
                         }
                         else
                         {
-                            // TwoPointPlace((Vector3)alt_position, position);
-                            alt_position = null;
+                            TwoPointReplace((Vector3)altPosition, position, currentType);
+                            altPosition = null;
                         }
                     }
                     else
                     {
-                        MassPlace(position, currType);
+                        MassPlace(position, currentType);
                     }
                 }
                 else
@@ -167,7 +168,7 @@ public class VoxelInteraction : MonoBehaviour
 
     private void PlaceVoxel(Vector3 position)
     {
-        player.TryPlace(position, currType);
+        player.TryPlace(position, currentType);
     }
 
     private void MassBreak(Vector3 position)

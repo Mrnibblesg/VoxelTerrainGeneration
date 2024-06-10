@@ -14,7 +14,7 @@ public class WorldBuilder
         ChunkHeight=16,
         WaterHeight=30,
         Seed=1,
-        Name="Default",
+        Name="New World",
 
     };
     private WorldParameters worldParams = DEFAULT_PARAMS;

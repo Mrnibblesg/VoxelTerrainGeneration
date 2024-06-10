@@ -43,10 +43,12 @@ public class ProfileGameTask : WorldTask
     //Queue all scenarios with the currently set world params
     private void QueueScenarios()
     {
-        string worldNameEnding = $"Resolution {worldParams.Resolution}, " +
-                    $"Chunk size {worldParams.ChunkSize}, " +
-                    $"Chunk Height {worldParams.ChunkHeight}, " +
-                    $"World Height (Chunks) {worldParams.WorldHeightInChunks}";
+        (float resolution, int worldHeightInChunks, int chunkSize, int chunkHeight, _, _, _) = worldParams;
+
+        string worldNameEnding = $"Resolution {resolution}, " +
+                    $"Chunk size {chunkSize}, " +
+                    $"Chunk Height {chunkHeight}, " +
+                    $"World Height (Chunks) {worldHeightInChunks}";
 
         worldParams.Name = $"Simple Actions: " + worldNameEnding;
         worldParams.Seed = 1;

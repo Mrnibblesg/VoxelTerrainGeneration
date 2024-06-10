@@ -52,6 +52,7 @@ public class Player : AuthoritativeAgent
     {
         this.Camera = transform.GetChild(0).GetComponent<Camera>();
         this.networkedPlayer = this.gameObject.GetComponent<NetworkedPlayer>();
+        this.NetworkedAgent = this.networkedPlayer;
 
         if (!this.networkedPlayer.isLocalPlayer)
         {
