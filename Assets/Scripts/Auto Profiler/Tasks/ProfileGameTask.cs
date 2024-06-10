@@ -9,7 +9,7 @@ public class ProfileGameTask : WorldTask
     WorldParameters worldParams = new WorldParameters
     {
         WaterHeight = 10,
-        WorldHeightInChunks = 4
+        WorldHeightInChunks = 8
     };
 
     public ProfileGameTask()
@@ -28,7 +28,7 @@ public class ProfileGameTask : WorldTask
                 worldParams.Resolution = res;
                 worldParams.ChunkSize = chunkSize;
                 worldParams.ChunkHeight = 16;
-                worldParams.WorldHeightInChunks = 4 * (int)Mathf.Pow(2, res - 1);
+                worldParams.WorldHeightInChunks = 8 * (int)Mathf.Pow(2, res - 1);
 
                 QueueScenarios();
 
@@ -48,31 +48,31 @@ public class ProfileGameTask : WorldTask
                     $"Chunk Height {worldParams.ChunkHeight}, " +
                     $"World Height (Chunks) {worldParams.WorldHeightInChunks}";
 
-        worldParams.Name = $"Simple Actions: " + worldNameEnding;
-        worldParams.Seed = 1;
-        tasks.Enqueue(new SimpleActionsScenario(worldParams));
+/*        worldParams.Name = $"Simple Actions: " + worldNameEnding;
+        worldParams.Seed = 100;
+        tasks.Enqueue(new SimpleActionsScenario(worldParams));*/
 
         worldParams.Name = $"Journey: " + worldNameEnding;
-        worldParams.Seed = 2;
+        worldParams.Seed = 200;
         tasks.Enqueue(new JourneyScenario(worldParams));
 
         worldParams.Name = $"World Gen Stress Test: " + worldNameEnding;
-        worldParams.Seed = 3;
+        worldParams.Seed = 300;
         tasks.Enqueue(new WorldGenStressTestScenario(worldParams, 10));
 
         worldParams.Name = $"Mass Single Replace: " + worldNameEnding;
-        worldParams.Seed = 4;
+        worldParams.Seed = 400;
         tasks.Enqueue(new MassSingleReplaceScenario(worldParams, 2000));
 
         worldParams.Name = $"Mass Mass Replace: " + worldNameEnding;
-        worldParams.Seed = 5;
+        worldParams.Seed = 500;
         tasks.Enqueue(new MassMassReplaceScenario(worldParams, 1000));
 
         //This scenario consumes a TON of resources... It's more useful if we keep the params low.
-        if (worldParams.ChunkSize <= 32 && worldParams.Resolution == 1)
+        if (worldParams.ChunkSize < 32 && worldParams.Resolution == 1)
         {
             worldParams.Name = $"Worst Chunks: " + worldNameEnding;
-            worldParams.Seed = 6;
+            worldParams.Seed = 600;
             tasks.Enqueue(new WorstChunksPossibleScenario(worldParams, 10));
         }
     }

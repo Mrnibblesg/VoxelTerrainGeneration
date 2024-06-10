@@ -151,7 +151,16 @@ public class ProfilerManager : MonoBehaviour
     /// </summary>
     public void SetProfilerAgentWorld(WorldParameters parameters)
     {
-        World w = new WorldBuilder()
+        //remove the current world to prevent memory leaks from unused worlds
+        World w;
+        if (Agent.CurrentWorld is not null)
+        {
+            w = Agent.CurrentWorld;
+            WorldAccessor.RemoveWorld(w.parameters.Name);
+            
+        }
+        
+        w = new WorldBuilder()
             .SetParameters(parameters)
             .Build();
         w.SetWorstChunks(worstChunks);

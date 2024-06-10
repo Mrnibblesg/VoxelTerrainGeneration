@@ -46,7 +46,7 @@ public class SimpleMoveTask : WorldTask
             
         }
 
-        agent.Move(distance * Time.fixedDeltaTime * Vector3.Normalize(difference));
+        agent.Move(distance * Vector3.Normalize(difference));
     }
     public override void Interrupt()
     {

@@ -330,7 +330,7 @@ public class World
         Chunk c = ChunkFromGlobal(vec);
         if (c != null)
         {
-            return (Voxel)c.VoxelFromLocal(c.transform.InverseTransformPoint(vec));
+            return c.VoxelFromLocal(c.transform.InverseTransformPoint(vec));
         }
         return null;
     }
@@ -441,17 +441,28 @@ public class World
         }
         return 0;
     }
+    /// <summary>
+    /// Delete all the stuff this world contains.
+    /// </summary>
     public void UnloadAll()
     {
         loadQueue.Clear();
-        unloadQueue.Clear();
         chunksInProg.Clear();
         foreach (Vector3Int coord in chunks.Keys)
         {
             unloadQueue.Enqueue(coord);
         }
-
-        UpdateNeighborQueues();
+        while (unloadQueue.Count > 0)
+        {
+            Vector3Int coords = unloadQueue.Dequeue();
+#if UNITY_EDITOR //Apparently use this if we're in the editor otherwise the destroy is ignored?
+            GameObject.Destroy(chunks[coords].gameObject);
+#else
+            GameObject.Destroy(chunks[coords].gameObject);
+#endif
+            chunks.Remove(coords);
+        }
+        //UpdateNeighborQueues();
     }
     public bool IsLoadingInProgress()
     {

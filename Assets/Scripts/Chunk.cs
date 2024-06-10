@@ -38,6 +38,15 @@ public class Chunk : MonoBehaviour
         voxels = new VoxelRun(world.parameters.ChunkSize, world.parameters.ChunkHeight);
     }
 
+    private void OnDestroy()
+    {
+        for (int i = 0; i < neighbors.Length; i++)
+        {
+            neighbors[i] = null;
+        }
+        Destroy(meshFilter.sharedMesh);
+    }
+
     /// <summary>
     /// Generates a mesh for this chunk
     /// </summary>

@@ -51,7 +51,6 @@ public class ProfilerAgent : AuthoritativeAgent, ITaskable
             }
             
         }
-
         //Keep the bot from getting stuck on the terrain while navigating
         if ((currentWorld?.VoxelFromGlobal(transform.position-(Vector3.up*0.9f))?.type ?? VoxelType.AIR) != VoxelType.AIR)
         {
