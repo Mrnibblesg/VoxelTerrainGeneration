@@ -1,6 +1,7 @@
 using Mirror;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
@@ -36,6 +37,8 @@ public class NetworkedPlayer : NetworkedAgent
 
     void OnNameChanged(string _Old, string _New)
     {
+        playerName = _New;
+
         playerNameText.text = playerName;
     }
 
@@ -57,7 +60,11 @@ public class NetworkedPlayer : NetworkedAgent
 
         string name = "Player" + Random.Range(100, 999);
         Color color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+
         CmdSetupPlayer(name, color);
+        
+        OnNameChanged(playerNameText.text, name);
+        OnColorChanged(playerNameText.color, color);
     }
 
     [Command]
@@ -85,6 +92,75 @@ public class NetworkedPlayer : NetworkedAgent
         this.playerName = _nick;
     }
 
+    [Command]
+    public void CmdTeleport(string[] command)
+    {
+        if (string.IsNullOrEmpty(command[1]))
+        {
+            RpcReceive(this.connectionToClient, "Please enter a valid player name.");
+            return;
+        }
+
+        string playerName = command[1];
+
+        string result = $"Could not find the player: {playerName}";
+        foreach (var connection in NetworkServer.connections.Values)
+        {
+            if (connection.identity.GetComponent<NetworkedPlayer>().PlayerName.Equals(playerName))
+            {
+                RpcTeleport(gameObject.GetComponent<NetworkedPlayer>().connectionToClient, connection.identity.GetComponent<Player>().transform.position);
+                RpcReceive(this.connectionToClient, $"Teleporting to player: {playerName}...");
+                
+                return;
+            }
+        }
+
+        RpcReceive(this.connectionToClient, result);
+    }
+
+    [Command]
+    public void CmdList()
+    {
+        int playersConnected = NetworkServer.connections.Count;
+
+        string result = $"There are {playersConnected} players online.\n";
+        result += "Players:\n";
+
+        foreach (var connection in NetworkServer.connections.Values)
+        {
+            result += "\t" + connection.identity.GetComponent<NetworkedPlayer>().PlayerName + "\n";
+        }
+
+        RpcReceive(this.connectionToClient, result);
+    }
+
+    [Command]
+    public void CmdNick(string[] command)
+    {
+        if (string.IsNullOrEmpty(command[1]) || command[1].Length > 255)
+        {
+            RpcReceive(this.connectionToClient, "Please enter a valid name.");
+
+            return;
+        }
+
+        if (NetworkServer.connections.Values
+            .Select(connection => connection.identity.GetComponent<NetworkedPlayer>().PlayerName)
+            .ToList()
+            .Contains(command[1]))
+        {
+
+            RpcReceive(this.connectionToClient, "Another player already possesses that name.");
+            
+            return;
+        }
+
+        NetworkedPlayer player = gameObject.GetComponent<NetworkedPlayer>();
+        player.playerName = command[1];
+
+        RpcReceive(this.connectionToClient, $"Display name set to {command[1]}");
+    }
+
     [ClientRpc]
     public void RpcBroadcast(string _name, string _msg)
     {
@@ -92,9 +168,15 @@ public class NetworkedPlayer : NetworkedAgent
     }
 
     [TargetRpc]
-    public void RpcReceive(string _msg)
+    public void RpcReceive(NetworkConnectionToClient target, string _msg)
     {
         NetworkedChatController.ChatController.Push($"{_msg}");
+    }
+
+    [TargetRpc]
+    public void RpcTeleport(NetworkConnectionToClient target, Vector3 position)
+    {
+        this.gameObject.transform.position = position;
     }
 
     private void Update()

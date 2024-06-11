@@ -112,7 +112,14 @@ public class Player : AuthoritativeAgent
         }
 
         if (NetworkedChatController.ChatController.IsPaused())
+        {
             return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Slash))
+        {
+            NetworkedChatController.ChatController.Pause(true);
+        }
 
         if (Input.GetMouseButton(2))
         {

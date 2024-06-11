@@ -456,7 +456,9 @@ public class World
             unloadQueue.Enqueue(coord);
         }
 
-        UpdateNeighborQueues();
+        WorldAccessor.RemoveWorld(this.parameters.Name);
+
+        //UpdateNeighborQueues();
     }
     public bool IsLoadingInProgress()
     {

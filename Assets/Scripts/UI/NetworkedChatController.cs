@@ -5,8 +5,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class NetworkedChatController : MonoBehaviour
@@ -24,6 +27,9 @@ public class NetworkedChatController : MonoBehaviour
 
     [SerializeField]
     private Scrollbar chatScrollbar;
+
+    [SerializeField]
+    NetworkedPlayer player;
 
     private static string HELP_MSG = @"
 To display this menu, use /help
@@ -51,13 +57,23 @@ To teleport to another player, use /teleport [playerName]";
         input.onSubmit.RemoveListener(Send);
     }
 
-    public void Pause()
+    public void Pause(bool commandPause = false)
     {
         this.pauseMenu.SetActive(!pauseMenu.activeSelf);
 
         if (this.IsPaused())
         {
             input.Select();
+
+            if (commandPause)
+            {
+                input.text = "/";
+            }
+
+            input.ActivateInputField();
+            input.caretPosition = input.text.Length;
+
+            this.player = this.player ?? NetworkClient.localPlayer.GetComponent<NetworkedPlayer>();
         }
     }
 
@@ -91,7 +107,6 @@ To teleport to another player, use /teleport [playerName]";
 
         // Keep Chat input field active
         input.ActivateInputField();
-        input.Select();
     }
 
     public void Push(string message)
@@ -103,19 +118,22 @@ To teleport to another player, use /teleport [playerName]";
 
     private IEnumerator ScrollToBottom()
     {
-        yield return new WaitForEndOfFrame();
+        yield return new WaitForSecondsRealtime(0.1f);
 
         chatScrollbar.value = 0;
+        input.ActivateInputField();
     }
 
     private IEnumerator PushDisplayName()
     {
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(1f);
+        
+        player = player ?? NetworkClient.localPlayer.gameObject.GetComponent<NetworkedPlayer>();
 
-        Push($"Your username is: {NetworkClient.localPlayer.gameObject.GetComponent<NetworkedPlayer>().PlayerName}! " +
+        Push($"Your username is: {player.PlayerName}! " +
             $"Welcome to the server :)");
     }
-
+    
     private void Execute(string[] command)
     {
         string result;
@@ -153,62 +171,23 @@ To teleport to another player, use /teleport [playerName]";
 
     private string Teleport(string[] command)
     {
-        if (string.IsNullOrEmpty(command[1]))
-        {
-            return "Please enter a valid player name.";
-        }
-        
-        string playerName = command[1];
+        player.CmdTeleport(command);
 
-        string result = $"Could not find the player: {playerName}";
-        foreach (var connection in NetworkServer.connections.Values)
-        {
-            if (connection.identity.GetComponent<NetworkedPlayer>().PlayerName.Equals(playerName))
-            {
-                NetworkClient.localPlayer.GetComponent<Player>().transform.position = 
-                    connection.identity.GetComponent<Player>().transform.position;
-
-                return $"Teleporting to player: {playerName}...";
-            }
-        }
-
-        return result;
+        return null;
     }
 
     private string List()
     {
-        int playersConnected = NetworkServer.connections.Count;
+        player.CmdList();
 
-        string result = $"There are {playersConnected} players online.\n";
-        result += "Players:\n";
-
-        foreach (var connection in NetworkServer.connections.Values)
-        {
-            result += "\t" + connection.identity.GetComponent<NetworkedPlayer>().PlayerName + "\n";
-        }
-
-        return result;
+        return null;
     }
 
     private string Nick(string[] command)
     {
-        if (string.IsNullOrEmpty(command[1]) || command[1].Length > 255)
-        {
-            return "Please enter a valid name.";
-        }
-        
-        if (NetworkServer.connections.Values
-            .Select(connection => connection.identity.GetComponent<NetworkedPlayer>().PlayerName)
-            .ToList()
-            .Contains(command[1])) {
+        player.CmdNick(command);
 
-            return "Another player already possesses that name.";
-        }
-
-        NetworkedPlayer player = NetworkClient.localPlayer.gameObject.GetComponent<NetworkedPlayer>();
-        player.CmdNick(command[1]);
-
-        return $"Display name set to {command[1]}";
+        return null;
     }
 
     private string Seed()
@@ -216,5 +195,25 @@ To teleport to another player, use /teleport [playerName]";
         NetworkedPlayer player = NetworkClient.localPlayer.gameObject.GetComponent<NetworkedPlayer>();
 
         return $"This world's seed is: {player.ClientPlayer.CurrentWorld.parameters.Seed}";
+    }
+
+    public void MainMenu()
+    {
+        player.ClientPlayer.CurrentWorld.UnloadAll();
+
+        if (NetworkServer.active && NetworkClient.isConnected)
+        {
+            NetworkManager.singleton.StopHost();
+        }
+        else if (NetworkServer.active)
+        {
+            NetworkManager.singleton.StopServer();
+        }
+        else if (NetworkClient.isConnected)
+        {
+            NetworkManager.singleton.StopClient();
+        }
+
+        SceneManager.LoadScene(0);
     }
 }
