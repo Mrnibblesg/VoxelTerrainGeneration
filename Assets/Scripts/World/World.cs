@@ -381,7 +381,8 @@ public class World
     /// It's expected that p1 is the corner with the smallest of each coordinate
     /// for its x y and z in the selection
     /// </summary>
-    /// <param name="vec"></param>
+    /// <param name="p1"></param>
+    /// <param name="p2"></param>
     /// <param name="voxel"></param>
     public void SetVoxels(Vector3 p1, Vector3 p2, Voxel voxel)
     {
