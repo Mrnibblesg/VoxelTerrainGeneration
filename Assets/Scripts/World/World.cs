@@ -401,17 +401,32 @@ public class World
                 for (int z = chunkP1.z; z <= chunkP2.z; z++)
                 {
                     Chunk c = GetChunk(new Vector3Int(x, y, z));
-                    if (c != null)
+                    if (c == null)
                     {
-                        if (!c.SetVoxels(
-                            c.transform.InverseTransformPoint(p1),
-                            c.transform.InverseTransformPoint(p2),
-                            voxel
-                        ))
-                        {
-                            c.RegenerateMesh();
-                        }
+                        continue;
                     }
+                    c.SetVoxels(
+                        c.transform.InverseTransformPoint(p1),
+                        c.transform.InverseTransformPoint(p2),
+                        voxel
+                    );
+                }
+            }
+        }
+
+        // Regenerate the mesh for all affected chunks
+        for (int x = chunkP1.x; x <= chunkP2.x; x++)
+        {
+            for (int y = chunkP1.y; y <= chunkP2.y; y++)
+            {
+                for (int z = chunkP1.z; z <= chunkP2.z; z++)
+                {
+                    Chunk c = GetChunk(new Vector3Int(x, y, z));
+                    if (c == null)
+                    {
+                        continue;
+                    }
+                    c.RegenerateMesh();
                 }
             }
         }
