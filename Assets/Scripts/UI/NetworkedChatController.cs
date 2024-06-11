@@ -75,6 +75,10 @@ To teleport to another player, use /teleport [playerName]";
 
             this.player = this.player ?? NetworkClient.localPlayer.GetComponent<NetworkedPlayer>();
         }
+        else
+        {
+            input.text = "";
+        }
     }
 
     public bool IsPaused()
