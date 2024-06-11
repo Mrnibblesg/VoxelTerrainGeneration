@@ -183,8 +183,6 @@ public class VoxelInteraction : NetworkBehaviour
 
     private void MassPlace(Vector3 position, VoxelType type)
     {
-        List<Vector3> positions = new List<Vector3>();
-
         float voxelSize = 1 / player.CurrentWorld.parameters.Resolution;
         Vector3 offset = new Vector3(-voxelSize * breakRange, -voxelSize * breakRange, -voxelSize * breakRange);
         Vector3 p1 = position - offset;
@@ -196,54 +194,18 @@ public class VoxelInteraction : NetworkBehaviour
     /// <summary>
     /// Corrects the given positions before attempting the replacement
     /// </summary>
-    private void TwoPointReplace(Vector3 altPos, Vector3 pos, VoxelType type)
+    private void TwoPointReplace(Vector3 posOne, Vector3 posTwo, VoxelType type)
     {
+        Vector3 c1 = new Vector3( // Corner 1
+            Mathf.Min(posOne.x, posTwo.x),
+            Mathf.Min(posOne.y, posTwo.y),
+            Mathf.Min(posOne.z, posTwo.z));
+        Vector3 c2 = new Vector3( // Corner 2
+            Mathf.Max(posOne.x, posTwo.x),
+            Mathf.Max(posOne.y, posTwo.y),
+            Mathf.Max(posOne.z, posTwo.z));
 
-        float startX;
-        float startY;
-        float startZ;
-        float endX;
-        float endY;
-        float endZ;
-
-        if (pos.x <= altPos.x)
-        {
-            startX = pos.x;
-            endX = altPos.x;
-        }
-        else
-        {
-            startX = altPos.x;
-            endX = pos.x;
-        }
-
-        if (pos.y <= altPos.y)
-        {
-            startY = pos.y;
-            endY = altPos.y;
-        }
-        else
-        {
-            startY = altPos.y;
-            endY = pos.y;
-        }
-
-        if (pos.z <= altPos.z)
-        {
-            startZ = pos.z;
-            endZ = altPos.z;
-        }
-        else
-        {
-            startZ = altPos.z;
-            endZ = pos.z;
-        }
-
-
-        player.TryTwoPointReplace(
-            new Vector3(startX, startY, startZ),
-            new Vector3(endX, endY, endZ),
-            type);
+        player.TryTwoPointReplace(c1, c2, type);
 
     }
 }
