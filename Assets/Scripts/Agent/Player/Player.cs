@@ -51,8 +51,6 @@ public class Player : AuthoritativeAgent
     public void Start()
     {
         this.Camera = transform.GetChild(0).GetComponent<Camera>();
-        this.networkedPlayer = this.gameObject.GetComponent<NetworkedPlayer>();
-        this.NetworkedAgent = this.networkedPlayer;
 
         if (!this.networkedPlayer.isLocalPlayer)
         {
@@ -88,22 +86,27 @@ public class Player : AuthoritativeAgent
 
     private void Awake()
     {
+        this.networkedPlayer = this.gameObject.GetComponent<NetworkedPlayer>();
+        this.NetworkedAgent = this.networkedPlayer;
+
+        if (!NetworkServer.activeHost)
+            return;
+
         // Check in WorldAccessor for a world
         World world = WorldAccessor.Identify(this);
 
         if (world is null)
         {
             world = WorldAccessor.Join(this);
+            CurrentWorld = world;
         }
-
-        CurrentWorld = world;
     }
 
     public override void Update()
     {
         base.Update();
 
-        if (! this.networkedPlayer.isLocalPlayer)
+        if (! this.networkedPlayer.isLocalPlayer || currentWorld == null)
             return;
 
         if (Input.GetKeyDown(KeyCode.Escape))
