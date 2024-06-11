@@ -10,7 +10,7 @@ public class WorldBuilder
     {
         Resolution = 1,
         WorldHeightInChunks=1,
-        ChunkSize=32,
+        ChunkSize=16,
         ChunkHeight=256,
         WaterHeight=30,
         Seed=1,
