@@ -92,7 +92,24 @@ public class World
         //Queue furthest chunks to unload. Only done when player coord changes.
         foreach (KeyValuePair<Vector3Int, Chunk> p in chunks)
         {
-            if (Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist)
+            bool shouldUnload = !NetworkClient.activeHost && Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist;
+            if (NetworkClient.activeHost)
+            {
+                shouldUnload = true;
+                // Additional logic to check all players distances to unload for host performance
+                foreach (var connection in NetworkServer.connections)
+                {
+                    var player = connection.Value.identity;
+                    var playerAgent = player.GetComponent<AuthoritativeAgent>();
+                    if (Vector3Int.Distance(p.Key, playerAgent.chunkCoord) <= playerAgent.UnloadDist)
+                    {
+                        shouldUnload = false;
+                        break;
+                    }
+                }
+            }
+
+            if (shouldUnload)
             {
                 unloadQueue.Enqueue(p.Key);
             }
