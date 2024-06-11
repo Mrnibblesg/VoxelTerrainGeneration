@@ -26,6 +26,11 @@ public class WorldAccessor : MonoBehaviour
 
     public static void AddWorld(string name, World world)
     {
+        if (name == "Menu" && worldDictionary.ContainsKey("Menu"))
+        {
+            return;
+        }
+
         worldDictionary.Add(name, world);
     }
 

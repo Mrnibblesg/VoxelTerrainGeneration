@@ -9,5 +9,5 @@ public struct ChunkMessage
 {
     public Vector3Int ChunkCoords;
     public VoxelRun Voxels;
-    public string worldName;
+    public string WorldName;
 }
