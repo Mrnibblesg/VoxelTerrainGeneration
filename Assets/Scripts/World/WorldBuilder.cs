@@ -9,9 +9,9 @@ public class WorldBuilder
     private static WorldParameters DEFAULT_PARAMS = new WorldParameters
     {
         Resolution = 1,
-        WorldHeightInChunks=8,
-        ChunkSize=16,
-        ChunkHeight=16,
+        WorldHeightInChunks=1,
+        ChunkSize=32,
+        ChunkHeight=256,
         WaterHeight=30,
         Seed=1,
         Name="New World",

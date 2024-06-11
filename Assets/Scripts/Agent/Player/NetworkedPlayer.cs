@@ -18,15 +18,19 @@ public class NetworkedPlayer : NetworkedAgent
     [SyncVar(hook = nameof(OnNameChanged))]
     private string playerName;
 
+    public string PlayerName { get { return playerNameText.text; } }
+
     [SyncVar(hook = nameof(OnColorChanged))]
     private Color playerColor = Color.white;
 
     [SerializeField]
     private Player clientPlayer;
+    public Player ClientPlayer { get { return clientPlayer; } private set { clientPlayer = value; } }
+
     private Camera PlayerCamera {
         get
         {
-            return clientPlayer.Camera ?? transform.GetChild(0).GetComponent<Camera>();
+            return ClientPlayer.Camera ?? transform.GetChild(0).GetComponent<Camera>();
         }
     }
 
@@ -62,6 +66,35 @@ public class NetworkedPlayer : NetworkedAgent
         // player info sent to server, then server updates sync vars which handles it on all clients
         playerName = _name;
         playerColor = _col;
+    }
+
+    [Command]
+    public void CmdSendChatMessage(string _msg)
+    {
+        if (!isServer)
+            return;
+
+        this.RpcBroadcast(this.playerName, _msg);
+    }
+
+    [Command]
+    public void CmdNick(string _nick)
+    {
+        if (!isServer) return;
+
+        this.playerName = _nick;
+    }
+
+    [ClientRpc]
+    public void RpcBroadcast(string _name, string _msg)
+    {
+        NetworkedChatController.ChatController.Push($"{_name}: {_msg}");
+    }
+
+    [TargetRpc]
+    public void RpcReceive(string _msg)
+    {
+        NetworkedChatController.ChatController.Push($"{_msg}");
     }
 
     private void Update()

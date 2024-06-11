@@ -80,6 +80,9 @@ public class Player : AuthoritativeAgent
         if (!this.networkedPlayer.isLocalPlayer)
             return;
 
+        if (NetworkedChatController.ChatController.IsPaused())
+            return;
+
         UpdateMove();
     }
 
@@ -103,15 +106,25 @@ public class Player : AuthoritativeAgent
         if (! this.networkedPlayer.isLocalPlayer)
             return;
 
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            NetworkedChatController.ChatController.Pause();
+        }
+
+        if (NetworkedChatController.ChatController.IsPaused())
+            return;
+
         if (Input.GetMouseButton(2))
         {
             UpdateLook();
         }
+
         if ((currentWorld.VoxelFromGlobal(transform.position)?.type ?? VoxelType.AIR) != VoxelType.AIR)
         {
             GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
             transform.position += Vector3.up;
         }
+
         UpdateTeleport();
 
         if (this.CurrentWorld is not null)

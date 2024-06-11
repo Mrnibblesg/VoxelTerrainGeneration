@@ -12,6 +12,7 @@ public class VoxelInteraction : NetworkBehaviour
     private Vector3[] voxelInfo;
     private Vector3 position;
     Vector3? altPosition;
+    Vector3? altPosition2;
     private int breakRange;
 
     // Start is called before the first frame update
@@ -30,6 +31,9 @@ public class VoxelInteraction : NetworkBehaviour
     void Update()
     {
         if (!this.networkedPlayer.isLocalPlayer)
+            return;
+
+        if (NetworkedChatController.ChatController.IsPaused())
             return;
 
         TypeSelection();
@@ -138,14 +142,14 @@ public class VoxelInteraction : NetworkBehaviour
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
                     {
-                        if (altPosition == null)
+                        if (altPosition2 == null)
                         {
-                            altPosition = position;
+                            altPosition2 = position;
                         }
                         else
                         {
-                            TwoPointReplace((Vector3)altPosition, position, currentType);
-                            altPosition = null;
+                            TwoPointReplace((Vector3)altPosition2, position, currentType);
+                            altPosition2 = null;
                         }
                     }
                     else
