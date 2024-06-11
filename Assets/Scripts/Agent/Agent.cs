@@ -49,13 +49,6 @@ public abstract class Agent : WorldObject
         NetworkedAgent.TryBreak(pos);
     }
 
-    public void TryTwoPointBreak(Vector3 p1, Vector3 p2)
-    {
-        VerifyNetworked();
-
-        NetworkedAgent.TryTwoPointBreak(p1, p2);
-    }
-
     /// <summary>
     /// Attempt to place a block in the current world, at world-space position.
     /// </summary>

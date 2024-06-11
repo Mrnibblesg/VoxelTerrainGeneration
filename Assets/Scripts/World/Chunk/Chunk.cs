@@ -138,7 +138,10 @@ public class Chunk : MonoBehaviour
     /// <summary>
     /// Set the voxels between localized p1 and p2 to the given voxel
     /// </summary>
-    /// <returns></returns>
+    /// <param name="p1"></param>
+    /// <param name="p2"></param>
+    /// <param name="voxel"></param>
+    /// <returns>Whether the chunk was changed</returns>
     public bool SetVoxels(Vector3 p1, Vector3 p2, Voxel voxel)
     {
         Vector3Int p1Coords = LocalToVoxelCoord(p1);
@@ -153,12 +156,17 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = Math.Max(0, p1Coords.z); z <= Math.Min(world.parameters.ChunkSize-1, p2Coords.z); z++)
                 {
+                    if (GetVoxel(new Vector3Int(x, y, z)).type == voxel.type)
+                    {
+                        // Voxel is already set
+                        continue;
+                    }
+
                     SetVoxel(new Vector3Int(x, y, z), voxel);
                     changed = true;
                 }
             }
         }
-        if (changed) { RegenerateMesh(); }
         
         return changed;
     }
