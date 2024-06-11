@@ -15,8 +15,8 @@ public class WorldBuilder
         WaterHeight=30,
         Seed=1,
         Name="New World",
-
     };
+
     private WorldParameters worldParams = DEFAULT_PARAMS;
 
     /// <summary>

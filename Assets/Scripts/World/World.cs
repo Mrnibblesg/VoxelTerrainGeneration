@@ -92,7 +92,24 @@ public class World
         //Queue furthest chunks to unload. Only done when player coord changes.
         foreach (KeyValuePair<Vector3Int, Chunk> p in chunks)
         {
-            if (Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist)
+            bool shouldUnload = !NetworkClient.activeHost && Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist;
+            if (NetworkClient.activeHost)
+            {
+                shouldUnload = true;
+                // Additional logic to check all players distances to unload for host performance
+                foreach (var connection in NetworkServer.connections)
+                {
+                    var player = connection.Value.identity;
+                    var playerAgent = player.GetComponent<AuthoritativeAgent>();
+                    if (Vector3Int.Distance(p.Key, playerAgent.chunkCoord) <= playerAgent.UnloadDist)
+                    {
+                        shouldUnload = false;
+                        break;
+                    }
+                }
+            }
+
+            if (shouldUnload)
             {
                 unloadQueue.Enqueue(p.Key);
             }
@@ -131,12 +148,37 @@ public class World
     /// <param name="chunkCoords"></param>
     private void LoadChunk(Vector3Int chunkCoords)
     {
+        if (!NetworkClient.activeHost && NetworkClient.isConnected)
+        {
+            if (ChunkWithinWorld(chunkCoords))
+            {
+                chunksInProg.Add(chunkCoords);
+                NetworkClient.localPlayer.GetComponent<NetworkedPlayer>()
+                .CmdRequestChunk(chunkCoords, NetworkClient.localPlayer);
+            }
+
+            return;
+        }
+
         Chunk c = GetChunk(chunkCoords);
         if (c)
         {
             return;
         }
         if (ChunkWithinWorld(chunkCoords)) 
+        {
+            chunksInProg.Add(chunkCoords);
+            chunkFactory.RequestNewChunk(chunkCoords);
+        }
+    }
+
+    /// <summary>
+    /// Called from command. Already checked in memory.
+    /// </summary>
+    /// <param name="chunkCoords"></param>
+    public void ForceRequestChunk(Vector3Int chunkCoords)
+    {
+        if (ChunkWithinWorld(chunkCoords))
         {
             chunksInProg.Add(chunkCoords);
             chunkFactory.RequestNewChunk(chunkCoords);
@@ -151,7 +193,7 @@ public class World
             chunkCoords.y < parameters.WorldHeightInChunks &&
             chunkCoords.y >= 0;
     }
-
+    
     /// <summary>
     /// Called when a chunk finishes generating. Builds a new chunk.
     /// </summary>
@@ -161,6 +203,36 @@ public class World
     //  They get queued as well if they're in range.
     public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
+        if (NetworkClient.activeHost)
+        {
+            foreach (var connection in NetworkServer.connections)
+            {
+                var playerAgent = connection.Value.identity.GetComponent<Player>();
+
+                if (connection.Value.identity.Equals(NetworkClient.localPlayer))
+                {
+                    continue;
+                }
+
+                var networkedPlayerAgent = playerAgent.GetComponent<NetworkedPlayer>();
+
+                if (networkedPlayerAgent.chunksInProgress.Contains(chunkCoords)/* &&
+                    Vector3Int.Distance(chunkCoords, playerAgent.chunkCoord) <= playerAgent.UnloadDist*/)
+                {
+                    var chunkMessage = new ChunkMessage()
+                    {
+                        ChunkCoords = chunkCoords,
+                        Voxels = voxels,
+                        WorldName = this.parameters.Name
+                    };
+
+                    networkedPlayerAgent.chunksInProgress.Remove(chunkCoords);
+
+                    networkedPlayerAgent.TargetReceiveChunk(networkedPlayerAgent.connectionToClient, chunkMessage);
+                }
+            }
+        }
+
         //Protect against loading chunks that aren't needed anymore or are somehow already loaded
         if (!chunksInProg.Contains(chunkCoords) || chunks.ContainsKey(chunkCoords))
         {

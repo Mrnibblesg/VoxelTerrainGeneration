@@ -65,6 +65,17 @@ public class NetworkedPlayer : NetworkedAgent
         
         OnNameChanged(playerNameText.text, name);
         OnColorChanged(playerNameText.color, color);
+
+        this.clientPlayer = this.gameObject.GetComponent<Player>();
+
+        if (clientPlayer.CurrentWorld is null && NetworkClient.isConnected)
+        {
+            LoadWorldFromServer();
+        }
+        else if (NetworkClient.isConnecting)
+        {
+            Debug.LogError("Connection suspended.");
+        }
     }
 
     [Command]
@@ -191,4 +202,86 @@ public class NetworkedPlayer : NetworkedAgent
         }
     }
 
+    [Command]
+    private void CmdRequestWorld()
+    {
+        World world = WorldAccessor.Identify(this.clientPlayer);
+
+        if (world == null)
+        {
+            throw new KeyNotFoundException(world.parameters.Name);
+        }
+
+        // Send world information back to the client
+        // Also we should add the player to the world here so it's there server-side
+        // Fine for now though.
+        RpcReceiveWorld(this.connectionToClient, world.parameters);
+    }
+
+    [TargetRpc]
+    private void RpcReceiveWorld(NetworkConnectionToClient target, WorldParameters world)
+    {
+        clientPlayer.CurrentWorld = new WorldBuilder().SetParameters(world).Build();
+    }
+
+    public async void LoadWorldFromServer()
+    {
+        if (isServer)
+        {
+            Debug.LogError("RequestWorldFromServer should not be called on the server.");
+            return;
+        }
+
+        CmdRequestWorld();
+
+        while (clientPlayer.CurrentWorld == null)
+        {
+            await System.Threading.Tasks.Task.Delay(100);
+        }
+
+        Debug.Log($"World information received from the server. Seed: {clientPlayer.CurrentWorld.parameters.Seed}");
+    }
+
+    public HashSet<Vector3Int> chunksInProgress = new HashSet<Vector3Int>();
+
+    [Command]
+    public void CmdRequestChunk(Vector3Int chunkCoords, NetworkIdentity identity)
+    {
+        World world = NetworkClient.localPlayer.GetComponent<Player>().CurrentWorld;
+        chunksInProgress.Add(chunkCoords);
+
+        Chunk chunk = world.GetChunk(chunkCoords);
+
+        if (chunk)
+        {
+            VoxelRun voxels = chunk.voxels;
+            TargetReceiveChunk(identity.connectionToClient, new ChunkMessage
+            {
+                ChunkCoords = chunkCoords,
+                Voxels = voxels,
+                WorldName = chunk.world.parameters.Name
+            });
+        }
+        else
+        {
+            // Handle the case where the chunk is not found on the server
+            world.ForceRequestChunk(chunkCoords);
+            // Will trigger async loading which then calls into a ClientRpc
+            // that loads for all clients in range.
+        }
+    }
+
+    [TargetRpc]
+    public void TargetReceiveChunk(NetworkConnectionToClient target, ChunkMessage chunkMessage)
+    {
+        var currentWorld = clientPlayer.CurrentWorld;
+        if (currentWorld == null || currentWorld.parameters.Name != chunkMessage.WorldName)
+        {
+            Debug.LogError("Received chunk for the wrong world or world not loaded.");
+            return;
+        }
+
+        currentWorld.ChunkFinished(chunkMessage.ChunkCoords, chunkMessage.Voxels);
+    }
 }
+
