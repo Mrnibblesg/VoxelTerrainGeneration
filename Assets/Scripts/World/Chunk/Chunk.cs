@@ -153,15 +153,7 @@ public class Chunk : MonoBehaviour
             {
                 for (int z = Math.Max(0, p1Coords.z); z <= Math.Min(world.parameters.ChunkSize-1, p2Coords.z); z++)
                 {
-                    if (GetVoxel(new Vector3Int(x, y, z)).type == VoxelType.AIR)
-                    {
-                        if (voxel.type == VoxelType.AIR)
-                        {
-                            // Voxel is already set
-                            continue;
-                        }
-                    }
-                    else if (voxel.type != VoxelType.AIR)
+                    if (GetVoxel(new Vector3Int(x, y, z)).type == voxel.type)
                     {
                         // Voxel is already set
                         continue;
