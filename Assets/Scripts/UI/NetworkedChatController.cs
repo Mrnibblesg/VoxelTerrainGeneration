@@ -225,13 +225,10 @@ To teleport to another player, use /teleport [playerName]";
             NetworkManager.singleton.StopClient();
         }
 
-        SceneManager.LoadScene(0);
-        SceneManager.sceneLoaded += returnedToMenu;
-        
-    }
-    void returnedToMenu(Scene s, LoadSceneMode mode)
-    {
-        WorldBuilder.InitializeMenuWorld();
-        SceneManager.sceneLoaded -= returnedToMenu;
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+
     }
 }
