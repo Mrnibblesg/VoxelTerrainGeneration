@@ -74,13 +74,10 @@ public class MainMenu : MonoBehaviour
     public void PlayUsingPlayerAgent(Scene scene, LoadSceneMode mode)
     {
         NetworkManager.singleton.StartHost();
-
         // Build the world
         World w = new WorldBuilder()
             .SetParameters(worldParameters)
             .Build();
-
-        WorldAccessor.GetWorld("Menu").UnloadAll();
 
         SceneManager.sceneLoaded -= PlayUsingPlayerAgent;
     }

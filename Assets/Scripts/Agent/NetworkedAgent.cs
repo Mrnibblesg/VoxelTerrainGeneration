@@ -11,13 +11,13 @@ public class NetworkedAgent : NetworkBehaviour
     [Command]
     public void TryBreak(Vector3 pos)
     {
-        this.Break(pos, Agent.CurrentWorld.parameters.Name);
+        this.RpcBreak(pos, Agent.CurrentWorld.parameters.Name);
     }
 
     [Command]
     public void TryTwoPointReplace(Vector3 p1, Vector3 p2, VoxelType type)
     {
-        this.TwoPointReplace(p1, p2, type, Agent.CurrentWorld.parameters.Name);
+        this.RpcTwoPointReplace(p1, p2, type, Agent.CurrentWorld.parameters.Name);
     }
 
     /// <summary>
@@ -26,24 +26,40 @@ public class NetworkedAgent : NetworkBehaviour
     [Command]
     public virtual void TryPlace(Vector3 pos, VoxelType type)
     {
-        this.Place(pos, type, Agent.CurrentWorld.parameters.Name);
+        this.RpcPlace(pos, type, Agent.CurrentWorld.parameters.Name);
     }
 
     [ClientRpc]
-    public void Break(Vector3 pos, string worldName)
+    public void RpcBreak(Vector3 pos, string worldName)
+    {
+        Break(pos, worldName);
+    }
+
+    [ClientRpc]
+    public void RpcPlace(Vector3 pos, VoxelType type, string worldName)
+    {
+        Place(pos, type, worldName);
+    }
+
+    [ClientRpc]
+    public void RpcTwoPointReplace(Vector3 p1, Vector3 p2, VoxelType type, string worldName)
+    {
+        TwoPointReplace(p1, p2, type, worldName);
+    }
+
+    public static void Break(Vector3 pos, string worldName)
     {
         WorldAccessor.GetWorld(worldName).SetVoxel(pos, VoxelType.AIR);
     }
 
-    [ClientRpc]
-    public void Place(Vector3 pos, VoxelType type, string worldName)
+    public static void Place(Vector3 pos, VoxelType type, string worldName)
     {
         WorldAccessor.GetWorld(worldName).SetVoxel(pos, type);
     }
 
-    [ClientRpc]
-    public void TwoPointReplace(Vector3 p1, Vector3 p2, VoxelType type, string worldName)
+    public static void TwoPointReplace(Vector3 p1, Vector3 p2, VoxelType type, string worldName)
     {
         WorldAccessor.GetWorld(worldName).SetVoxels(p1, p2, type);
     }
+
 }

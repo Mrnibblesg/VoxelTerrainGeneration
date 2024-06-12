@@ -12,26 +12,11 @@ public class LookingAtVoxel : MonoBehaviour
         playerLayer = LayerMask.GetMask("Player");
     }
 
-    public Vector3[] LookingAt(Camera cam)
-    {
-        lookDir = cam.transform.forward;
-        Debug.DrawRay(cam.transform.position, lookDir * 20);
-        Ray ray = new Ray(cam.transform.position, lookDir);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, 20, ~playerLayer))
-        {
-            return new Vector3[] { hit.point, hit.normal };
-        }
-
-        return null;
-    }
-
-    public Vector3[] ClickedVoxel(Camera cam)
+    public Vector3[] ClickedVoxel(Camera cam, float range=20f)
     {
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, 20, ~playerLayer))
+        if (Physics.Raycast(ray, out hit, range, ~playerLayer))
         {
             return new Vector3[] { hit.point, hit.normal };
         }

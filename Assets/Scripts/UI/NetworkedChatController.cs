@@ -83,6 +83,10 @@ To teleport to another player, use /teleport [playerName]";
 
     public bool IsPaused()
     {
+        if (pauseMenu.IsUnityNull())
+        {
+            return false;
+        }
         return pauseMenu.activeSelf;
     }
 
@@ -131,11 +135,13 @@ To teleport to another player, use /teleport [playerName]";
     private IEnumerator PushDisplayName()
     {
         yield return new WaitForSeconds(1f);
-        
-        player = player ?? NetworkClient.localPlayer.gameObject.GetComponent<NetworkedPlayer>();
+        player = NetworkClient.localPlayer.gameObject.GetComponent<NetworkedPlayer>();
 
-        Push($"Your username is: {player.PlayerName}! " +
-            $"Welcome to the server :)");
+        if (!player.IsUnityNull())
+        {
+            Push($"Your username is: {player.PlayerName}! " +
+                $"Welcome to the server :)");
+        }
     }
     
     private void Execute(string[] command)
@@ -218,6 +224,10 @@ To teleport to another player, use /teleport [playerName]";
             NetworkManager.singleton.StopClient();
         }
 
-        SceneManager.LoadScene(0);
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+
     }
 }

@@ -92,8 +92,9 @@ public class World
         //Queue furthest chunks to unload. Only done when player coord changes.
         foreach (KeyValuePair<Vector3Int, Chunk> p in chunks)
         {
-            bool shouldUnload = !NetworkClient.activeHost && Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist;
-            if (NetworkClient.activeHost)
+            bool shouldUnload = !NetworkServer.active && Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist;
+            
+            if (NetworkServer.active)
             {
                 shouldUnload = true;
                 // Additional logic to check all players distances to unload for host performance
@@ -148,7 +149,7 @@ public class World
     /// <param name="chunkCoords"></param>
     private void LoadChunk(Vector3Int chunkCoords)
     {
-        if (!NetworkClient.activeHost && NetworkClient.isConnected)
+        if (!NetworkServer.active && NetworkClient.isConnected)
         {
             if (ChunkWithinWorld(chunkCoords))
             {
@@ -203,7 +204,7 @@ public class World
     //  They get queued as well if they're in range.
     public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
-        if (NetworkClient.activeHost)
+        if (NetworkServer.active)
         {
             foreach (var connection in NetworkServer.connections)
             {
@@ -272,17 +273,18 @@ public class World
     /// <param name="chunkCoords"></param>
     public void UnloadChunk(Vector3Int chunkCoords)
     {
-#if UNITY_EDITOR //Apparently use this if we're in the editor otherwise the destroy is ignored?
-        GameObject.DestroyImmediate(chunks[chunkCoords].gameObject);
-#else
-        GameObject.Destroy(chunks[chunkCoords].gameObject);
-#endif
+
+        DestroyChunk(chunkCoords);
         chunks.Remove(chunkCoords);
         unloadedNeighbors.Add(chunkCoords);
 
         //Extra bookkeeping
         TryRemoveUnloadedNeighbors(chunkCoords);
         TryRemoveUnloaded(chunkCoords);
+    }
+    private void DestroyChunk(Vector3Int chunkCoords)
+    {
+        GameObject.Destroy(chunks[chunkCoords].gameObject);
     }
 
     /// <summary>
@@ -405,7 +407,7 @@ public class World
         Chunk c = ChunkFromGlobal(vec);
         if (c != null)
         {
-            return (Voxel)c.VoxelFromLocal(c.transform.InverseTransformPoint(vec));
+            return c.VoxelFromLocal(c.transform.InverseTransformPoint(vec));
         }
         return null;
     }
@@ -542,6 +544,10 @@ public class World
         foreach (Vector3Int coord in chunks.Keys)
         {
             unloadQueue.Enqueue(coord);
+        }
+        while (unloadQueue.Count > 0)
+        {
+            DestroyChunk(unloadQueue.Dequeue());
         }
 
         WorldAccessor.RemoveWorld(this.parameters.Name);

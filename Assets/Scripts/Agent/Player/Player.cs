@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Mirror;
 using TMPro;
 using Unity.VisualScripting;
+using System.Linq;
 
 public class Player : AuthoritativeAgent
 {
@@ -24,6 +25,9 @@ public class Player : AuthoritativeAgent
     [SerializeField]
     private float maxMouseY = 40f;
 
+    [SerializeField]
+    private GameObject canvas;
+
     public Camera Camera { get; private set; }
 
     public override World CurrentWorld
@@ -31,7 +35,7 @@ public class Player : AuthoritativeAgent
         get => currentWorld;
         set
         {
-            //this.currentWorld?.UnloadAll();
+            this.currentWorld?.UnloadAll();
             
             this.currentWorld = value;
             Vector3 startPosition = new(
@@ -88,8 +92,10 @@ public class Player : AuthoritativeAgent
     {
         this.networkedPlayer = this.gameObject.GetComponent<NetworkedPlayer>();
         this.NetworkedAgent = this.networkedPlayer;
+        GameObject canvas = GameObject.FindObjectsOfType<Canvas>(true).First().gameObject;
+        canvas.SetActive(true);
 
-        if (!NetworkServer.activeHost)
+        if (!NetworkServer.active)
             return;
 
         // Check in WorldAccessor for a world
