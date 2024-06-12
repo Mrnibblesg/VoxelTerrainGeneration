@@ -2,10 +2,12 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
-using Unity.VisualScripting;
+using Mirror;
+using System;
 public class MainMenu : MonoBehaviour
 {
     public TMP_InputField seedInput;
+    public TMP_InputField addressInput;
     public Slider heightSlider;
     public Slider resolutionSlider;
     public Slider chunkSizeSlider;
@@ -50,7 +52,6 @@ public class MainMenu : MonoBehaviour
             $"resolution: {worldParameters.Resolution}," +
             $"chunk size: {worldParameters.ChunkSize}," +
             $"water height: {worldParameters.WaterHeight}");
-
         
 
         // Load the world generation scene
@@ -61,19 +62,23 @@ public class MainMenu : MonoBehaviour
         SceneManager.sceneLoaded += PlayUsingPlayerAgent;
     }
 
+    public void JoinWorld()
+    {
+        SceneManager.LoadScene("Za Warudo", LoadSceneMode.Single);
+
+        NetworkManager.singleton.networkAddress = addressInput.text;
+
+        NetworkManager.singleton.StartClient();
+    }
+
     public void PlayUsingPlayerAgent(Scene scene, LoadSceneMode mode)
     {
+        NetworkManager.singleton.StartHost();
         // Build the world
         World w = new WorldBuilder()
             .SetParameters(worldParameters)
             .Build();
 
-        //Spawn a new clone of the player prefab, and save a reference to its script
-        Player p = Instantiate(Resources.Load("Prefabs/Player"), null, true)
-            .GetComponent<Player>();
-
-        p.CurrentWorld = w;
-        p.gameObject.SetActive(true);
         SceneManager.sceneLoaded -= PlayUsingPlayerAgent;
     }
 

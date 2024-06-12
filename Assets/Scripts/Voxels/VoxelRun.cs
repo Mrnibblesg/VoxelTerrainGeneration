@@ -4,9 +4,15 @@ using Unity.Collections;
 //A linked list.
 public class VoxelRun
 {
-    private VoxelRun next;
-    public int runLength { get; private set; } //Always at least 1.
-    public Voxel type { get; private set; }
+    public VoxelRun next;
+    public int runLength; //Always at least 1.
+    public Voxel type;
+
+    // This along with VoxelRun public
+    public VoxelRun()
+    {
+
+    }
 
     public VoxelRun(int size, int height)
     {
