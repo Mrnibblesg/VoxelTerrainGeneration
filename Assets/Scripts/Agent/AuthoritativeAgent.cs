@@ -37,7 +37,7 @@ public abstract class AuthoritativeAgent : Agent
         set
         {
             currentWorld = value;
-            UpdateChunkCoord();
+            currentWorld?.UpdateAuthAgentChunkPos(this);
         }
     }
 
