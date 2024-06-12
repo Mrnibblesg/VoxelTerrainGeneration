@@ -117,7 +117,6 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 position = voxelInfo[0] + (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
-
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
