@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Mirror;
 using TMPro;
 using Unity.VisualScripting;
+using System.Linq;
 
 public class Player : AuthoritativeAgent
 {
@@ -23,6 +24,9 @@ public class Player : AuthoritativeAgent
 
     [SerializeField]
     private float maxMouseY = 40f;
+
+    [SerializeField]
+    private GameObject canvas;
 
     public Camera Camera { get; private set; }
 
@@ -88,6 +92,8 @@ public class Player : AuthoritativeAgent
     {
         this.networkedPlayer = this.gameObject.GetComponent<NetworkedPlayer>();
         this.NetworkedAgent = this.networkedPlayer;
+        GameObject canvas = GameObject.FindObjectsOfType<Canvas>(true).First().gameObject;
+        canvas.SetActive(true);
 
         if (!NetworkServer.active)
             return;
