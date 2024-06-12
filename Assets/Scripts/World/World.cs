@@ -406,7 +406,7 @@ public class World
         Chunk c = ChunkFromGlobal(vec);
         if (c != null)
         {
-            return (Voxel)c.VoxelFromLocal(c.transform.InverseTransformPoint(vec));
+            return c.VoxelFromLocal(c.transform.InverseTransformPoint(vec));
         }
         return null;
     }
@@ -547,7 +547,7 @@ public class World
 
         WorldAccessor.RemoveWorld(this.parameters.Name);
 
-        //UpdateNeighborQueues();
+        UpdateNeighborQueues();
     }
     public bool IsLoadingInProgress()
     {
