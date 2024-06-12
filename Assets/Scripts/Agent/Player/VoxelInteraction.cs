@@ -94,21 +94,65 @@ public class VoxelInteraction : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            voxelInfo = looking.LookingAt(playerCamera);
+            voxelInfo = looking.LookingAt(playerCamera, clickRange);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
-                BreakVoxel(position);
+                position = voxelInfo[0] - (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    if (Input.GetKey(KeyCode.LeftControl))
+                    {
+                        if (altPosition == null)
+                        {
+                            altPosition = position;
+                        }
+                        else
+                        {
+                            TwoPointReplace((Vector3)altPosition, position, VoxelType.AIR);
+                            altPosition = null;
+                        }
+                    }
+                    else
+                    {
+                        MassBreak(position);
+                    }
+                }
+                else
+                {
+                    BreakVoxel(position);
+                }
             }
         }
 
         if (Input.GetMouseButtonDown(1))
         {
-            voxelInfo = looking.LookingAt(playerCamera);
+            voxelInfo = looking.LookingAt(playerCamera, clickRange);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
-                PlaceVoxel(position);
+                position = voxelInfo[0] + (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
+                if (Input.GetKey(KeyCode.LeftShift))
+                {
+                    if (Input.GetKey(KeyCode.LeftControl))
+                    {
+                        if (altPosition2 == null)
+                        {
+                            altPosition2 = position;
+                        }
+                        else
+                        {
+                            TwoPointReplace((Vector3)altPosition2, position, currentType);
+                            altPosition2 = null;
+                        }
+                    }
+                    else
+                    {
+                        MassPlace(position, currentType);
+                    }
+                }
+                else
+                {
+                    PlaceVoxel(position);
+                }
             }
         }
     }
@@ -153,7 +197,6 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 position = voxelInfo[0] + (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
-
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
