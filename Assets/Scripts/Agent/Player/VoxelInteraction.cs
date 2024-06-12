@@ -15,8 +15,8 @@ public class VoxelInteraction : MonoBehaviour
     Vector3? altPosition2;
     private float breakRange;
     private float clickRange;
-    private bool isThirdPerson;
 
+    
     void Start()
     {
         looking = gameObject.AddComponent<LookingAtVoxel>();
@@ -32,7 +32,6 @@ public class VoxelInteraction : MonoBehaviour
         currentType = VoxelType.GRASS;
         breakRange = 2;
         clickRange = 200;
-        isThirdPerson = true;
     }
 
     void Update()
@@ -45,19 +44,7 @@ public class VoxelInteraction : MonoBehaviour
 
         TypeSelection();
 
-        if (Input.GetKeyDown(KeyCode.V))
-        {
-            isThirdPerson = !isThirdPerson;
-        }
-
-        if (isThirdPerson)
-        {
-            ThirdPerson();
-        }
-        else
-        {
-            FirstPerson();
-        }
+        ThirdPerson();
     }
 
     private void TypeSelection()
@@ -87,73 +74,6 @@ public class VoxelInteraction : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Comma))
         {
             breakRange--;
-        }
-    }
-
-    private void FirstPerson()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            voxelInfo = looking.LookingAt(playerCamera, clickRange);
-            if (voxelInfo != null)
-            {
-                position = voxelInfo[0] - (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
-                if (Input.GetKey(KeyCode.LeftShift))
-                {
-                    if (Input.GetKey(KeyCode.LeftControl))
-                    {
-                        if (altPosition == null)
-                        {
-                            altPosition = position;
-                        }
-                        else
-                        {
-                            TwoPointReplace((Vector3)altPosition, position, VoxelType.AIR);
-                            altPosition = null;
-                        }
-                    }
-                    else
-                    {
-                        MassBreak(position);
-                    }
-                }
-                else
-                {
-                    BreakVoxel(position);
-                }
-            }
-        }
-
-        if (Input.GetMouseButtonDown(1))
-        {
-            voxelInfo = looking.LookingAt(playerCamera, clickRange);
-            if (voxelInfo != null)
-            {
-                position = voxelInfo[0] + (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
-                if (Input.GetKey(KeyCode.LeftShift))
-                {
-                    if (Input.GetKey(KeyCode.LeftControl))
-                    {
-                        if (altPosition2 == null)
-                        {
-                            altPosition2 = position;
-                        }
-                        else
-                        {
-                            TwoPointReplace((Vector3)altPosition2, position, currentType);
-                            altPosition2 = null;
-                        }
-                    }
-                    else
-                    {
-                        MassPlace(position, currentType);
-                    }
-                }
-                else
-                {
-                    PlaceVoxel(position);
-                }
-            }
         }
     }
 
@@ -197,6 +117,7 @@ public class VoxelInteraction : MonoBehaviour
             if (voxelInfo != null)
             {
                 position = voxelInfo[0] + (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
+
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
