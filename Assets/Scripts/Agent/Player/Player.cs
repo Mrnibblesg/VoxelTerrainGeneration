@@ -35,7 +35,7 @@ public class Player : AuthoritativeAgent
         get => currentWorld;
         set
         {
-            //this.currentWorld?.UnloadAll();
+            this.currentWorld?.UnloadAll();
             
             this.currentWorld = value;
             Vector3 startPosition = new(

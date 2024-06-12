@@ -80,8 +80,6 @@ public class MainMenu : MonoBehaviour
             .SetParameters(worldParameters)
             .Build();
 
-        WorldAccessor.GetWorld("Menu").UnloadAll();
-
         SceneManager.sceneLoaded -= PlayUsingPlayerAgent;
     }
 

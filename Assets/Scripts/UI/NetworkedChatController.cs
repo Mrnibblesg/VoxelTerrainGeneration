@@ -83,6 +83,10 @@ To teleport to another player, use /teleport [playerName]";
 
     public bool IsPaused()
     {
+        if (pauseMenu.IsUnityNull())
+        {
+            return false;
+        }
         return pauseMenu.activeSelf;
     }
 

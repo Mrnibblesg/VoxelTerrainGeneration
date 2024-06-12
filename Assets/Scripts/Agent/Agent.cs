@@ -2,7 +2,6 @@ using Mirror;
 using System;
 using Unity.VisualScripting;
 using UnityEngine;
-using static UnityEditor.PlayerSettings;
 
 /// <summary>
 /// Anything that is an AbstractAgent can interact with the world in some way.

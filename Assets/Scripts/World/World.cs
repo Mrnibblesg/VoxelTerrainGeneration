@@ -273,17 +273,18 @@ public class World
     /// <param name="chunkCoords"></param>
     public void UnloadChunk(Vector3Int chunkCoords)
     {
-#if UNITY_EDITOR //Apparently use this if we're in the editor otherwise the destroy is ignored?
-        GameObject.DestroyImmediate(chunks[chunkCoords].gameObject);
-#else
-        GameObject.Destroy(chunks[chunkCoords].gameObject);
-#endif
+
+        DestroyChunk(chunkCoords);
         chunks.Remove(chunkCoords);
         unloadedNeighbors.Add(chunkCoords);
 
         //Extra bookkeeping
         TryRemoveUnloadedNeighbors(chunkCoords);
         TryRemoveUnloaded(chunkCoords);
+    }
+    private void DestroyChunk(Vector3Int chunkCoords)
+    {
+        GameObject.Destroy(chunks[chunkCoords].gameObject);
     }
 
     /// <summary>
@@ -544,10 +545,14 @@ public class World
         {
             unloadQueue.Enqueue(coord);
         }
+        while (unloadQueue.Count > 0)
+        {
+            DestroyChunk(unloadQueue.Dequeue());
+        }
 
         WorldAccessor.RemoveWorld(this.parameters.Name);
 
-        UpdateNeighborQueues();
+        //UpdateNeighborQueues();
     }
     public bool IsLoadingInProgress()
     {
