@@ -92,8 +92,9 @@ public class World
         //Queue furthest chunks to unload. Only done when player coord changes.
         foreach (KeyValuePair<Vector3Int, Chunk> p in chunks)
         {
-            bool shouldUnload = !NetworkClient.activeHost && Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist;
-            if (NetworkClient.activeHost)
+            bool shouldUnload = !NetworkServer.active && Vector3Int.Distance(p.Key, chunkCoord) > playerUnloadDist;
+            
+            if (NetworkServer.active)
             {
                 shouldUnload = true;
                 // Additional logic to check all players distances to unload for host performance
@@ -148,7 +149,7 @@ public class World
     /// <param name="chunkCoords"></param>
     private void LoadChunk(Vector3Int chunkCoords)
     {
-        if (!NetworkClient.activeHost && NetworkClient.isConnected)
+        if (!NetworkServer.active && NetworkClient.isConnected)
         {
             if (ChunkWithinWorld(chunkCoords))
             {
@@ -203,7 +204,7 @@ public class World
     //  They get queued as well if they're in range.
     public void ChunkFinished(Vector3Int chunkCoords, VoxelRun voxels)
     {
-        if (NetworkClient.activeHost)
+        if (NetworkServer.active)
         {
             foreach (var connection in NetworkServer.connections)
             {

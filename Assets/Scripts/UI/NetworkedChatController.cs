@@ -132,10 +132,13 @@ To teleport to another player, use /teleport [playerName]";
     {
         yield return new WaitForSeconds(1f);
         
-        player = player ?? NetworkClient.localPlayer.gameObject.GetComponent<NetworkedPlayer>();
+        if (player)
+        {
+            player = player ?? NetworkClient.localPlayer.gameObject.GetComponent<NetworkedPlayer>();
 
-        Push($"Your username is: {player.PlayerName}! " +
-            $"Welcome to the server :)");
+            Push($"Your username is: {player.PlayerName}! " +
+                $"Welcome to the server :)");
+        }
     }
     
     private void Execute(string[] command)

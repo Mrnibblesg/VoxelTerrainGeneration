@@ -1,5 +1,8 @@
+using Mirror;
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
+using static UnityEditor.PlayerSettings;
 
 /// <summary>
 /// Anything that is an AbstractAgent can interact with the world in some way.
@@ -39,11 +42,23 @@ public abstract class Agent : WorldObject
         }
     }
 
+    private bool IsServerOnly()
+    {
+        return this.networkedAgent is not NetworkedPlayer && !NetworkServer.activeHost;
+    }
+
     /// <summary>
     /// Attempt to break a block in the current world, at world-space position.
     /// </summary>
     public void TryBreak(Vector3 pos)
     {
+        if (IsServerOnly())
+        {
+            NetworkedAgent.Break(pos, this.CurrentWorld.parameters.Name);
+
+            return;
+        }
+
         VerifyNetworked();
 
         NetworkedAgent.TryBreak(pos);
@@ -54,6 +69,13 @@ public abstract class Agent : WorldObject
     /// </summary>
     public void TryPlace(Vector3 pos, VoxelType type)
     {
+        if (IsServerOnly())
+        {
+            NetworkedAgent.Place(pos, type, this.CurrentWorld.parameters.Name);
+
+            return;
+        }
+
         VerifyNetworked();
 
         NetworkedAgent.TryPlace(pos, type);
@@ -61,6 +83,13 @@ public abstract class Agent : WorldObject
 
     public void TryTwoPointReplace(Vector3 p1, Vector3 p2, VoxelType type)
     {
+        if (IsServerOnly())
+        {
+            NetworkedAgent.TwoPointReplace(p1, p2, type, this.CurrentWorld.parameters.Name);
+
+            return;
+        }
+
         VerifyNetworked();
 
         NetworkedAgent.TryTwoPointReplace(p1, p2, type);

@@ -89,7 +89,7 @@ public class Player : AuthoritativeAgent
         this.networkedPlayer = this.gameObject.GetComponent<NetworkedPlayer>();
         this.NetworkedAgent = this.networkedPlayer;
 
-        if (!NetworkServer.activeHost)
+        if (!NetworkServer.active)
             return;
 
         // Check in WorldAccessor for a world

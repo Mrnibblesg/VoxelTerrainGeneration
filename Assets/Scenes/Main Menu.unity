@@ -4360,7 +4360,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 527725432}
         m_TargetAssemblyTypeName: ProfilerManager, Assembly-CSharp
         m_MethodName: StartProfiling
         m_Mode: 1
