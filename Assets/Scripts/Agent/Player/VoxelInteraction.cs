@@ -2,44 +2,47 @@ using Mirror;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class VoxelInteraction : NetworkBehaviour
+public class VoxelInteraction : MonoBehaviour
 {
     public Camera playerCamera;
     private LookingAtVoxel looking;
     private VoxelType currentType;
-    private Player player;
-    private NetworkedPlayer networkedPlayer;
+    private Agent agent;
+    private NetworkIdentity netIdentity;
     private Vector3[] voxelInfo;
     private Vector3 position;
     Vector3? altPosition;
     Vector3? altPosition2;
-    private int breakRange;
+    private float breakRange;
+    private float clickRange;
 
-    // Start is called before the first frame update
+    
     void Start()
     {
         looking = gameObject.AddComponent<LookingAtVoxel>();
-        player = GetComponent<Player>();
-        networkedPlayer = GetComponent<NetworkedPlayer>();
+
+        //now THIS is coupling *puts sunglasses on*
+        agent = GetComponent<Player>();
+        if (agent is null)
+        {
+            agent = gameObject.GetComponentInParent<MenuCameraController>();
+        }
+
+        netIdentity = GetComponent<NetworkIdentity>();
         currentType = VoxelType.GRASS;
-        voxelInfo = null;
         breakRange = 2;
-        altPosition = null;
+        clickRange = 200;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (!this.networkedPlayer.isLocalPlayer)
+        if (netIdentity is not null && !this.netIdentity.isLocalPlayer)
             return;
 
-        if (NetworkedChatController.ChatController.IsPaused())
+        if (NetworkedChatController.ChatController is not null && NetworkedChatController.ChatController.IsPaused())
             return;
 
         TypeSelection();
-
-        //We don't have a first person view yet
-        //FirstPerson();
 
         ThirdPerson();
     }
@@ -74,37 +77,14 @@ public class VoxelInteraction : NetworkBehaviour
         }
     }
 
-    private void FirstPerson()
-    {
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            voxelInfo = looking.LookingAt(playerCamera);
-            if (voxelInfo != null)
-            {
-                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
-                BreakVoxel(position);
-            }
-        }
-
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            voxelInfo = looking.LookingAt(playerCamera);
-            if (voxelInfo != null)
-            {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
-                PlaceVoxel(position);
-            }
-        }
-    }
-
     private void ThirdPerson()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            voxelInfo = looking.ClickedVoxel(playerCamera);
+            voxelInfo = looking.ClickedVoxel(playerCamera, clickRange);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] - (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
+                position = voxelInfo[0] - (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
                     if (Input.GetKey(KeyCode.LeftControl))
@@ -133,10 +113,10 @@ public class VoxelInteraction : NetworkBehaviour
 
         if (Input.GetMouseButtonDown(1))
         {
-            voxelInfo = looking.ClickedVoxel(playerCamera);
+            voxelInfo = looking.ClickedVoxel(playerCamera, clickRange);
             if (voxelInfo != null)
             {
-                position = voxelInfo[0] + (voxelInfo[1] / player.CurrentWorld.parameters.Resolution / 2);
+                position = voxelInfo[0] + (voxelInfo[1] / agent.CurrentWorld.parameters.Resolution / 2);
 
                 if (Input.GetKey(KeyCode.LeftShift))
                 {
@@ -167,12 +147,12 @@ public class VoxelInteraction : NetworkBehaviour
 
     private void BreakVoxel(Vector3 position)
     {
-        player.TryBreak(position);
+        agent.TryBreak(position);
     }
 
     private void PlaceVoxel(Vector3 position)
     {
-        player.TryPlace(position, currentType);
+        agent.TryPlace(position, currentType);
     }
 
     private void MassBreak(Vector3 position)
@@ -183,7 +163,7 @@ public class VoxelInteraction : NetworkBehaviour
 
     private void MassPlace(Vector3 position, VoxelType type)
     {
-        float voxelSize = 1 / player.CurrentWorld.parameters.Resolution;
+        float voxelSize = 1 / agent.CurrentWorld.parameters.Resolution;
         Vector3 offset = new Vector3(-voxelSize * breakRange, -voxelSize * breakRange, -voxelSize * breakRange);
         Vector3 p1 = position - offset;
         Vector3 p2 = position + offset;
@@ -205,7 +185,7 @@ public class VoxelInteraction : NetworkBehaviour
             Mathf.Max(posOne.y, posTwo.y),
             Mathf.Max(posOne.z, posTwo.z));
 
-        player.TryTwoPointReplace(c1, c2, type);
+        agent.TryTwoPointReplace(c1, c2, type);
 
     }
 }
