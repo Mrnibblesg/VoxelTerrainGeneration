@@ -15,6 +15,8 @@ public class VoxelInteraction : NetworkBehaviour
     Vector3? altPosition2;
     private int breakRange;
 
+    private bool isThirdPerson;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -25,6 +27,8 @@ public class VoxelInteraction : NetworkBehaviour
         voxelInfo = null;
         breakRange = 2;
         altPosition = null;
+
+        isThirdPerson = true;
     }
 
     // Update is called once per frame
@@ -38,10 +42,19 @@ public class VoxelInteraction : NetworkBehaviour
 
         TypeSelection();
 
-        //We don't have a first person view yet
-        //FirstPerson();
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            isThirdPerson = !isThirdPerson;
+        }
 
-        ThirdPerson();
+        if (isThirdPerson)
+        {
+            ThirdPerson();
+        }
+        else
+        {
+            FirstPerson();
+        }
     }
 
     private void TypeSelection()
@@ -76,7 +89,7 @@ public class VoxelInteraction : NetworkBehaviour
 
     private void FirstPerson()
     {
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetMouseButtonDown(0))
         {
             voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
@@ -86,7 +99,7 @@ public class VoxelInteraction : NetworkBehaviour
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.T))
+        if (Input.GetMouseButtonDown(1))
         {
             voxelInfo = looking.LookingAt(playerCamera);
             if (voxelInfo != null)
